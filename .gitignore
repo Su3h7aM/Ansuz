@@ -39,3 +39,8 @@ luac.out
 *.x86_64
 *.hex
 
+# Odin specific
+*.bin
+hello_world
+examples/hello_world
+
