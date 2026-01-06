@@ -25,6 +25,9 @@ Context :: struct {
     // Frame timing (for future FPS limiting)
     frame_count:   u64,
     
+    // Layout system
+    layout_ctx:    LayoutContext,
+
     // Allocator for internal allocations
     allocator:     mem.Allocator,
 }
@@ -81,6 +84,9 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     // Initialize event buffer
     ctx.event_buffer = init_event_buffer()
 
+    // Initialize layout context
+    ctx.layout_ctx = init_layout_context(allocator)
+
     // Initial terminal setup
     hide_cursor()
     clear_screen()
@@ -101,6 +107,9 @@ shutdown :: proc(ctx: ^Context) {
     
     // Clean up event buffer
     destroy_event_buffer(&ctx.event_buffer)
+
+    // Clean up layout context
+    destroy_layout_context(&ctx.layout_ctx)
 
     // Restore terminal
     reset_terminal()
@@ -203,6 +212,43 @@ handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
     
     resize_buffer(&ctx.front_buffer, new_width, new_height)
     resize_buffer(&ctx.back_buffer, new_width, new_height)
+}
+
+// --- Layout API (Clay-like) ---
+
+// begin_layout starts a layout definition for the entire screen
+begin_layout :: proc(ctx: ^Context) {
+    reset_layout_context(&ctx.layout_ctx, Rect{0, 0, ctx.width, ctx.height})
+}
+
+// end_layout calculates the layout and renders all nodes
+end_layout :: proc(ctx: ^Context) {
+    finish_layout(&ctx.layout_ctx, ctx)
+}
+
+// layout_begin_container starts a new layout container
+layout_begin_container :: proc(ctx: ^Context, config: LayoutConfig) {
+    begin_container(&ctx.layout_ctx, config)
+}
+
+// layout_end_container ends the current layout container
+layout_end_container :: proc(ctx: ^Context) {
+    end_container(&ctx.layout_ctx)
+}
+
+// layout_text adds a text node to the current layout container
+layout_text :: proc(ctx: ^Context, content: string, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+    add_text(&ctx.layout_ctx, content, style, config)
+}
+
+// layout_box adds a bordered box node to the current layout container
+layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+    add_box(&ctx.layout_ctx, style, config)
+}
+
+// layout_rect adds a filled rectangular node to the current layout container
+layout_rect :: proc(ctx: ^Context, char: rune, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+    add_rect(&ctx.layout_ctx, char, style, config)
 }
 
 // Predefined styles for convenience
