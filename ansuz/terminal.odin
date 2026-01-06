@@ -2,12 +2,12 @@ package ansuz
 
 import "core:fmt"
 import "core:os"
-import "core:sys/unix"
+import "core:sys/posix"
 
 // TerminalState maintains the state of terminal configuration
 // It stores the original termios settings for restoration on exit
 TerminalState :: struct {
-    original_termios: unix.termios,
+    original_termios: posix.Termios,
     is_raw_mode:      bool,
     is_initialized:   bool,
 }
@@ -31,8 +31,8 @@ init_terminal :: proc() -> TerminalError {
     }
 
     // Get current terminal attributes for later restoration
-    result := unix.tcgetattr(os.stdin, &_terminal_state.original_termios)
-    if result != .NONE {
+    result := posix.tcgetattr(os.stdin, &_terminal_state.original_termios)
+    if result != 0 {
         return .FailedToGetAttributes
     }
 
@@ -56,25 +56,25 @@ enter_raw_mode :: proc() -> TerminalError {
     raw := _terminal_state.original_termios
 
     // Input flags: disable software flow control, CR->NL translation
-    raw.c_iflag &= ~unix.Input_Flag{.BRKINT, .ICRNL, .INPCK, .ISTRIP, .IXON}
+    raw.c_iflag &= ~(posix.BRKINT | posix.ICRNL | posix.INPCK | posix.ISTRIP | posix.IXON)
 
     // Output flags: disable output processing (raw output)
-    raw.c_oflag &= ~unix.Output_Flag{.OPOST}
+    raw.c_oflag &= ~posix.OPOST
 
     // Control flags: set 8-bit character size
-    raw.c_cflag |= unix.Control_Flag{.CS8}
+    raw.c_cflag |= posix.CS8
 
     // Local flags: disable canonical mode, echo, signals, and extended input
     // This is the most critical part for raw mode
-    raw.c_lflag &= ~unix.Local_Flag{.ECHO, .ICANON, .IEXTEN, .ISIG}
+    raw.c_lflag &= ~(posix.ECHO | posix.ICANON | posix.IEXTEN | posix.ISIG)
 
     // Control characters: non-blocking reads
-    raw.c_cc[unix.Control_Code.VMIN] = 0  // Minimum characters to read
-    raw.c_cc[unix.Control_Code.VTIME] = 0 // Timeout in deciseconds
+    raw.c_cc[posix.VMIN] = 0  // Minimum characters to read
+    raw.c_cc[posix.VTIME] = 0 // Timeout in deciseconds
 
     // Apply the modified settings
-    result := unix.tcsetattr(os.stdin, .TCSAFLUSH, &raw)
-    if result != .NONE {
+    result := posix.tcsetattr(os.stdin, posix.TCSAFLUSH, &raw)
+    if result != 0 {
         return .FailedToSetAttributes
     }
 
@@ -89,8 +89,8 @@ leave_raw_mode :: proc() -> TerminalError {
         return .None // Already in cooked mode
     }
 
-    result := unix.tcsetattr(os.stdin, .TCSAFLUSH, &_terminal_state.original_termios)
-    if result != .NONE {
+    result := posix.tcsetattr(os.stdin, posix.TCSAFLUSH, &_terminal_state.original_termios)
+    if result != 0 {
         return .FailedToSetAttributes
     }
 
@@ -112,7 +112,7 @@ write_ansi :: proc(sequence: string) -> TerminalError {
 flush_output :: proc() {
     // In Odin, stdout is typically line-buffered, but we can force a flush
     // by writing directly through the file descriptor
-    unix.fsync(os.stdout)
+    _ = posix.fsync(os.stdout)
 }
 
 // clear_screen clears the entire terminal screen
@@ -163,10 +163,10 @@ show_cursor :: proc() -> TerminalError {
 // get_terminal_size retrieves the current terminal dimensions
 // Returns (width, height) in characters
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-    ws: unix.winsize
-    result := unix.ioctl(os.stdout, unix.TIOCGWINSZ, &ws)
-    
-    if result != .NONE {
+    ws: posix.Winsize
+    result := posix.ioctl(os.stdout, posix.TIOCGWINSZ, &ws)
+
+    if result != 0 {
         return 0, 0, .FailedToGetAttributes
     }
 
@@ -175,10 +175,10 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 
 // read_input reads a single byte from stdin without blocking
 // Returns (byte, true) if data available, or (0, false) if no data
-read_input :: proc() -> (byte: byte, available: bool) {
-    buffer: [1]byte
+read_input :: proc() -> (byte: u8, available: bool) {
+    buffer: [1]u8
     n, err := os.read(os.stdin, buffer[:])
-    
+
     if err != os.ERROR_NONE || n == 0 {
         return 0, false
     }

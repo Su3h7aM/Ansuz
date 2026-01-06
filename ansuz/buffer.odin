@@ -43,7 +43,7 @@ init_buffer :: proc(width, height: int, allocator := context.allocator) -> (buff
     buffer.allocator = allocator
 
     // Allocate the cell array
-    buffer.cells = make([]Cell, width * height, allocator) or_return
+    buffer.cells = make([]Cell, width * height, allocator)
     if buffer.cells == nil {
         return buffer, .AllocationFailed
     }
@@ -320,7 +320,7 @@ resize_buffer :: proc(buffer: ^FrameBuffer, new_width, new_height: int) -> Buffe
     }
 
     // Create new cell array
-    new_cells := make([]Cell, new_width * new_height, buffer.allocator) or_return
+    new_cells := make([]Cell, new_width * new_height, buffer.allocator)
     if new_cells == nil {
         return .AllocationFailed
     }

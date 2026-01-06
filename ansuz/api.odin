@@ -143,26 +143,26 @@ poll_events :: proc(ctx: ^Context) -> []Event {
     // Read raw input and parse into events
     // This is a simplified version - production would buffer partial sequences
     events: [dynamic]Event
-    
-    input_buffer: [32]byte
+
+    input_buffer: [32]u8
     bytes_read := 0
-    
+
     // Read all available input
     for {
         b, available := read_input()
         if !available {
             break
         }
-        
+
         input_buffer[bytes_read] = b
         bytes_read += 1
-        
+
         // Try to parse what we have
         if bytes_read >= len(input_buffer) {
             break
         }
     }
-    
+
     // Parse the input if we got any
     if bytes_read > 0 {
         ev, parsed := parse_input(input_buffer[:bytes_read])
@@ -170,7 +170,7 @@ poll_events :: proc(ctx: ^Context) -> []Event {
             append(&events, ev)
         }
     }
-    
+
     return events[:]
 }
 

@@ -53,8 +53,12 @@ handle_event :: proc(app: ^AppState, event: ansuz.Event) {
         if e.key == .Ctrl_C || e.key == .Ctrl_D {
             app.should_quit = true
         }
-    case:
-        // Ignore other event types for now
+    case ansuz.ResizeEvent:
+        // Handle resize events if needed
+        // For now, just ignore - the next frame will handle it
+    case ansuz.MouseEvent:
+        // Handle mouse events if needed
+        // For now, just ignore
     }
 }
 
