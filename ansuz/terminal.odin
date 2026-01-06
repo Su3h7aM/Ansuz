@@ -4,8 +4,8 @@ import "core:fmt"
 import "core:os"
 
 // Foreign imports for POSIX system calls
-// These are required for raw terminal mode which is essential for TUI functionality
-// Note: Odin's standard library doesn't expose these low-level POSIX APIs directly
+// This is the standard and idiomatic way in Odin to access low-level system APIs
+// These functions are not exposed by Odin's core:os or core:sys/unix packages
 foreign import libc "system:c"
 
 @(default_calling_convention="c")
@@ -62,7 +62,7 @@ ISIG   :: u32(1 << 3)  // Signal generation (Ctrl+C, etc.)
 VMIN  :: 0  // Minimum number of characters to read
 VTIME :: 1  // Timeout in deciseconds
 
-// Terminal size query
+// Terminal size query ioctl request code
 TIOCGWINSZ :: 0x5413
 
 // TerminalState maintains the state of terminal configuration
