@@ -97,7 +97,7 @@ Event :: union {
 // parse_input attempts to parse raw terminal input into an Event
 // This is a simplified parser for the MVP - handles basic keys and Ctrl+C
 // A full implementation would parse complete ANSI escape sequences
-parse_input :: proc(bytes: []byte) -> (event: Event, parsed: bool) {
+parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
     if len(bytes) == 0 {
         return nil, false
     }
