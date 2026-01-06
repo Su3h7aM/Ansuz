@@ -109,7 +109,7 @@ style_flag_to_ansi :: proc(flag: StyleFlag) -> int {
 // for the given foreground color, background color, and style flags
 // Returns a string like "\x1b[1;31;42m" for bold red on green
 generate_style_sequence :: proc(fg: Color, bg: Color, styles: StyleFlags) -> string {
-    if fg == .Default && bg == .Default && len(styles) == 0 {
+    if fg == .Default && bg == .Default && card(styles) == 0 {
         // No styling needed, return reset
         return "\x1b[0m"
     }
@@ -178,13 +178,3 @@ default_style :: proc() -> Style {
 to_ansi :: proc(style: Style) -> string {
     return generate_style_sequence(style.fg_color, style.bg_color, style.flags)
 }
-
-// Predefined common styles for convenience
-STYLE_NORMAL :: Style{.Default, .Default, {}}
-STYLE_BOLD :: Style{.Default, .Default, {.Bold}}
-STYLE_DIM :: Style{.Default, .Default, {.Dim}}
-STYLE_UNDERLINE :: Style{.Default, .Default, {.Underline}}
-STYLE_ERROR :: Style{.Red, .Default, {.Bold}}
-STYLE_SUCCESS :: Style{.Green, .Default, {}}
-STYLE_WARNING :: Style{.Yellow, .Default, {}}
-STYLE_INFO :: Style{.Cyan, .Default, {}}

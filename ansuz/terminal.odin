@@ -4,10 +4,69 @@ import "core:fmt"
 import "core:os"
 import "core:sys/unix"
 
+// Foreign imports for termios functions that aren't directly exposed
+foreign import libc "system:c"
+
+@(default_calling_convention="c")
+foreign libc {
+    tcgetattr :: proc(fd: int, termios_p: ^termios) -> int ---
+    tcsetattr :: proc(fd: int, optional_actions: int, termios_p: ^termios) -> int ---
+    ioctl :: proc(fd: int, request: u64, ...) -> int ---
+    fsync :: proc(fd: int) -> int ---
+}
+
+// termios structure matches the C struct
+termios :: struct {
+    c_iflag: u32,
+    c_oflag: u32,
+    c_cflag: u32,
+    c_lflag: u32,
+    c_line:  u8,
+    c_cc:    [32]u8,
+    c_ispeed: u32,
+    c_ospeed: u32,
+}
+
+// winsize structure for terminal size queries
+winsize :: struct {
+    ws_row: u16,
+    ws_col: u16,
+    ws_xpixel: u16,
+    ws_ypixel: u16,
+}
+
+// Constants for termios
+TCSAFLUSH :: 2
+
+TIOCGWINSZ :: 0x5413
+
+// Input flags
+BRKINT :: u32(1 << 0)
+ICRNL  :: u32(1 << 1)
+INPCK  :: u32(1 << 2)
+ISTRIP :: u32(1 << 3)
+IXON   :: u32(1 << 4)
+
+// Output flags
+OPOST :: u32(1 << 0)
+
+// Control flags
+CS8 :: u32(0x60)
+
+// Local flags
+ECHO   :: u32(1 << 0)
+ICANON :: u32(1 << 1)
+IEXTEN :: u32(1 << 2)
+ISIG   :: u32(1 << 3)
+
+// Control codes
+VMIN  :: 0
+VTIME :: 1
+
 // TerminalState maintains the state of terminal configuration
 // It stores the original termios settings for restoration on exit
 TerminalState :: struct {
-    original_termios: unix.termios,
+    original_termios: termios,
     is_raw_mode:      bool,
     is_initialized:   bool,
 }
@@ -31,8 +90,8 @@ init_terminal :: proc() -> TerminalError {
     }
 
     // Get current terminal attributes for later restoration
-    result := unix.tcgetattr(os.stdin, &_terminal_state.original_termios)
-    if result != .NONE {
+    result := tcgetattr(os.stdin, &_terminal_state.original_termios)
+    if result != 0 {
         return .FailedToGetAttributes
     }
 
@@ -56,25 +115,25 @@ enter_raw_mode :: proc() -> TerminalError {
     raw := _terminal_state.original_termios
 
     // Input flags: disable software flow control, CR->NL translation
-    raw.c_iflag &= ~unix.Input_Flag{.BRKINT, .ICRNL, .INPCK, .ISTRIP, .IXON}
+    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
 
     // Output flags: disable output processing (raw output)
-    raw.c_oflag &= ~unix.Output_Flag{.OPOST}
+    raw.c_oflag &= ~OPOST
 
     // Control flags: set 8-bit character size
-    raw.c_cflag |= unix.Control_Flag{.CS8}
+    raw.c_cflag |= CS8
 
     // Local flags: disable canonical mode, echo, signals, and extended input
     // This is the most critical part for raw mode
-    raw.c_lflag &= ~unix.Local_Flag{.ECHO, .ICANON, .IEXTEN, .ISIG}
+    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG)
 
     // Control characters: non-blocking reads
-    raw.c_cc[unix.Control_Code.VMIN] = 0  // Minimum characters to read
-    raw.c_cc[unix.Control_Code.VTIME] = 0 // Timeout in deciseconds
+    raw.c_cc[VMIN] = 0  // Minimum characters to read
+    raw.c_cc[VTIME] = 0 // Timeout in deciseconds
 
     // Apply the modified settings
-    result := unix.tcsetattr(os.stdin, .TCSAFLUSH, &raw)
-    if result != .NONE {
+    result := tcsetattr(os.stdin, TCSAFLUSH, &raw)
+    if result != 0 {
         return .FailedToSetAttributes
     }
 
@@ -89,8 +148,8 @@ leave_raw_mode :: proc() -> TerminalError {
         return .None // Already in cooked mode
     }
 
-    result := unix.tcsetattr(os.stdin, .TCSAFLUSH, &_terminal_state.original_termios)
-    if result != .NONE {
+    result := tcsetattr(os.stdin, TCSAFLUSH, &_terminal_state.original_termios)
+    if result != 0 {
         return .FailedToSetAttributes
     }
 
@@ -112,7 +171,7 @@ write_ansi :: proc(sequence: string) -> TerminalError {
 flush_output :: proc() {
     // In Odin, stdout is typically line-buffered, but we can force a flush
     // by writing directly through the file descriptor
-    unix.fsync(os.stdout)
+    _ = fsync(os.stdout)
 }
 
 // clear_screen clears the entire terminal screen
@@ -163,10 +222,10 @@ show_cursor :: proc() -> TerminalError {
 // get_terminal_size retrieves the current terminal dimensions
 // Returns (width, height) in characters
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-    ws: unix.winsize
-    result := unix.ioctl(os.stdout, unix.TIOCGWINSZ, &ws)
-    
-    if result != .NONE {
+    ws: winsize
+    result := ioctl(os.stdout, TIOCGWINSZ, &ws)
+
+    if result != 0 {
         return 0, 0, .FailedToGetAttributes
     }
 
@@ -175,10 +234,10 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 
 // read_input reads a single byte from stdin without blocking
 // Returns (byte, true) if data available, or (0, false) if no data
-read_input :: proc() -> (byte: byte, available: bool) {
-    buffer: [1]byte
+read_input :: proc() -> (byte: u8, available: bool) {
+    buffer: [1]u8
     n, err := os.read(os.stdin, buffer[:])
-    
+
     if err != os.ERROR_NONE || n == 0 {
         return 0, false
     }
