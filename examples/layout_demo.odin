@@ -18,7 +18,7 @@ main :: proc() {
         for ev in events {
             #partial switch e in ev {
             case ansuz.KeyEvent:
-                if e.key == .Escape || e.key == 'q' {
+                if e.key == .Escape || (e.key == .Char && e.rune == 'q') {
                     running = false
                 }
             }
