@@ -7,11 +7,11 @@ Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nic
 ## Features
 
 - **Immediate Mode API** - Simple, declarative UI that's easy to reason about
-- **Efficient Rendering** - Smart diffing algorithm minimizes terminal output
+- **Full Frame Redraw** - Each frame renders completely, simplifying the render logic
 - **Raw Terminal Control** - Direct ANSI escape sequence management
 - **16-Color Support** - Standard ANSI color palette
 - **Text Styling** - Bold, dim, underline, and more
-- **Frame Buffering** - Double-buffered rendering for smooth updates
+- **Frame Buffering** - Single buffer with clear-and-redraw cycle
 - **Cross-Platform** - Unix/Linux support (Windows planned)
 
 ## Project Structure
