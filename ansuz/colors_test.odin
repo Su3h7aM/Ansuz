@@ -53,7 +53,7 @@ test_to_ansi :: proc(t: ^testing.T) {
     // Test simple style
     style := Style{.Red, .Black, {}}
     ansi := to_ansi(style)
-    testing.expect(t, contains(anssi, "[31;40m"),
+    testing.expect(t, contains(ansi, "[31;40m"),
                   fmt.tprintf("Should contain fg and bg codes, got: %s", ansi))
 
     // Test style with flags
@@ -104,7 +104,8 @@ test_predefined_styles :: proc(t: ^testing.T) {
 // Helper function to check if string contains substring
 contains :: proc(s, substr: string) -> bool {
     if len(s) < len(substr) do return false
-    for i in 0..<=len(s)-len(substr) {
+    end := len(s) - len(substr)
+    for i in 0..<=end {
         if s[i:i+len(substr)] == substr do return true
     }
     return false

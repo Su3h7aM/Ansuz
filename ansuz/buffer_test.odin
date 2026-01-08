@@ -21,8 +21,8 @@ test_buffer_clear :: proc(t: ^testing.T) {
     defer destroy_buffer(&buf)
 
     // Set some cells
-    set_cell(&buf, 0, 0, 'X', .Red, .Black, {.Bold})
-    set_cell(&buf, 5, 3, 'Y', .Blue, .White, {.Underline})
+    set_cell(&buf, 0, 0, 'X', .Red, .Black, {})
+    set_cell(&buf, 5, 3, 'Y', .Blue, .White, {})
 
     // Clear buffer
     clear_buffer(&buf)
@@ -47,7 +47,7 @@ test_set_cell :: proc(t: ^testing.T) {
     defer destroy_buffer(&buf)
 
     // Set a cell
-    err := set_cell(&buf, 3, 2, 'A', .Red, .Black, {.Bold})
+    err := set_cell(&buf, 3, 2, 'A', .Red, .Black, {})
     testing.expect(t, err == .None, "set_cell should succeed")
 
     // Read it back
