@@ -92,8 +92,8 @@ test_fill_rect :: proc(t: ^testing.T) {
     fill_rect(&buf, 5, 5, 5, 3, 'X', .Red, .Black, {})
 
     // Check filled cells
-    for y in 5..8 {
-        for x in 5..10 {
+    for y in 5..=<7 {
+        for x in 5..=<9 {
             cell := get_cell_safe(&buf, x, y)
             testing.expect(t, cell.rune == 'X',
                           fmt.tprintf("Cell (%d, %d) should be 'X'", x, y))

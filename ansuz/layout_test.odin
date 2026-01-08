@@ -60,7 +60,7 @@ test_layout_padding_gap :: proc(t: ^testing.T) {
     // Item 1 width = 75 / 2 = 37
     // Item 2 width = 75 / 2 = 37
     // Actually 37 + 37 = 74, one cell lost to integer division
-    
+
     testing.expect_value(t, l_ctx.nodes[1].rect.w, 37)
     testing.expect_value(t, l_ctx.nodes[2].rect.w, 37)
     testing.expect_value(t, l_ctx.nodes[1].rect.x, 2)
@@ -90,7 +90,7 @@ test_layout_alignment :: proc(t: ^testing.T) {
 
     // Horizontal: (80 - 10) / 2 = 35
     // Vertical: (24 - 1) / 2 = 11
-    
+
     testing.expect_value(t, l_ctx.nodes[1].rect.x, 35)
     testing.expect_value(t, l_ctx.nodes[1].rect.y, 11)
 }

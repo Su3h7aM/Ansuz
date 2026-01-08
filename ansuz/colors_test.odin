@@ -104,7 +104,7 @@ test_predefined_styles :: proc(t: ^testing.T) {
 // Helper function to check if string contains substring
 contains :: proc(s, substr: string) -> bool {
     if len(s) < len(substr) do return false
-    for i in 0..len(s)-len(substr) {
+    for i in 0..<=len(s)-len(substr) {
         if s[i:i+len(substr)] == substr do return true
     }
     return false
