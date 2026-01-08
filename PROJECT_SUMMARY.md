@@ -46,12 +46,12 @@ Ansuz is a complete Terminal User Interface (TUI) library for the Odin programmi
    - Non-blocking input reading
    - Graceful cleanup
 
-2. **buffer.odin** (356 lines)
-   - 2D cell grid frame buffer
-   - Efficient diff-based rendering
-   - Unicode box drawing
-   - Text and shape primitives
-   - Buffer resizing support
+2. **buffer.odin** (328 lines)
+    - 2D cell grid frame buffer
+    - Full frame rendering (immediate mode)
+    - Unicode box drawing
+    - Text and shape primitives
+    - Buffer resizing support
 
 3. **colors.odin** (190 lines)
    - 16-color ANSI palette
@@ -65,11 +65,11 @@ Ansuz is a complete Terminal User Interface (TUI) library for the Odin programmi
    - Event buffering
    - Key and control character handling
 
-5. **api.odin** (216 lines)
-   - High-level immediate-mode API
-   - Context management
-   - Frame lifecycle
-   - Convenience rendering functions
+5. **api.odin** (248 lines)
+    - High-level immediate-mode API
+    - Context management
+    - Frame lifecycle
+    - Convenience rendering functions
 
 #### Examples
 
@@ -89,7 +89,7 @@ Ansuz is a complete Terminal User Interface (TUI) library for the Odin programmi
 ### Architecture
 
 - **Immediate Mode Pattern**: UI declared each frame as pure function of state
-- **Double Buffering**: Efficient diff-based rendering minimizes terminal I/O
+- **Single Buffer**: Full frame redraw for maximum simplicity
 - **Raw Terminal Mode**: Direct control via Unix termios API
 - **Zero External Dependencies**: Pure Odin + standard library
 
@@ -102,10 +102,9 @@ Ansuz is a complete Terminal User Interface (TUI) library for the Odin programmi
 
 ### Performance Features
 
-- **Dirty Flag Optimization**: Only render changed cells
-- **Minimal ANSI Output**: Smart diffing reduces bandwidth by ~95%
 - **Cache-Friendly Layout**: Flat array for cell buffer
 - **String Pooling**: Uses temp allocator for frame-local strings
+- **Style Batching**: Minimizes ANSI escape sequences by tracking current style
 
 ## File Structure
 
@@ -119,10 +118,10 @@ ansuz/
 ├── PROJECT_SUMMARY.md        # This file
 ├── build.sh                  # Build script
 │
-├── ansuz/                    # Core library (1,212 lines)
-│   ├── api.odin             # Public API (216 lines)
+├── ansuz/                    # Core library (1,256 lines)
+│   ├── api.odin             # Public API (248 lines)
 │   ├── terminal.odin        # Terminal I/O (197 lines)
-│   ├── buffer.odin          # Frame buffer (356 lines)
+│   ├── buffer.odin          # Frame buffer (328 lines)
 │   ├── colors.odin          # Colors/styles (190 lines)
 │   └── event.odin           # Events (253 lines)
 │
@@ -143,8 +142,8 @@ ansuz/
 - Terminal size detection
 
 ### ✅ Rendering
-- Double-buffered cell grid
-- Diff-based output
+- Single-buffer cell grid
+- Full frame redraw (immediate mode)
 - Text rendering with styles
 - Rectangle filling
 - Unicode box drawing

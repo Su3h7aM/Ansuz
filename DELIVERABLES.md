@@ -39,7 +39,7 @@ Raw terminal control and ANSI I/O:
 
 #### ansuz/buffer.odin
 Frame buffer and rendering system:
-- ✅ `Cell` struct - Character, colors, style, dirty flag
+- ✅ `Cell` struct - Character, colors, style
 - ✅ `FrameBuffer` struct - 2D grid with efficient layout
 - ✅ `init_buffer()`, `destroy_buffer()` - Memory management
 - ✅ `clear_buffer()` - Reset all cells
@@ -47,15 +47,14 @@ Frame buffer and rendering system:
 - ✅ `write_string()` - Write styled text
 - ✅ `fill_rect()` - Fill rectangular regions
 - ✅ `draw_box()` - Draw borders with Unicode box-drawing characters
-- ✅ `render_to_string()` - Full buffer rendering
-- ✅ `render_diff()` - Efficient diff-based rendering
+- ✅ `render_to_string()` - Full buffer rendering (immediate mode)
 - ✅ `resize_buffer()` - Handle terminal size changes
 
 **Key features:**
-- Dirty flag optimization for minimal redraws
+- Full frame redraw for maximum simplicity (immediate mode)
 - Unicode box-drawing characters (┌─┐│└┘)
-- Smart diffing algorithm (only output changed cells)
 - Cache-friendly flat array layout
+- Style batching to minimize ANSI sequences
 
 #### ansuz/colors.odin
 Color and style system:
@@ -97,7 +96,7 @@ Public API and context management:
 - ✅ `init()` - Initialize Ansuz with terminal setup
 - ✅ `shutdown()` - Clean up and restore terminal
 - ✅ `begin_frame()` - Start frame rendering
-- ✅ `end_frame()` - Finish frame and output diff
+- ✅ `end_frame()` - Finish frame and output (full redraw)
 - ✅ `poll_events()` - Read and parse input events
 - ✅ `write_text()` - Convenience text rendering
 - ✅ `draw_box()` - Convenience box drawing
@@ -110,6 +109,7 @@ Public API and context management:
 - Immediate-mode lifecycle (begin/end frame)
 - Automatic cleanup with defer
 - Re-exported common types for convenience
+- Single buffer for maximum simplicity
 
 ### 3. Examples
 
@@ -221,8 +221,8 @@ ansuz/
 
 1. **Single Package Structure** - All library code in `ansuz/` package for MVP simplicity
 2. **No Internal Subpackages** - Avoids Odin import complexity at this stage
-3. **Double Buffering** - Front/back buffers for efficient diffing
-4. **Dirty Flags** - Per-cell change tracking for minimal output
+3. **Single Buffer with Full Redraw** - Immediate mode approach for maximum simplicity
+4. **No Diffing/Comparison** - Each frame renders completely, avoiding complex state tracking
 5. **Immediate Mode** - Stateless UI declarations each frame
 6. **Unicode Box Drawing** - Professional-looking borders
 7. **Graceful Cleanup** - Always restore terminal state
@@ -264,14 +264,15 @@ ansuz/
 
 ```
 ansuz/terminal.odin:     ~200 lines
-ansuz/buffer.odin:       ~360 lines
-ansuz/colors.odin:       ~180 lines
+ansuz/buffer.odin:       ~330 lines
+ansuz/colors.odin:       ~190 lines
 ansuz/event.odin:        ~250 lines
-ansuz/api.odin:          ~210 lines
+ansuz/api.odin:          ~250 lines
 examples/hello_world.odin: ~160 lines
+examples/layout_demo.odin: ~115 lines
 research/ARCHITECTURE.md:  ~850 lines
 README.md:               ~270 lines
-Total:                   ~2500 lines
+Total:                   ~2620 lines
 ```
 
 ## Conclusion
