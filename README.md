@@ -6,12 +6,12 @@ Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nic
 
 ## Features
 
-- **Immediate Mode API** - Simple, declarative UI that's easy to reason about
-- **Efficient Rendering** - Smart diffing algorithm minimizes terminal output
+- **True Immediate Mode API** - Simple, declarative UI that's easy to reason about
+- **Full Frame Rendering** - Complete screen redraw each frame for maximum simplicity
 - **Raw Terminal Control** - Direct ANSI escape sequence management
 - **16-Color Support** - Standard ANSI color palette
 - **Text Styling** - Bold, dim, underline, and more
-- **Frame Buffering** - Double-buffered rendering for smooth updates
+- **Single Buffer** - Simplified architecture without diff complexity
 - **Cross-Platform** - Unix/Linux support (Windows planned)
 
 ## Project Structure
@@ -104,14 +104,14 @@ main :: proc() {
 
 ## Architecture
 
-Ansuz follows an **immediate-mode** pattern:
+Ansuz follows a **pure immediate-mode** pattern:
 
-1. **begin_frame()** - Clear the back buffer
+1. **begin_frame()** - Clear the buffer
 2. **Declare UI** - Call functions to describe what should be visible
-3. **end_frame()** - Diff buffers and output only changes
+3. **end_frame()** - Render entire buffer to terminal
 4. **Handle events** - Process input and update state
 
-Each frame, you declare the entire UI based on your application state. The library handles efficient rendering automatically.
+Each frame, you declare the entire UI based on your application state. The entire screen is re-rendered every frame, making the library extremely simple and predictable.
 
 ## Core Concepts
 
@@ -131,11 +131,12 @@ ansuz.end_frame(ctx)
 
 ### Frame Buffer
 
-Ansuz maintains two buffers:
-- **Back buffer** - Currently being rendered
-- **Front buffer** - What's on screen
+Ansuz maintains a single buffer that represents the terminal screen:
+- Each frame starts by clearing the buffer
+- Widgets draw into this buffer
+- At the end of the frame, the entire buffer is rendered to the terminal
 
-The library diffs these buffers and only outputs changed cells, minimizing terminal I/O.
+This simple approach makes the code easy to understand and maintain, with performance that's more than adequate for typical TUI applications.
 
 ### Raw Mode
 

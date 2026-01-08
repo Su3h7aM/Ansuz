@@ -11,7 +11,6 @@ Cell :: struct {
     fg_color: Color,       // Foreground (text) color
     bg_color: Color,       // Background color
     style:    StyleFlags,  // Text attributes (bold, underline, etc.)
-    dirty:    bool,        // Changed since last render
 }
 
 // FrameBuffer is a 2D grid representing the terminal screen
@@ -72,7 +71,6 @@ clear_buffer :: proc(buffer: ^FrameBuffer) {
         cell.fg_color = .Default
         cell.bg_color = .Default
         cell.style = {}
-        cell.dirty = true // Mark as dirty to force redraw
     }
 }
 
@@ -97,26 +95,16 @@ get_cell_safe :: proc(buffer: ^FrameBuffer, x, y: int) -> Cell {
 }
 
 // set_cell sets the character and style for a cell at the specified position
-// Marks the cell as dirty if any values changed
 set_cell :: proc(buffer: ^FrameBuffer, x, y: int, r: rune, fg, bg: Color, style: StyleFlags) -> BufferError {
     cell := get_cell(buffer, x, y)
     if cell == nil {
         return .OutOfBounds
     }
 
-    // Check if anything changed to avoid unnecessary dirty marking
-    changed := cell.rune != r || 
-               cell.fg_color != fg || 
-               cell.bg_color != bg || 
-               cell.style != style
-
-    if changed {
-        cell.rune = r
-        cell.fg_color = fg
-        cell.bg_color = bg
-        cell.style = style
-        cell.dirty = true
-    }
+    cell.rune = r
+    cell.fg_color = fg
+    cell.bg_color = bg
+    cell.style = style
 
     return .None
 }
@@ -191,25 +179,8 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
     }
 }
 
-// clear_dirty_flags resets the dirty flag on all cells
-// Should be called after rendering to terminal
-clear_dirty_flags :: proc(buffer: ^FrameBuffer) {
-    for &cell in buffer.cells {
-        cell.dirty = false
-    }
-}
-
-// cells_equal compares two cells for equality (ignoring dirty flag)
-cells_equal :: proc(a, b: Cell) -> bool {
-    return a.rune == b.rune &&
-           a.fg_color == b.fg_color &&
-           a.bg_color == b.bg_color &&
-           a.style == b.style
-}
-
 // render_to_string converts the entire buffer to a string with ANSI codes
-// This is a simple renderer that outputs the entire buffer
-// For production, use a diffing renderer that only outputs changed cells
+// Renders the complete buffer every frame (immediate mode)
 render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocator) -> string {
     builder := strings.builder_make(allocator)
 
@@ -255,63 +226,6 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
     return strings.to_string(builder)
 }
 
-// render_diff generates ANSI output for only the changed cells
-// This is much more efficient than rendering the entire buffer
-render_diff :: proc(new_buffer, old_buffer: ^FrameBuffer, allocator := context.temp_allocator) -> string {
-    if new_buffer.width != old_buffer.width || new_buffer.height != old_buffer.height {
-        // Dimensions changed, fall back to full render
-        return render_to_string(new_buffer, allocator)
-    }
-
-    builder := strings.builder_make(allocator)
-    
-    current_style := default_style()
-    cursor_x := 0
-    cursor_y := 0
-
-    for y in 0..<new_buffer.height {
-        for x in 0..<new_buffer.width {
-            new_cell := get_cell_safe(new_buffer, x, y)
-            old_cell := get_cell_safe(old_buffer, x, y)
-
-            // Skip if cell hasn't changed
-            if cells_equal(new_cell, old_cell) && !new_cell.dirty {
-                continue
-            }
-
-            // Move cursor if needed (1-indexed for ANSI)
-            if cursor_x != x || cursor_y != y {
-                move_seq := fmt.tprintf("\x1b[%d;%dH", y + 1, x + 1)
-                strings.write_string(&builder, move_seq)
-                cursor_x = x
-                cursor_y = y
-            }
-
-            // Update style if needed
-            new_style := Style{
-                fg_color = new_cell.fg_color,
-                bg_color = new_cell.bg_color,
-                flags = new_cell.style,
-            }
-
-            if new_style != current_style {
-                style_seq := to_ansi(new_style)
-                strings.write_string(&builder, style_seq)
-                current_style = new_style
-            }
-
-            // Write the character
-            strings.write_rune(&builder, new_cell.rune)
-            cursor_x += 1
-        }
-    }
-
-    // Reset style at the end
-    strings.write_string(&builder, reset_style())
-
-    return strings.to_string(builder)
-}
-
 // resize_buffer changes the dimensions of an existing buffer
 // Preserves as much content as possible
 resize_buffer :: proc(buffer: ^FrameBuffer, new_width, new_height: int) -> BufferError {
@@ -331,7 +245,6 @@ resize_buffer :: proc(buffer: ^FrameBuffer, new_width, new_height: int) -> Buffe
         cell.fg_color = .Default
         cell.bg_color = .Default
         cell.style = {}
-        cell.dirty = true
     }
 
     // Copy old content (as much as fits)

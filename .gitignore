@@ -43,4 +43,6 @@ luac.out
 *.bin
 hello_world
 examples/hello_world
+examples/layout_demo
+test_build*
 

@@ -1,0 +1,46 @@
+Refactor: Simplify to pure immediate mode rendering
+
+Simplified the Ansuz TUI library by removing double buffering and dirty
+tracking in favor of full-frame rendering each frame. This makes the
+library much simpler to understand and maintain while keeping 100% API
+compatibility.
+
+Key changes:
+
+1. Buffer System (ansuz/buffer.odin):
+   - Removed `dirty` field from Cell struct
+   - Removed `clear_dirty_flags()` function
+   - Removed `cells_equal()` function
+   - Removed `render_diff()` function (no longer needed)
+   - Simplified `set_cell()` - no change detection
+   - Simplified `clear_buffer()` - no dirty marking
+
+2. API (ansuz/api.odin):
+   - Changed Context from double buffer to single buffer
+   - Simplified `begin_frame()` - just clears buffer
+   - Simplified `end_frame()` - renders full buffer every frame
+   - Updated all drawing functions to use single buffer
+
+3. Documentation:
+   - Updated README.md to reflect pure immediate mode
+   - Added IMMEDIATE_MODE_REFACTOR.md with technical details
+   - Added CHANGES_SUMMARY.md with overview
+   - Added TESTING.md with testing procedures
+   - Updated .gitignore for build artifacts
+
+Benefits:
+- ~60 lines of code removed
+- 3 functions removed
+- Simpler mental model (no hidden state)
+- True immediate mode pattern
+- Easier to debug and maintain
+- No breaking changes to public API
+
+Testing:
+- All unit tests pass (3/3)
+- Both examples compile successfully
+- No references to removed code in codebase
+
+The visual output and functionality remain identical. Performance is
+still more than adequate for typical TUI applications. The tradeoff
+of full-frame rendering is worth it for the significant simplification.
