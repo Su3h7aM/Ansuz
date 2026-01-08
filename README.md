@@ -23,12 +23,20 @@ ansuz/
 │   ├── terminal.odin      # Terminal I/O and raw mode
 │   ├── buffer.odin        # Frame buffer and rendering
 │   ├── colors.odin        # Color and style system
-│   └── event.odin         # Input event handling
+│   ├── event.odin         # Input event handling
+│   ├── layout.odin        # Layout system (flexbox-like)
+│   ├── buffer_test.odin   # Buffer tests
+│   ├── colors_test.odin   # Color tests
+│   ├── event_test.odin    # Event tests
+│   └── layout_test.odin   # Layout tests
 ├── examples/
-│   └── hello_world.odin   # Basic example
+│   ├── hello_world.odin   # Basic example
+│   ├── layout_demo.odin   # Layout demonstration
+│   └── render_test.odin   # Immediate mode demo
 ├── research/
 │   └── ARCHITECTURE.md    # Technical documentation
-└── build.sh               # Build script
+├── build.sh               # Build script
+└── BUILD_AND_TEST.md      # Build and test guide
 ```
 
 ## Quick Start
@@ -89,14 +97,14 @@ main :: proc() {
 
         // Render UI (immediate mode)
         ansuz.begin_frame(ctx)
-        
-        ansuz.write_text(ctx, 10, 5, "Hello, Ansuz!", 
+
+        ansuz.text(ctx, 10, 5, "Hello, Ansuz!",
             ansuz.Style{
                 fg_color = .BrightYellow,
                 bg_color = .Blue,
                 flags = {.Bold},
             })
-        
+
         ansuz.end_frame(ctx)
     }
 }
@@ -153,7 +161,6 @@ Ansuz automatically restores the terminal on exit.
 
 - `init() -> (^Context, ContextError)` - Initialize Ansuz
 - `shutdown(^Context)` - Clean up and restore terminal
-- `get_size(^Context) -> (width, height: int)` - Get terminal dimensions
 
 ### Frame Lifecycle
 
@@ -162,13 +169,14 @@ Ansuz automatically restores the terminal on exit.
 
 ### Drawing
 
-- `write_text(^Context, x, y, text, Style)` - Draw styled text
-- `fill_rect(^Context, x, y, width, height, rune, Style)` - Fill region
-- `draw_box(^Context, x, y, width, height, Style)` - Draw bordered box
+- `text(^Context, x, y, text, Style)` - Draw styled text
+- `rect(^Context, x, y, width, height, char, Style)` - Fill region
+- `box(^Context, x, y, width, height, Style)` - Draw bordered box
 
 ### Input
 
 - `poll_events(^Context) -> []Event` - Get pending input events
+- `handle_resize(^Context, new_width, new_height)` - Handle terminal resize
 
 ### Colors
 
@@ -215,9 +223,9 @@ See [research/ARCHITECTURE.md](research/ARCHITECTURE.md) for:
 - [x] Hello World example
 
 ### Phase 2
+- [x] Layout system (containers, alignment)
 - [ ] Complete event parsing (arrow keys, function keys)
 - [ ] Basic widgets (button, text input)
-- [ ] Layout system (containers, alignment)
 - [ ] Focus management
 
 ### Phase 3
