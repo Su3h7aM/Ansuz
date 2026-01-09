@@ -117,23 +117,33 @@ set_cell_simple :: proc(buffer: ^FrameBuffer, x, y: int, r: rune) -> BufferError
 // write_string writes a string to the buffer starting at the specified position
 // Returns the number of characters written (may be less than string length if out of bounds)
 write_string :: proc(buffer: ^FrameBuffer, x, y: int, text: string, fg, bg: Color, style: StyleFlags) -> int {
-    chars_written := 0
-    current_x := x
+	chars_written := 0
+	current_x := x
 
-    for r in text {
-        if current_x >= buffer.width {
-            break // Reached end of line
-        }
+	// Check bounds once
+	if y < 0 || y >= buffer.height {
+		return 0
+	}
 
-        if current_x >= 0 && y >= 0 && y < buffer.height {
-            set_cell(buffer, current_x, y, r, fg, bg, style)
-            chars_written += 1
-        }
+	for r in text {
+		if current_x >= buffer.width {
+			break // Reached end of line
+		}
 
-        current_x += 1
-    }
+		if current_x >= 0 {
+			// Direct array access - faster than set_cell()
+			index := y * buffer.width + current_x
+			buffer.cells[index].rune = r
+			buffer.cells[index].fg_color = fg
+			buffer.cells[index].bg_color = bg
+			buffer.cells[index].style = style
+			chars_written += 1
+		}
 
-    return chars_written
+		current_x += 1
+	}
+
+	return chars_written
 }
 
 // fill_rect fills a rectangular region with a character and style
