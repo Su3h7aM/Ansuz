@@ -160,22 +160,72 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
     HORIZONTAL :: '─'
     VERTICAL :: '│'
 
-    // Corners
-    set_cell(buffer, x, y, TOP_LEFT, fg, bg, style)
-    set_cell(buffer, x + width - 1, y, TOP_RIGHT, fg, bg, style)
-    set_cell(buffer, x, y + height - 1, BOTTOM_LEFT, fg, bg, style)
-    set_cell(buffer, x + width - 1, y + height - 1, BOTTOM_RIGHT, fg, bg, style)
-
-    // Top and bottom edges
-    for dx in 1..<width-1 {
-        set_cell(buffer, x + dx, y, HORIZONTAL, fg, bg, style)
-        set_cell(buffer, x + dx, y + height - 1, HORIZONTAL, fg, bg, style)
+    // Corners - direct array access for speed
+    if x >= 0 && x < buffer.width && y >= 0 && y < buffer.height {
+        index := y * buffer.width + x
+        buffer.cells[index].rune = TOP_LEFT
+        buffer.cells[index].fg_color = fg
+        buffer.cells[index].bg_color = bg
+        buffer.cells[index].style = style
+    }
+    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y >= 0 && y < buffer.height {
+        index := y * buffer.width + (x + width - 1)
+        buffer.cells[index].rune = TOP_RIGHT
+        buffer.cells[index].fg_color = fg
+        buffer.cells[index].bg_color = bg
+        buffer.cells[index].style = style
+    }
+    if x >= 0 && x < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+        index := (y + height - 1) * buffer.width + x
+        buffer.cells[index].rune = BOTTOM_LEFT
+        buffer.cells[index].fg_color = fg
+        buffer.cells[index].bg_color = bg
+        buffer.cells[index].style = style
+    }
+    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+        index := (y + height - 1) * buffer.width + (x + width - 1)
+        buffer.cells[index].rune = BOTTOM_RIGHT
+        buffer.cells[index].fg_color = fg
+        buffer.cells[index].bg_color = bg
+        buffer.cells[index].style = style
     }
 
-    // Left and right edges
+    // Top and bottom edges - direct array access
+    for dx in 1..<width-1 {
+        px := x + dx
+        if px >= 0 && px < buffer.width && y >= 0 && y < buffer.height {
+            index := y * buffer.width + px
+            buffer.cells[index].rune = HORIZONTAL
+            buffer.cells[index].fg_color = fg
+            buffer.cells[index].bg_color = bg
+            buffer.cells[index].style = style
+        }
+        if px >= 0 && px < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+            index := (y + height - 1) * buffer.width + px
+            buffer.cells[index].rune = HORIZONTAL
+            buffer.cells[index].fg_color = fg
+            buffer.cells[index].bg_color = bg
+            buffer.cells[index].style = style
+        }
+    }
+
+    // Left and right edges - direct array access
     for dy in 1..<height-1 {
-        set_cell(buffer, x, y + dy, VERTICAL, fg, bg, style)
-        set_cell(buffer, x + width - 1, y + dy, VERTICAL, fg, bg, style)
+        py := y + dy
+        if x >= 0 && x < buffer.width && py >= 0 && py < buffer.height {
+            index := py * buffer.width + x
+            buffer.cells[index].rune = VERTICAL
+            buffer.cells[index].fg_color = fg
+            buffer.cells[index].bg_color = bg
+            buffer.cells[index].style = style
+        }
+        if x + width - 1 >= 0 && x + width - 1 < buffer.width && py >= 0 && py < buffer.height {
+            index := py * buffer.width + (x + width - 1)
+            buffer.cells[index].rune = VERTICAL
+            buffer.cells[index].fg_color = fg
+            buffer.cells[index].bg_color = bg
+            buffer.cells[index].style = style
+        }
     }
 }
 
