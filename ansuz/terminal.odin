@@ -122,8 +122,7 @@ write_ansi :: proc(sequence: string) -> TerminalError {
 
 // flush_output ensures all buffered output is written to terminal
 flush_output :: proc() {
-	stdout_fd := posix.FD(os.stdout)
-	_ = posix.fsync(stdout_fd)
+	_ = os.flush(os.stdout)
 }
 
 // clear_screen clears entire terminal screen
