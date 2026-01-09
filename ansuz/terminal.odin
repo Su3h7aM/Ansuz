@@ -14,7 +14,7 @@ winsize :: struct {
 }
 
 // TerminalState maintains state of terminal configuration
-// It stores the original termios settings for restoration on exit
+// It stores original termios settings for restoration on exit
 TerminalState :: struct {
 	original_termios: posix.termios,
 	is_raw_mode:      bool,
@@ -33,7 +33,7 @@ TerminalError :: enum {
 // Global terminal state (simplifies API for single-terminal programs)
 _terminal_state: TerminalState
 
-// init_terminal initializes the terminal system and stores original settings
+// init_terminal initializes terminal system and stores original settings
 init_terminal :: proc() -> TerminalError {
 	if _terminal_state.is_initialized {
 		return .None
@@ -50,7 +50,7 @@ init_terminal :: proc() -> TerminalError {
 	return .None
 }
 
-// enter_raw_mode switches the terminal to raw mode for immediate input
+// enter_raw_mode switches terminal to raw mode for immediate input
 // This disables line buffering, echo, and signal processing
 // Must be called after init_terminal()
 enter_raw_mode :: proc() -> TerminalError {
@@ -92,8 +92,8 @@ enter_raw_mode :: proc() -> TerminalError {
 	return .None
 }
 
-// leave_raw_mode restores the terminal to its original state
-// Should be called before program exit to avoid corrupting the terminal
+// leave_raw_mode restores terminal to its original state
+// Should be called before program exit to avoid corrupting terminal
 leave_raw_mode :: proc() -> TerminalError {
 	if !_terminal_state.is_raw_mode {
 		return .None
@@ -120,65 +120,65 @@ write_ansi :: proc(sequence: string) -> TerminalError {
 	return .None
 }
 
-// flush_output ensures all buffered output is written to the terminal
+// flush_output ensures all buffered output is written to terminal
 flush_output :: proc() {
 	stdout_fd := posix.FD(os.stdout)
 	_ = posix.fsync(stdout_fd)
 }
 
-// clear_screen clears the entire terminal screen
+// clear_screen clears entire terminal screen
 clear_screen :: proc() -> TerminalError {
 	return write_ansi("\x1b[2J")
 }
 
-// clear_line clears the current line
+// clear_line clears current line
 clear_line :: proc() -> TerminalError {
 	return write_ansi("\x1b[2K")
 }
 
-// move_cursor moves the cursor to the specified position (1-indexed)
+// move_cursor moves cursor to specified position (1-indexed)
 // Terminal coordinates are 1-based, not 0-based
 move_cursor :: proc(row, col: int) -> TerminalError {
 	sequence := fmt.tprintf("\x1b[%d;%dH", row, col)
 	return write_ansi(sequence)
 }
 
-// move_cursor_home moves the cursor to the top-left corner (1,1)
+// move_cursor_home moves cursor to top-left corner (1,1)
 move_cursor_home :: proc() -> TerminalError {
 	return write_ansi("\x1b[H")
 }
 
-// save_cursor saves the current cursor position
+// save_cursor saves current cursor position
 // Can be restored later with restore_cursor()
 save_cursor :: proc() -> TerminalError {
 	return write_ansi("\x1b[s")
 }
 
-// restore_cursor restores the previously saved cursor position
+// restore_cursor restores previously saved cursor position
 restore_cursor :: proc() -> TerminalError {
 	return write_ansi("\x1b[u")
 }
 
-// hide_cursor makes the cursor invisible
+// hide_cursor makes cursor invisible
 // Useful during rendering to prevent flicker
 hide_cursor :: proc() -> TerminalError {
 	return write_ansi("\x1b[?25l")
 }
 
-// show_cursor makes the cursor visible again
+// show_cursor makes cursor visible again
 // Should be called before program exit
 show_cursor :: proc() -> TerminalError {
 	return write_ansi("\x1b[?25h")
 }
 
-// get_terminal_size retrieves the current terminal dimensions
+// get_terminal_size retrieves current terminal dimensions
 // Returns (width, height) in characters
 //
 // This function uses ioctl(TIOCGWINSZ) which is non-blocking and doesn't interfere
 // with stdin input, making it safe to call during the render loop.
 // Uses native Odin ioctl from core:sys/linux.
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-	stdin_fd := int(posix.FD(os.stdin))
+	stdin_fd := posix.FD(os.stdin)
 
 	ws: winsize
 	result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, uintptr(&ws))
