@@ -171,6 +171,18 @@ show_cursor :: proc() -> TerminalError {
 	return write_ansi("\x1b[?25h")
 }
 
+// enter_alternate_buffer switches to alternate screen buffer
+// This hides the original terminal content and prevents frames from appearing in history
+enter_alternate_buffer :: proc() -> TerminalError {
+	return write_ansi("\x1b[?1049h")
+}
+
+// leave_alternate_buffer restores original screen buffer
+// Should be called before exiting to restore terminal to original state
+leave_alternate_buffer :: proc() -> TerminalError {
+	return write_ansi("\x1b[?1049l")
+}
+
 // get_terminal_size retrieves current terminal dimensions
 // Returns (width, height) in characters
 //
@@ -209,6 +221,7 @@ read_input :: proc() -> (byte: u8, available: bool) {
 reset_terminal :: proc() {
 	leave_raw_mode()
 	show_cursor()
+	leave_alternate_buffer()
 	clear_screen()
 	move_cursor_home()
 	flush_output()

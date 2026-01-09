@@ -52,13 +52,19 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
         return ctx, .TerminalInitFailed
     }
     
-    // Enter raw mode for immediate input
-    raw_err := enter_raw_mode()
-    if raw_err != .None {
-        return ctx, .RawModeFailed
-    }
-    
-    // Get terminal size
+	// Enter raw mode for immediate input
+	raw_err := enter_raw_mode()
+	if raw_err != .None {
+		return ctx, .RawModeFailed
+	}
+
+	// Enter alternate screen buffer (prevents frames in history)
+	alt_err := enter_alternate_buffer()
+	if alt_err != .None {
+		return ctx, .TerminalInitFailed
+	}
+
+	// Get terminal size
     width, height, size_err := get_terminal_size()
     if size_err != .None {
         return ctx, .TerminalInitFailed
@@ -204,9 +210,7 @@ handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
     ctx.width = new_width
     ctx.height = new_height
 
-    // Clear the screen to prevent artifacts from old content
-    clear_screen()
-
+    // No need to clear screen - we redraw everything each frame anyway
     resize_buffer(&ctx.buffer, new_width, new_height)
 }
 
