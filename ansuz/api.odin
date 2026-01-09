@@ -114,6 +114,14 @@ shutdown :: proc(ctx: ^Context) {
 // Call this at the beginning of your render loop
 // In immediate mode, we clear the entire buffer each frame
 begin_frame :: proc(ctx: ^Context) {
+    // Check for terminal size changes (every frame)
+    // Since we now use ioctl() which is non-blocking, this is safe and efficient
+    current_width, current_height, size_err := get_terminal_size()
+    if size_err == .None && (current_width != ctx.width || current_height != ctx.height) {
+        // Terminal was resized - update context
+        handle_resize(ctx, current_width, current_height)
+    }
+
     // Clear buffer for new frame
     clear_buffer(&ctx.buffer)
 }
@@ -195,7 +203,10 @@ get_size :: proc(ctx: ^Context) -> (width, height: int) {
 handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
     ctx.width = new_width
     ctx.height = new_height
-    
+
+    // Clear the screen to prevent artifacts from old content
+    clear_screen()
+
     resize_buffer(&ctx.buffer, new_width, new_height)
 }
 
