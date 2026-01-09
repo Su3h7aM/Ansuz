@@ -184,7 +184,7 @@ show_cursor :: proc() -> TerminalError {
 //
 // This function uses ioctl(TIOCGWINSZ) which is non-blocking and doesn't interfere
 // with stdin input, making it safe to call during the render loop.
-// Uses ioctl from libc (foreign import) since native Odin ioctl doesn't work with struct pointers.
+// Uses linux.TIOCGWINSZ constant from core:sys/linux, and ioctl() via foreign import.
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
     stdin_fd := int(posix.FD(os.stdin))
 
