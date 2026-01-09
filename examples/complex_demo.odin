@@ -7,15 +7,17 @@ import "core:strings"
 
 // DemoState holds the application state
 DemoState :: struct {
-	fps:           f32,
-	frame_time:     time.Duration,
-	frame_count:    u64,
-	last_time:      time.Time,
-	running:        bool,
-	selected_tab:   int,
-	theme_color:    int,
-	progress:       f32,
-	anim_direction: int,
+	fps:                 f32,
+	frame_time:           time.Duration,
+	frame_count:          u64,
+	last_time:            time.Time,
+	last_fps_update:       time.Time,
+	running:             bool,
+	selected_tab:        int,
+	theme_color:          int,
+	progress:             f32,
+	anim_direction:        int,
+	progress_start_time:   time.Time,
 }
 
 main :: proc() {
@@ -31,11 +33,13 @@ main :: proc() {
 		frame_time = 0,
 		frame_count = 0,
 		last_time = time.now(),
+		last_fps_update = time.now(),
 		running = true,
 		selected_tab = 0,
 		theme_color = 0,
 		progress = 0.0,
 		anim_direction = 1,
+		progress_start_time = time.now(),
 	}
 
 	for state.running {
@@ -47,7 +51,7 @@ main :: proc() {
 			handle_input(&state, ev)
 		}
 
-		// Update state
+		// Update state (animate progress)
 		update_state(&state)
 
 		// Render
@@ -56,16 +60,18 @@ main :: proc() {
 		// Calculate FPS
 		end_time := time.now()
 		frame_duration := time.diff(end_time, start_time)
-		frame_elapsed := time.diff(end_time, state.last_time)
+		frame_elapsed := time.diff(end_time, state.last_fps_update)
 
 		state.frame_count += 1
 
 		// Update FPS every second
 		if frame_elapsed >= time.Second {
 			elapsed_seconds := f32(frame_elapsed) / f32(time.Second)
-			state.fps = f32(state.frame_count) / elapsed_seconds
+			if elapsed_seconds > 0 {
+				state.fps = f32(state.frame_count) / elapsed_seconds
+			}
 			state.frame_count = 0
-			state.last_time = end_time
+			state.last_fps_update = end_time
 		}
 
 		state.frame_time = frame_duration
@@ -78,6 +84,8 @@ handle_input :: proc(state: ^DemoState, event: ansuz.Event) {
 		#partial switch e.key {
 		case .Ctrl_C, .Ctrl_D, .Escape:
 			state.running = false
+		case .Tab:
+			state.selected_tab = (state.selected_tab + 1) % 3
 		case .Right:
 			state.selected_tab = (state.selected_tab + 1) % 3
 		case .Left:
@@ -110,14 +118,26 @@ handle_input :: proc(state: ^DemoState, event: ansuz.Event) {
 }
 
 update_state :: proc(state: ^DemoState) {
-	// Animate progress bar
-	state.progress += 0.02 * f32(state.anim_direction)
-	if state.progress >= 1.0 {
-		state.progress = 1.0
-		state.anim_direction = -1
-	} else if state.progress <= 0.0 {
-		state.progress = 0.0
-		state.anim_direction = 1
+	// Animate progress bar - takes exactly 10 seconds to complete
+	current_time := time.now()
+	elapsed := f32(time.diff(current_time, state.progress_start_time)) / f32(time.Second)
+
+	if state.anim_direction == 1 {
+		// Growing: 0% -> 100%
+		state.progress = min(elapsed / 10.0, 1.0)
+		if state.progress >= 1.0 {
+			state.progress = 1.0
+			state.anim_direction = -1
+			state.progress_start_time = current_time
+		}
+	} else {
+		// Shrinking: 100% -> 0%
+		state.progress = 1.0 - min(elapsed / 10.0, 1.0)
+		if state.progress <= 0.0 {
+			state.progress = 0.0
+			state.anim_direction = 1
+			state.progress_start_time = current_time
+		}
 	}
 }
 
