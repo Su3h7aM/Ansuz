@@ -192,7 +192,18 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
 
     for y in 0..<buffer.height {
         for x in 0..<buffer.width {
-            cell := get_cell_safe(buffer, x, y)
+            cell := get_cell(buffer, x, y)
+
+            if cell == nil {
+                // Out of bounds - write space with default style
+                if current_style != default_style() {
+                    style_seq := to_ansi(default_style())
+                    strings.write_string(&builder, style_seq)
+                    current_style = default_style()
+                    needs_style_reset = true
+                }
+                strings.write_rune(&builder, ' ')
+            } else {
 
             // Generate style sequence if style changed
             new_style := Style{
@@ -208,8 +219,9 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
                 needs_style_reset = true
             }
 
-            // Write the character
-            strings.write_rune(&builder, cell.rune)
+                // Write the character
+                strings.write_rune(&builder, cell.rune)
+            }
         }
 
         // Move to next line (unless it's the last line)
