@@ -181,7 +181,7 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 	stdin_fd := linux.Fd(posix.FD(os.stdin))
 
 	ws: winsize
-	result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+	result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, transmute(uintptr)&ws)
 
 	if result < 0 {
 		// ioctl failed, return error
