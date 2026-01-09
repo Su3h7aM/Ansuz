@@ -31,18 +31,35 @@ In immediate mode, every frame is redrawn from scratch, which means the terminal
 
 **After:**
 ```odin
-// Uses ioctl(TIOCGWINSZ) - standard POSIX approach via core:sys/linux
-// Pure Odin implementation - no C dependencies
+// Uses ioctl(TIOCGWINSZ) - standard POSIX approach
+// Uses TIOCGWINSZ constant from core:sys/linux (standard Odin library)
+// Foreign import for ioctl only (not available in core:sys/linux)
 // Non-blocking and doesn't touch stdin
 // Fast and safe to call every frame
 
 import "core:sys/linux"
 
+// Foreign imports for ioctl with TIOCGWINSZ
+foreign import libc "system:c"
+
+@(default_calling_convention="c")
+foreign libc {
+    ioctl :: proc(fd: int, request: u64, ...) -> int ---
+}
+
+// winsize struct for TIOCGWINSZ ioctl
+winsize :: struct {
+    ws_row:    u16,  // rows, in characters
+    ws_col:    u16,  // columns, in characters
+    ws_xpixel: u16,  // horizontal size, pixels (unused)
+    ws_ypixel: u16,  // vertical size, pixels (unused)
+}
+
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
     stdin_fd := int(posix.FD(os.stdin))
 
-    ws: linux.winsize
-    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+    ws: winsize
+    result := ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
 
     if result < 0 {
         // ioctl failed, return error
@@ -54,11 +71,11 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 ```
 
 **Key Points:**
-- Uses `core:sys/linux` - standard Odin library package
-- `linux.winsize` - struct provided by Odin
-- `linux.TIOCGWINSZ` - constant provided by Odin
-- `linux.ioctl()` - function provided by Odin
-- **100% pure Odin, no foreign imports or C code**
+- Uses `linux.TIOCGWINSZ` - **constant provided by core:sys/linux** (standard Odin library)
+- Foreign import for `ioctl()` only (not available in core:sys/linux)
+- `winsize` struct defined manually (not available in core:sys/linux)
+- Minimal foreign imports - uses Odin's standard library when available
+- Much better than ANSI escape sequences approach
 
 ### 2. Added automatic resize detection (api.odin)
 
@@ -185,16 +202,16 @@ odin test ansuz
 - Needs timeout (50ms) to wait for response
 - Can consume keyboard input meant for the application
 
-**ioctl (new method - Pure Odin):**
+**ioctl (new method - Odin with core:sys/linux):**
 - Uses `core:sys/linux` package - standard Odin library
-- `linux.ioctl(fd, linux.TIOCGWINSZ, &ws.winsize)` - 100% Odin
-- `linux.winsize` struct - provided by Odin
-- `linux.TIOCGWINSZ` constant - provided by Odin
+- `linux.TIOCGWINSZ` constant - **provided by Odin's standard library**
+- Foreign import for `ioctl()` only (not available in core:sys/linux)
+- `winsize` struct defined manually (not available in core:sys/linux)
 - Returns immediately with current size
 - Doesn't touch stdin
 - No timeout needed
 - Much faster
-- **No C dependencies or foreign imports**
+- **Uses Odin standard library when possible, minimal foreign imports**
 
 ### Why Check Every Frame?
 

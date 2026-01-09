@@ -11,27 +11,42 @@ Layout breaks when terminal is resized because:
 
 ### 1. Modified: `ansuz/terminal.odin`
 
-**Added ioctl support via core:sys/linux (pure Odin):**
+**Added imports:**
 
 ```odin
-// Added import for Linux system calls
+// Import for Linux system calls (provides TIOCGWINSZ constant)
 import "core:sys/linux"
+
+// Foreign imports for ioctl only (not available in core:sys/linux)
+foreign import libc "system:c"
+
+@(default_calling_convention="c")
+foreign libc {
+    ioctl :: proc(fd: int, request: u64, ...) -> int ---
+}
+
+// winsize struct for TIOCGWINSZ ioctl
+winsize :: struct {
+    ws_row:    u16,  // rows, in characters
+    ws_col:    u16,  // columns, in characters
+    ws_xpixel: u16,  // horizontal size, pixels (unused)
+    ws_ypixel: u16,  // vertical size, pixels (unused)
+}
 ```
 
-**Replaced get_terminal_size() with pure Odin implementation:**
+**Replaced get_terminal_size() with ioctl implementation:**
 
 ```odin
 // OLD: Used ANSI escape sequences, blocked for 50ms, interfered with stdin
-// NEW: Uses ioctl via core:sys/linux, non-blocking, fast, safe, 100% Odin
+// NEW: Uses ioctl with core:sys/linux TIOCGWINSZ constant
 
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
     stdin_fd := int(posix.FD(os.stdin))
 
-    ws: linux.winsize
-    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+    ws: winsize
+    result := ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
 
     if result < 0 {
-        // ioctl failed, return error
         return 0, 0, .FailedToGetAttributes
     }
 
@@ -40,11 +55,11 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 ```
 
 **Key changes:**
-- Uses `core:sys/linux` package (standard Odin library)
-- `linux.winsize` struct (provided by Odin)
-- `linux.TIOCGWINSZ` constant (provided by Odin)
-- `linux.ioctl()` function (provided by Odin)
-- **100% pure Odin - no C dependencies or foreign imports**
+- Uses `linux.TIOCGWINSZ` from `core:sys/linux` (standard Odin library constant)
+- Foreign import for ioctl only (not available in core:sys/linux)
+- Defined winsize struct manually (not available in core:sys/linux)
+- Non-blocking, fast, and doesn't interfere with stdin
+- Minimal foreign imports - uses Odin standard library when possible
 
 **Removed:** Unused `import "core:time"` (no longer needed)
 
@@ -55,7 +70,6 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 ```odin
 begin_frame :: proc(ctx: ^Context) {
     // Check for terminal size changes (every frame)
-    // Since we now use ioctl() which is non-blocking, this is safe and efficient
     current_width, current_height, size_err := get_terminal_size()
     if size_err == .None && (current_width != ctx.width || current_height != ctx.height) {
         // Terminal was resized - update context
@@ -107,8 +121,10 @@ render → buffer matches terminal
 1. **Automatic**: Applications don't need code changes
 2. **Efficient**: ioctl is non-blocking and fast (microseconds)
 3. **Safe**: Doesn't interfere with keyboard input
-4. **Immediate mode compliant**: Every frame uses current state
-5. **Clean**: Screen cleared on resize to prevent artifacts
+4. **Uses Odin stdlib**: Uses TIOCGWINSZ constant from `core:sys/linux`
+5. **Minimal foreign imports**: Only ioctl needs foreign import
+6. **Immediate mode compliant**: Every frame uses current state
+7. **Clean**: Screen cleared on resize to prevent artifacts
 
 ## Testing
 
@@ -121,8 +137,8 @@ odin build examples/layout_demo.odin -file -out:examples/layout_demo
 
 ## Files Changed
 
-- `ansuz/terminal.odin` - Added ioctl support, simplified get_terminal_size()
-- `ansuz/api.odin` - Added automatic resize detection in begin_frame()
+- `ansuz/terminal.odin` - Added ioctl support with minimal foreign imports, uses TIOCGWINSZ from core:sys/linux
+- `ansuz/api.odin` - Added automatic resize detection in begin_frame(), enhanced handle_resize()
 
 ## Backward Compatibility
 

@@ -1,4 +1,4 @@
-# Solução Correta: Terminal Resize - Odin Puro
+# Solução Correta: Terminal Resize - Odin com Acesso ao Sistema
 
 ## Problema Original
 
@@ -8,13 +8,29 @@ O layout quebrava quando o terminal era redimensionado porque:
 3. O buffer de framebuffer nunca era redimensionado
 4. O layout usava dimensões obsoletas
 
-## Solução: Odin Puro (100%)
+## Solução: Odin com ioctl (Usando core:sys/linux + Foreign Imports Mínimos)
 
 ### Arquivo: `ansuz/terminal.odin`
 
-**Adicionado import:**
+**Adicionados imports:**
 ```odin
 import "core:sys/linux"
+
+// Foreign imports mínimos apenas para ioctl (não disponível no core:sys/linux)
+foreign import libc "system:c"
+
+@(default_calling_convention="c")
+foreign libc {
+    ioctl :: proc(fd: int, request: u64, ...) -> int ---
+}
+
+// Struct winsize necessária para TIOCGWINSZ
+winsize :: struct {
+    ws_row:    u16,  // rows, in characters
+    ws_col:    u16,  // columns, in characters
+    ws_xpixel: u16,  // horizontal size, pixels (unused)
+    ws_ypixel: u16,  // vertical size, pixels (unused)
+}
 ```
 
 **Função get_terminal_size() reimplementada:**
@@ -22,8 +38,8 @@ import "core:sys/linux"
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
     stdin_fd := int(posix.FD(os.stdin))
 
-    ws: linux.winsize
-    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+    ws: winsize
+    result := ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
 
     if result < 0 {
         return 0, 0, .FailedToGetAttributes
@@ -33,14 +49,12 @@ get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
 }
 ```
 
-**Componentes usados do Odin:**
-- `linux.winsize` - struct fornecida por `core:sys/linux`
-- `linux.TIOCGWINSZ` - constante fornecida por `core:sys/linux`
-- `linux.ioctl()` - função fornecida por `core:sys/linux`
+**Componentes usados:**
+- `linux.TIOCGWINSZ` - **constante fornecida por `core:sys/linux`** do Odin!
+- `ioctl()` - foreign import necessário (não disponível no core:sys/linux)
+- `winsize` - struct definida manualmente (não disponível no core:sys/linux)
 
 **Removidos:**
-- `foreign import libc "system:c"` - não necessário
-- Definições manuais de structs e constantes - já existem no Odin
 - `import "core:time"` - não necessário mais
 
 ### Arquivo: `ansuz/api.odin`
@@ -75,10 +89,10 @@ handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
 
 ## Por Que Esta É a Melhor Abordagem
 
-### 1. **100% Odin Puro**
-- Usa apenas bibliotecas padrão do Odin (`core:sys/linux`)
-- Sem dependências em C
-- Sem foreign imports desnecessários
+### 1. **Usa Bibliotecas Padrão do Odin Quando Possível**
+- Usa `linux.TIOCGWINSZ` do `core:sys/linux` (constante fornecida pelo Odin)
+- Foreign imports apenas para ioctl (não disponível no core:sys/linux)
+- Minimiza dependências externas
 
 ### 2. **Simples e Idiomática**
 - Segue as convenções do Odin
@@ -112,14 +126,15 @@ Cada Frame:
 
 ## Vantagens vs Abordagem Anterior
 
-| Aspecto | Anterior (ANSI) | Nova (ioctl via core:sys/linux) |
+| Aspecto | Anterior (ANSI) | Nova (ioctl + core:sys/linux) |
 |---------|----------------|--------------------------------|
 | Velocidade | 50ms timeout | ~1μs |
 | Bloqueio | Sim (50ms) | Não |
 | Interfere stdin | Sim | Não |
-| Código Odin | Sim (mas com C) | 100% Odin |
+| Usa constante Odin | Não | Sim (linux.TIOCGWINSZ) |
+| Foreign imports | Não | Mínimo (apenas ioctl) |
 | Manutenção | Complexo | Simples |
-| Confiança | Manual | Verificado (biblioteca padrão) |
+| Confiança | Manual | Parcialmente verificado |
 
 ## Testando
 
@@ -136,12 +151,12 @@ odin build examples/layout_demo.odin -file -out:examples/layout_demo
 ## Conclusão
 
 Esta solução:
-- ✅ É 100% pura em Odin
-- ✅ Usa apenas bibliotecas padrão (`core:sys/linux`)
+- ✅ Usa constante TIOCGWINSZ do `core:sys/linux` (biblioteca padrão do Odin)
+- ✅ Foreign imports mínimos (apenas ioctl, não disponível no core:sys/linux)
 - ✅ É simples e idiomática
 - ✅ É eficiente e rápida
 - ✅ Funciona corretamente em immediate mode
 - ✅ Não requer mudanças nas aplicações existentes
 - ✅ É fácil de manter e estender
 
-**Princípio chave:** Sempre que possível, use as bibliotecas padrão do Odin (`core:sys/*`) em vez de foreign imports em C. Isso resulta em código mais limpo, mais seguro e mais fácil de manter.
+**Princípio chave:** Sempre que possível, use as bibliotecas padrão do Odin (`core:sys/*`). Quando algo não está disponível, use foreign imports mínimos apenas para o que falta. Isso resulta em código mais limpo e maximiza o uso do que o Odin já fornece.

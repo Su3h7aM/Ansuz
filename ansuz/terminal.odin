@@ -5,6 +5,23 @@ import "core:os"
 import "core:sys/posix"
 import "core:sys/linux"
 
+// Foreign imports for ioctl with TIOCGWINSZ
+// Note: core:sys/linux provides TIOCGWINSZ constant but not winsize struct or ioctl function
+foreign import libc "system:c"
+
+@(default_calling_convention="c")
+foreign libc {
+    ioctl :: proc(fd: int, request: u64, ...) -> int ---
+}
+
+// winsize struct for TIOCGWINSZ ioctl
+winsize :: struct {
+    ws_row:    u16,  // rows, in characters
+    ws_col:    u16,  // columns, in characters
+    ws_xpixel: u16,  // horizontal size, pixels (unused)
+    ws_ypixel: u16,  // vertical size, pixels (unused)
+}
+
 // TerminalState maintains the state of terminal configuration
 // It stores the original termios settings for restoration on exit
 TerminalState :: struct {
@@ -168,12 +185,12 @@ show_cursor :: proc() -> TerminalError {
 //
 // This function uses ioctl(TIOCGWINSZ) which is non-blocking and doesn't interfere
 // with stdin input, making it safe to call during the render loop.
-// Uses core:sys/linux for pure Odin implementation.
+// Uses TIOCGWINSZ constant from core:sys/linux.
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
     stdin_fd := int(posix.FD(os.stdin))
 
-    ws: linux.winsize
-    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+    ws: winsize
+    result := ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
 
     if result < 0 {
         // ioctl failed, return error
