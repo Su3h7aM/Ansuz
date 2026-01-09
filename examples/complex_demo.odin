@@ -62,11 +62,15 @@ main :: proc() {
 		frame_elapsed := time.diff(end_time, state.last_time)
 
 		state.frame_count += 1
+
+		// Update FPS every second
 		if frame_elapsed >= time.Second {
-			state.fps = f32(state.frame_count) / f32(frame_elapsed / time.Second)
+			elapsed_seconds := f32(frame_elapsed) / f32(time.Second)
+			state.fps = f32(state.frame_count) / elapsed_seconds
 			state.frame_count = 0
 			state.last_time = end_time
 		}
+
 		state.frame_time = frame_duration
 	}
 }
@@ -311,22 +315,30 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		// Progress bar
 		ansuz.layout_text(ctx, "Processing:", ansuz.STYLE_NORMAL)
 		ansuz.layout_begin_container(ctx, {
-			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+			direction = .TopToBottom,
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
+			gap = 1,
 		})
-			// Progress background
-			ansuz.layout_rect(ctx, '░', ansuz.STYLE_DIM, {
-				sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			// Progress bar container
+			ansuz.layout_begin_container(ctx, {
+				direction = .LeftToRight,
+				sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
 			})
-			// Progress fill
-			fill_width := int(state.progress * 100)
-			if fill_width > 0 {
-				ansuz.layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
-					sizing = {ansuz.sizing_percent(state.progress), ansuz.sizing_grow()},
+				// Progress fill (draws first, fills from left)
+				fill_width := int(state.progress * 100)
+				if fill_width > 0 {
+					ansuz.layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
+						sizing = {ansuz.sizing_fixed(fill_width), ansuz.sizing_grow()},
+					})
+				}
+				// Progress background (empty space to the right)
+				ansuz.layout_rect(ctx, '░', ansuz.STYLE_DIM, {
+					sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 				})
-			}
+			ansuz.layout_end_container(ctx)
+			// Percentage text
+			ansuz.layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_NORMAL)
 		ansuz.layout_end_container(ctx)
-		ansuz.layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_DIM)
 
 	ansuz.layout_end_container(ctx)
 
