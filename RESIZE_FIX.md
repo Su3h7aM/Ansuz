@@ -31,36 +31,34 @@ In immediate mode, every frame is redrawn from scratch, which means the terminal
 
 **After:**
 ```odin
-// Uses ioctl(TIOCGWINSZ) - standard POSIX approach
+// Uses ioctl(TIOCGWINSZ) - standard POSIX approach via core:sys/linux
+// Pure Odin implementation - no C dependencies
 // Non-blocking and doesn't touch stdin
 // Fast and safe to call every frame
 
-foreign import libc "system:c"
-
-@(default_calling_convention="c")
-foreign libc {
-    ioctl :: proc(fd: int, request: u64, ...) -> int ---
-}
-
-winsize :: struct {
-    ws_row:    u16,
-    ws_col:    u16,
-    ws_xpixel: u16,
-    ws_ypixel: u16,
-}
-
-TIOCGWINSZ :: 0x5413
+import "core:sys/linux"
 
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-    stdin_fd := posix.FD(os.stdin)
-    ws: winsize
-    result := ioctl(stdin_fd, TIOCGWINSZ, &ws)
+    stdin_fd := int(posix.FD(os.stdin))
+
+    ws: linux.winsize
+    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+
     if result < 0 {
+        // ioctl failed, return error
         return 0, 0, .FailedToGetAttributes
     }
+
     return int(ws.ws_col), int(ws.ws_row), .None
 }
 ```
+
+**Key Points:**
+- Uses `core:sys/linux` - standard Odin library package
+- `linux.winsize` - struct provided by Odin
+- `linux.TIOCGWINSZ` - constant provided by Odin
+- `linux.ioctl()` - function provided by Odin
+- **100% pure Odin, no foreign imports or C code**
 
 ### 2. Added automatic resize detection (api.odin)
 
@@ -187,12 +185,16 @@ odin test ansuz
 - Needs timeout (50ms) to wait for response
 - Can consume keyboard input meant for the application
 
-**ioctl (new method):**
-- Standard POSIX system call: `ioctl(fd, TIOCGWINSZ, &ws)`
+**ioctl (new method - Pure Odin):**
+- Uses `core:sys/linux` package - standard Odin library
+- `linux.ioctl(fd, linux.TIOCGWINSZ, &ws.winsize)` - 100% Odin
+- `linux.winsize` struct - provided by Odin
+- `linux.TIOCGWINSZ` constant - provided by Odin
 - Returns immediately with current size
 - Doesn't touch stdin
 - No timeout needed
 - Much faster
+- **No C dependencies or foreign imports**
 
 ### Why Check Every Frame?
 

@@ -11,44 +11,40 @@ Layout breaks when terminal is resized because:
 
 ### 1. Modified: `ansuz/terminal.odin`
 
-**Added ioctl support for terminal size queries:**
+**Added ioctl support via core:sys/linux (pure Odin):**
 
 ```odin
-// Foreign imports for ioctl and TIOCGWINSZ which aren't exposed by core:sys/posix
-foreign import libc "system:c"
-
-@(default_calling_convention="c")
-foreign libc {
-    ioctl :: proc(fd: int, request: u64, ...) -> int ---
-}
-
-// winsize struct for TIOCGWINSZ ioctl
-winsize :: struct {
-    ws_row:    u16,  // rows, in characters
-    ws_col:    u16,  // columns, in characters
-    ws_xpixel: u16,  // horizontal size, pixels (unused)
-    ws_ypixel: u16,  // vertical size, pixels (unused)
-}
-
-TIOCGWINSZ :: 0x5413 // Terminal IO Control Get WINdow SiZe
+// Added import for Linux system calls
+import "core:sys/linux"
 ```
 
-**Replaced get_terminal_size():**
+**Replaced get_terminal_size() with pure Odin implementation:**
 
 ```odin
 // OLD: Used ANSI escape sequences, blocked for 50ms, interfered with stdin
-// NEW: Uses ioctl, non-blocking, fast, safe
+// NEW: Uses ioctl via core:sys/linux, non-blocking, fast, safe, 100% Odin
 
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-    stdin_fd := posix.FD(os.stdin)
-    ws: winsize
-    result := ioctl(stdin_fd, TIOCGWINSZ, &ws)
+    stdin_fd := int(posix.FD(os.stdin))
+
+    ws: linux.winsize
+    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+
     if result < 0 {
+        // ioctl failed, return error
         return 0, 0, .FailedToGetAttributes
     }
+
     return int(ws.ws_col), int(ws.ws_row), .None
 }
 ```
+
+**Key changes:**
+- Uses `core:sys/linux` package (standard Odin library)
+- `linux.winsize` struct (provided by Odin)
+- `linux.TIOCGWINSZ` constant (provided by Odin)
+- `linux.ioctl()` function (provided by Odin)
+- **100% pure Odin - no C dependencies or foreign imports**
 
 **Removed:** Unused `import "core:time"` (no longer needed)
 

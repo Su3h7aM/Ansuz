@@ -3,24 +3,7 @@ package ansuz
 import "core:fmt"
 import "core:os"
 import "core:sys/posix"
-
-// Foreign imports for ioctl and TIOCGWINSZ which aren't exposed by core:sys/posix
-foreign import libc "system:c"
-
-@(default_calling_convention="c")
-foreign libc {
-    ioctl :: proc(fd: int, request: u64, ...) -> int ---
-}
-
-// winsize struct for TIOCGWINSZ ioctl
-winsize :: struct {
-    ws_row: u16,    // rows, in characters
-    ws_col: u16,    // columns, in characters
-    ws_xpixel: u16, // horizontal size, pixels (unused)
-    ws_ypixel: u16, // vertical size, pixels (unused)
-}
-
-TIOCGWINSZ :: 0x5413 // Terminal IO Control Get WINdow SiZe
+import "core:sys/linux"
 
 // TerminalState maintains the state of terminal configuration
 // It stores the original termios settings for restoration on exit
@@ -185,17 +168,18 @@ show_cursor :: proc() -> TerminalError {
 //
 // This function uses ioctl(TIOCGWINSZ) which is non-blocking and doesn't interfere
 // with stdin input, making it safe to call during the render loop.
+// Uses core:sys/linux for pure Odin implementation.
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-    stdin_fd := posix.FD(os.stdin)
-    
-    ws: winsize
-    result := ioctl(stdin_fd, TIOCGWINSZ, &ws)
-    
+    stdin_fd := int(posix.FD(os.stdin))
+
+    ws: linux.winsize
+    result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, &ws)
+
     if result < 0 {
         // ioctl failed, return error
         return 0, 0, .FailedToGetAttributes
     }
-    
+
     return int(ws.ws_col), int(ws.ws_row), .None
 }
 
