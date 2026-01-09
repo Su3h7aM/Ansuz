@@ -124,6 +124,9 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	ansuz.begin_frame(ctx)
 	defer ansuz.end_frame(ctx)
 
+	ansuz.begin_layout(ctx)
+	defer ansuz.end_layout(ctx)
+
 	width, height := ansuz.get_size(ctx)
 
 	// Main container
