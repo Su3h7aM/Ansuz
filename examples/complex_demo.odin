@@ -38,9 +38,6 @@ main :: proc() {
 		anim_direction = 1,
 	}
 
-	fmt.println("\x1b[?25l") // Hide cursor before demo starts
-	defer fmt.println("\x1b[?25h") // Show cursor on exit
-
 	for state.running {
 		start_time := time.now()
 
