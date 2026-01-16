@@ -38,3 +38,88 @@ bd sync               # Sync with git
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 
+---
+
+## Project Overview
+
+**Ansuz** is an immediate-mode TUI library for the Odin programming language.
+
+### Key Architecture Patterns
+
+- **Immediate Mode**: UI declared each frame as pure function of state (no widget tree)
+- **Single Buffer**: Full frame rendering (no double buffering or dirty tracking)
+- **Raw Terminal Mode**: Direct control via Unix termios API (core:sys/posix)
+- **Zero External Dependencies**: Pure Odin + standard library
+
+### Building
+
+```bash
+export ODIN_ROOT=/path/to/Odin
+odin build examples/hello_world.odin -file -out:examples/hello_world
+./examples/hello_world
+```
+
+### Testing
+
+```bash
+export ODIN_ROOT=/path/to/Odin
+odin test ansuz
+```
+
+### Project Structure
+
+```
+ansuz/
+├── ansuz/              # Core library
+│   ├── api.odin       # Public API
+│   ├── terminal.odin  # Terminal I/O (raw mode, ANSI)
+│   ├── buffer.odin    # Frame buffer
+│   ├── colors.odin    # Color/style system
+│   └── event.odin     # Input events
+├── examples/          # Example programs
+├── research/          # Technical documentation
+└── build.sh          # Build script
+```
+
+### Important Odin Patterns
+
+**ALWAYS use core:sys/posix first!**
+
+```odin
+import "core:sys/posix"
+
+// termios functions return posix.result
+res := posix.tcgetattr(fd, &termios)
+if res != .OK { /* error */ }
+
+// termios fields are bit_set - use += / -=
+raw.c_lflag -= {.ECHO, .ICANON}
+raw.c_cflag += {.CS8}
+```
+
+**Odin does NOT have:**
+- Increment/decrement operators (++/--)
+- Constructors or destructors
+- Exceptions (use defer for cleanup)
+
+### API Reference
+
+```odin
+// Context management
+init() -> (^Context, Error)
+shutdown(^Context)
+
+// Frame lifecycle
+begin_frame(^Context)
+end_frame(^Context)
+
+// Drawing
+write_text(^Context, x, y, text, Style)
+fill_rect(^Context, x, y, width, height, rune, Style)
+draw_box(^Context, x, y, width, height, Style)
+
+// Input
+poll_events(^Context) -> []Event
+get_size(^Context) -> (width, height: int)
+```
+
