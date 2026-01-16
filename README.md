@@ -237,6 +237,58 @@ See [research/ARCHITECTURE.md](research/ARCHITECTURE.md) for:
 
 Ansuz is in early development. Contributions are welcome!
 
+### Version Control
+
+This project uses **jj** (jujutsu) as the version control system instead of git.
+
+```bash
+# Clone the repository
+jj git clone https://github.com/yourusername/ansuz.git
+cd ansuz
+
+# View status
+jj status
+
+# View commit history
+jj log
+
+# Create a new commit
+jj new "your message"
+
+# Amend the current commit
+jj squash
+
+# View changes
+jj diff
+
+# Push to remote
+jj git push
+```
+
+### Issue Tracking
+
+This project uses **bd** (beads) for issue tracking.
+
+```bash
+# Get started with bd
+bd onboard
+
+# Find available work
+bd ready
+
+# View issue details
+bd show <id>
+
+# Claim work
+bd update <id> --status in_progress
+
+# Complete work
+bd close <id>
+
+# Sync with jj
+bd sync
+```
+
 Areas where help is needed:
 - Windows terminal support
 - Complete ANSI sequence parsing
