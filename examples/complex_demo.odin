@@ -59,13 +59,13 @@ main :: proc() {
 
 		// Calculate FPS
 		end_time := time.now()
-		frame_duration := time.diff(end_time, start_time)
-		frame_elapsed := time.diff(end_time, state.last_fps_update)
+		frame_duration := time.diff(start_time, end_time)
+		frame_elapsed := time.diff(state.last_fps_update, end_time)
 
 		state.frame_count += 1
 
-		// Update FPS every second
-		if frame_elapsed >= time.Second {
+		// Update FPS every 0.5 second for more responsive display
+		if frame_elapsed >= time.Second / 2 {
 			elapsed_seconds := f32(frame_elapsed) / f32(time.Second)
 			if elapsed_seconds > 0 {
 				state.fps = f32(state.frame_count) / elapsed_seconds
@@ -75,6 +75,12 @@ main :: proc() {
 		}
 
 		state.frame_time = frame_duration
+
+		// Cap at ~60 FPS to avoid unrealistic values and reduce CPU usage
+		target_frame_time := 16 * time.Millisecond
+		if frame_duration < target_frame_time {
+			time.sleep(target_frame_time - frame_duration)
+		}
 	}
 }
 
@@ -120,7 +126,7 @@ handle_input :: proc(state: ^DemoState, event: ansuz.Event) {
 update_state :: proc(state: ^DemoState) {
 	// Animate progress bar - takes exactly 10 seconds to complete
 	current_time := time.now()
-	elapsed := f32(time.diff(current_time, state.progress_start_time)) / f32(time.Second)
+	elapsed := f32(time.diff(state.progress_start_time, current_time)) / f32(time.Second)
 
 	if state.anim_direction == 1 {
 		// Growing: 0% -> 100%
@@ -204,7 +210,7 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 
 		// Stats
 		fps_text := fmt.tprintf("FPS: %.1f", state.fps)
-		frame_text := fmt.tprintf("Frame: %s", format_duration(state.frame_time))
+		frame_text := fmt.tprintf("Frame Time: %s", format_duration(state.frame_time))
 		size_width, size_height := ansuz.get_size(ctx)
 		size_text := fmt.tprintf("Size: %dx%d", size_width, size_height)
 
@@ -339,13 +345,12 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 			// Progress bar container
 			ansuz.layout_begin_container(ctx, {
 				direction = .LeftToRight,
-				sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+				sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			})
 				// Progress fill (draws first, fills from left)
-				fill_width := int(state.progress * 100)
-				if fill_width > 0 {
+				if state.progress > 0 {
 					ansuz.layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
-						sizing = {ansuz.sizing_fixed(fill_width), ansuz.sizing_grow()},
+						sizing = {ansuz.sizing_percent(state.progress), ansuz.sizing_grow()},
 					})
 				}
 				// Progress background (empty space to the right)
@@ -508,14 +513,6 @@ get_stat_style :: proc() -> ansuz.Style {
 }
 
 format_duration :: proc(d: time.Duration) -> string {
-	micros := d / time.Microsecond
-	if micros < 1000 {
-		return fmt.tprintf("%dμs", micros)
-	}
-	millis := d / time.Millisecond
-	if millis < 1000 {
-		return fmt.tprintf("%dms", millis)
-	}
-	seconds := f32(d) / f32(time.Second)
-	return fmt.tprintf("%.2fs", seconds)
+	millis := f32(d) / f32(time.Millisecond)
+	return fmt.tprintf("%.2fms", millis)
 }
