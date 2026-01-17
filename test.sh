@@ -21,12 +21,8 @@ fi
 echo "Running Ansuz test suite..."
 echo ""
 
-# Build and run tests
-echo "Running Ansuz test suite..."
-echo ""
-
-# Run tests
-if odin test ansuz -file 2>&1; then
+# Run tests (stdin closed to prevent terminal from waiting)
+if odin test ansuz -file </dev/null 2>&1; then
     echo ""
     echo "All tests passed!"
     exit 0
