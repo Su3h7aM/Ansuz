@@ -22,12 +22,16 @@ echo "Running Ansuz test suite..."
 echo ""
 
 # Build and run tests
-if odin test ansuz -file; then
+echo "Running Ansuz test suite..."
+echo ""
+
+# Run tests
+if odin test ansuz -file 2>&1; then
     echo ""
-    echo -e "${GREEN}✓ All tests passed!${NC}"
+    echo "All tests passed!"
     exit 0
 else
     echo ""
-    echo -e "${RED}✗ Tests failed${NC}"
+    echo "Tests failed"
     exit 1
 fi
