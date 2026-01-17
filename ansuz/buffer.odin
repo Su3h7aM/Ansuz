@@ -43,7 +43,7 @@ init_buffer :: proc(width, height: int, allocator := context.allocator) -> (buff
 
     // Allocate the cell array
     buffer.cells = make([]Cell, width * height, allocator)
-    if buffer.cells == nil {
+    if len(buffer.cells) != width * height {
         return buffer, .AllocationFailed
     }
 

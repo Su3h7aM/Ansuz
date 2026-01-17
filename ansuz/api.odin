@@ -330,17 +330,17 @@ Layout_text :: proc(ctx: ^Context, content: string, style: Style = STYLE_NORMAL,
 
 // Layout_box adds a bordered box node to the current layout container
 Layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
-    add_box(&ctx.layout_ctx, style, config)
+    add_box_container(&ctx.layout_ctx, style, config)
 }
 
 // Layout_rect adds a filled rectangular node to the current layout container
 Layout_rect :: proc(ctx: ^Context, char: rune, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
-    add_rect(&ctx.layout_ctx, char, style, config)
+    add_rect_container(&ctx.layout_ctx, char, style, config)
 }
 
 // Layout_end_box ends the current layout box
 Layout_end_box :: proc(ctx: ^Context) {
-    Layout_end_container(ctx)
+    end_box_container(&ctx.layout_ctx)
 }
 
 // Predefined styles for convenience

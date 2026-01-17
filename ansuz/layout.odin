@@ -144,27 +144,31 @@ reset_layout_context :: proc(ctx: ^LayoutContext, root_rect: Rect) {
 
 // Internal: adds a node to the tree
 _add_node :: proc(l_ctx: ^LayoutContext, config: LayoutConfig, is_container: bool) -> int {
+    parent_idx := len(l_ctx.stack) > 0 ? l_ctx.stack[len(l_ctx.stack) - 1] : -1
+
     node := LayoutNode{
         id           = u32(len(l_ctx.nodes)),
         config       = config,
-        parent_index = l_ctx.stack[len(l_ctx.stack) - 1],
+        parent_index = parent_idx,
         first_child  = -1,
         next_sibling = -1,
         is_container = is_container,
     }
 
     node_idx := len(l_ctx.nodes)
-    
-    if node.parent_index != -1 {
-        parent := &l_ctx.nodes[node.parent_index]
+
+    if parent_idx != -1 && node_idx < len(l_ctx.nodes) {
+        parent := &l_ctx.nodes[parent_idx]
         if parent.first_child == -1 {
             parent.first_child = node_idx
         } else {
             curr := parent.first_child
-            for l_ctx.nodes[curr].next_sibling != -1 {
+            for curr >= 0 && curr < len(l_ctx.nodes) && l_ctx.nodes[curr].next_sibling != -1 {
                 curr = l_ctx.nodes[curr].next_sibling
             }
-            l_ctx.nodes[curr].next_sibling = node_idx
+            if curr >= 0 && curr < len(l_ctx.nodes) {
+                l_ctx.nodes[curr].next_sibling = node_idx
+            }
         }
     }
 
@@ -209,6 +213,22 @@ add_box :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFA
     }
 }
 
+add_box_container :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+    node_idx := _add_node(l_ctx, config, true)
+    node := &l_ctx.nodes[node_idx]
+    node.render_cmd = RenderCommand{
+        type = .Box,
+        style = style,
+    }
+    append(&l_ctx.stack, node_idx)
+}
+
+end_box_container :: proc(l_ctx: ^LayoutContext) {
+    if len(l_ctx.stack) > 0 {
+        pop(&l_ctx.stack)
+    }
+}
+
 add_rect :: proc(l_ctx: ^LayoutContext, char: rune, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
     node_idx := _add_node(l_ctx, config, false)
     node := &l_ctx.nodes[node_idx]
@@ -216,6 +236,23 @@ add_rect :: proc(l_ctx: ^LayoutContext, char: rune, style: Style, config: Layout
         type = .Rect,
         char = char,
         style = style,
+    }
+}
+
+add_rect_container :: proc(l_ctx: ^LayoutContext, char: rune, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+    node_idx := _add_node(l_ctx, config, true)
+    node := &l_ctx.nodes[node_idx]
+    node.render_cmd = RenderCommand{
+        type = .Rect,
+        char = char,
+        style = style,
+    }
+    append(&l_ctx.stack, node_idx)
+}
+
+end_rect_container :: proc(l_ctx: ^LayoutContext) {
+    if len(l_ctx.stack) > 0 {
+        pop(&l_ctx.stack)
     }
 }
 

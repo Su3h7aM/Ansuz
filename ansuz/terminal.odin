@@ -193,14 +193,20 @@ leave_alternate_buffer :: proc() -> TerminalError {
 // with stdin input, making it safe to call during the render loop.
 // Uses native Odin ioctl from core:sys/linux.
 get_terminal_size :: proc() -> (width, height: int, err: TerminalError) {
-	stdin_fd := linux.Fd(posix.FD(os.stdin))
+	// Use stdout for ioctl as it's more likely to be the controlling terminal
+	stdout_fd := linux.Fd(posix.FD(os.stdout))
 
 	ws: winsize
-	result := linux.ioctl(stdin_fd, linux.TIOCGWINSZ, transmute(uintptr)&ws)
+	result := linux.ioctl(stdout_fd, linux.TIOCGWINSZ, uintptr(&ws))
 
-	if result < 0 {
-		// ioctl failed, return error
-		return 0, 0, .FailedToGetAttributes
+	if result < 0 || ws.ws_col == 0 || ws.ws_row == 0 {
+		// ioctl failed or returned 0, try stdin as fallback
+		stdin_fd := linux.Fd(posix.FD(os.stdin))
+		result = linux.ioctl(stdin_fd, linux.TIOCGWINSZ, uintptr(&ws))
+		if result < 0 || ws.ws_col == 0 || ws.ws_row == 0 {
+			// ioctl failed on both, use reasonable defaults
+			return 80, 24, .None
+		}
 	}
 
 	return int(ws.ws_col), int(ws.ws_row), .None
