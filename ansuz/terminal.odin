@@ -41,6 +41,10 @@ init_terminal :: proc() -> TerminalError {
 
 	stdin_fd := posix.FD(os.stdin)
 
+	if !posix.isatty(stdin_fd) {
+		return .FailedToGetAttributes
+	}
+
 	result := posix.tcgetattr(stdin_fd, &_terminal_state.original_termios)
 	if result != .OK {
 		return .FailedToGetAttributes

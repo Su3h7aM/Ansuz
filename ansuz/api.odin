@@ -3,6 +3,7 @@ package ansuz
 // This file provides the public API for the Ansuz TUI library
 // It combines all the low-level components into a high-level immediate-mode API
 
+import "core:fmt"
 import "core:mem"
 import "core:time"
 
@@ -61,6 +62,8 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     // Initialize terminal
     term_err := init_terminal()
     if term_err != .None {
+        fmt.eprintln("Error: This program requires a terminal (TTY) to run.")
+        fmt.eprintln("Please run it from a command line terminal, not from an IDE or pipe.")
         return ctx, .TerminalInitFailed
     }
     
