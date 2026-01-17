@@ -199,6 +199,7 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	ansuz.Layout_rect(ctx, '─', ansuz.STYLE_DIM, {
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
 	})
+	ansuz.Layout_end_rect(ctx)
 }
 
 render_sidebar :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
@@ -312,20 +313,22 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		})
 			// Progress bar container
 			ansuz.Layout_begin_container(ctx, {
-				direction = .LeftToRight,
+			direction = .LeftToRight,
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+		})
+			// Progress fill (draws first, fills from left)
+			if state.progress > 0 {
+				ansuz.Layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
+					sizing = {ansuz.Sizing_percent(state.progress), ansuz.Sizing_grow()},
+				})
+				ansuz.Layout_end_rect(ctx)
+			}
+			// Progress background (empty space to the right)
+			ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
 				sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			})
-				// Progress fill (draws first, fills from left)
-				if state.progress > 0 {
-					ansuz.Layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
-						sizing = {ansuz.Sizing_percent(state.progress), ansuz.Sizing_grow()},
-					})
-				}
-				// Progress background (empty space to the right)
-				ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
-					sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-				})
-			ansuz.Layout_end_container(ctx)
+			ansuz.Layout_end_rect(ctx)
+		ansuz.Layout_end_container(ctx)
 			// Percentage text
 			ansuz.Layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_NORMAL)
 		ansuz.Layout_end_container(ctx)

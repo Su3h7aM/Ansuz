@@ -343,6 +343,11 @@ Layout_end_box :: proc(ctx: ^Context) {
     end_box_container(&ctx.layout_ctx)
 }
 
+// Layout_end_rect ends the current layout rect
+Layout_end_rect :: proc(ctx: ^Context) {
+    end_rect_container(&ctx.layout_ctx)
+}
+
 // Predefined styles for convenience
 STYLE_NORMAL :: Style{.Default, .Default, {}}
 STYLE_BOLD :: Style{.Default, .Default, {.Bold}}

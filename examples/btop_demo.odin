@@ -113,16 +113,28 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	// Main content based on tab
 	switch state.selected_tab {
 	case 0: {
-		render_cpu_view(ctx, state)
+		ansuz.Layout_text(ctx, "CPU VIEW - Press Tab to switch", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, fmt.tprintf("Core 0: %.1f%%", state.cpu_usage[0]), ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, fmt.tprintf("Core 1: %.1f%%", state.cpu_usage[1]), ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, fmt.tprintf("Core 2: %.1f%%", state.cpu_usage[2]), ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, fmt.tprintf("Core 3: %.1f%%", state.cpu_usage[3]), ansuz.STYLE_NORMAL)
 	}
 	case 1: {
-		render_mem_view(ctx, state)
+		ansuz.Layout_text(ctx, "MEMORY VIEW", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, fmt.tprintf("RAM: %.1f/%.1f GB", state.mem_used, state.mem_total), ansuz.STYLE_NORMAL)
+		render_progress_bar(ctx, state.mem_used / state.mem_total * 100.0)
 	}
 	case 2: {
-		render_net_view(ctx, state)
+		ansuz.Layout_text(ctx, "NETWORK VIEW", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, fmt.tprintf("RX: %.1f MB/s", state.net_rx), ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, fmt.tprintf("TX: %.1f MB/s", state.net_tx), ansuz.STYLE_NORMAL)
 	}
 	case 3: {
-		render_proc_view(ctx, state)
+		ansuz.Layout_text(ctx, "PROCESS VIEW", ansuz.STYLE_BOLD)
+		for i in 0..<min(5, len(state.processes)) {
+			p := state.processes[i]
+			ansuz.Layout_text(ctx, fmt.tprintf("%d %s %.1f%% %.1f%%", p.pid, p.name, p.cpu, p.mem), ansuz.STYLE_NORMAL)
+		}
 	}
 	}
 
@@ -206,18 +218,20 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 			ansuz.Layout_rect(ctx, '█', ansuz.STYLE_NORMAL, {
 				sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
 			})
+			ansuz.Layout_end_rect(ctx)
 		}
 	}
 
 	// Empty portion
-		empty_width := 20 - int(usage / 100.0 * 20.0)
-		if empty_width > 0 {
-			ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
-				sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
-			})
-		}
+	empty_width := 20 - int(usage / 100.0 * 20.0)
+	if empty_width > 0 {
+		ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
+			sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
+		})
+		ansuz.Layout_end_rect(ctx)
+	}
 
-		ansuz.Layout_end_box(ctx)  // End horizontal box
+	ansuz.Layout_end_box(ctx)  // End horizontal box
 	}
 
 	ansuz.Layout_end_box(ctx)  // End vertical box
@@ -270,11 +284,13 @@ render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32) {
 		ansuz.Layout_rect(ctx, '█', ansuz.STYLE_NORMAL, {
 			sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
 		})
+		ansuz.Layout_end_rect(ctx)
 	}
 	if empty_width > 0 {
 		ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
 			sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
 		})
+		ansuz.Layout_end_rect(ctx)
 	}
 
 	ansuz.Layout_end_box(ctx)

@@ -59,8 +59,8 @@ main :: proc() {
                     sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
                     padding = ansuz.Padding_all(1),
                 })
+                ansuz.Layout_end_box(ctx)
                 // We'd need a way to put text inside that box in the layout system...
-                // Currently box is a leaf node. 
                 // In clay, you'd use a container with a border.
             ansuz.Layout_end_container(ctx)
             
@@ -80,6 +80,7 @@ main :: proc() {
                     ansuz.Layout_rect(ctx, '-', ansuz.STYLE_DIM, {
                         sizing = {ansuz.Sizing_fixed(20), ansuz.Sizing_fixed(1)},
                     })
+                    ansuz.Layout_end_rect(ctx)
                     ansuz.Layout_text(ctx, "This layout is calculated using a Clay-inspired system.", ansuz.STYLE_NORMAL)
                 ansuz.Layout_end_container(ctx)
                 
@@ -89,8 +90,11 @@ main :: proc() {
                     gap = 3,
                 })
                     ansuz.Layout_box(ctx, ansuz.STYLE_WARNING, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
+                    ansuz.Layout_end_box(ctx)
                     ansuz.Layout_box(ctx, ansuz.STYLE_ERROR, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
+                    ansuz.Layout_end_box(ctx)
                     ansuz.Layout_box(ctx, ansuz.STYLE_INFO, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
+                    ansuz.Layout_end_box(ctx)
                 ansuz.Layout_end_container(ctx)
                 
             ansuz.Layout_end_container(ctx)

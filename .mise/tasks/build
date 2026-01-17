@@ -6,6 +6,23 @@
 
 set -euo pipefail
 
+CLEAN=0
+for arg in "$@"; do
+    case "$arg" in
+        -c|--clean)
+            CLEAN=1
+            ;;
+        -h|--help)
+            echo "Usage: mise build [-c|--clean]"
+            echo ""
+            echo "Options:"
+            echo "  -c, --clean    Remove existing binaries before building"
+            echo "  -h, --help     Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
 if ! command -v odin &>/dev/null; then
     if [[ -n "${ODIN_ROOT:-}" ]] && [[ -x "$ODIN_ROOT/odin" ]]; then
         export PATH="$ODIN_ROOT:$PATH"
@@ -13,6 +30,12 @@ if ! command -v odin &>/dev/null; then
         echo "Error: 'odin' not found. Set ODIN_ROOT or install Odin." >&2
         exit 1
     fi
+fi
+
+if [[ "$CLEAN" == "1" ]]; then
+    echo "Cleaning build artifacts..."
+    rm -f examples/hello_world examples/complex_demo examples/layout_demo examples/btop_demo
+    echo "Clean complete."
 fi
 
 echo "Building hello_world..."
