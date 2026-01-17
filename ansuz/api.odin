@@ -4,7 +4,6 @@ package ansuz
 // It combines all the low-level components into a high-level immediate-mode API
 
 import "core:mem"
-import "core:time"
 
 // Context maintains the global state for the TUI library
 // This follows the immediate-mode pattern where the context is passed to widget functions
@@ -24,9 +23,6 @@ Context :: struct {
 
     // Frame timing (for future FPS limiting)
     frame_count:   u64,
-
-    // Resize debounce timing
-    last_resize_time: time.Time,
 
     // Layout system
     layout_ctx:    LayoutContext,
@@ -76,7 +72,6 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     
     ctx.width = width
     ctx.height = height
-    ctx.last_resize_time = time.now()
 
     // Initialize buffer
     buf, buf_err := init_buffer(width, height, allocator)
@@ -131,9 +126,6 @@ begin_frame :: proc(ctx: ^Context) {
     if size_err == .None && (current_width != ctx.width || current_height != ctx.height) {
         // Terminal was resized - update context
         handle_resize(ctx, current_width, current_height)
-        // Debounce: wait for terminal to stabilize after resize
-        // This prevents flicker when rapidly resizing
-        time.sleep(50 * time.Millisecond)
     }
 
     // Clear buffer for new frame
@@ -223,9 +215,12 @@ get_size :: proc(ctx: ^Context) -> (width, height: int) {
 handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
     ctx.width = new_width
     ctx.height = new_height
-    ctx.last_resize_time = time.now()
 
-    // No need to clear screen - we redraw everything each frame anyway
+    // Re-enter alternate screen to ensure proper resize behavior
+    // This prevents flicker when resizing
+    leave_alternate_buffer()
+    enter_alternate_buffer()
+
     resize_buffer(&ctx.buffer, new_width, new_height)
 }
 
