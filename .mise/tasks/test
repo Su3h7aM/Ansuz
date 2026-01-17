@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#MISE description="Run Ansuz test suite"
+#MISE alias="t"
+#MISE sources=["ansuz/**/*_test.odin"]
+
+set -euo pipefail
+
+if ! command -v odin &>/dev/null; then
+    if [[ -n "${ODIN_ROOT:-}" ]] && [[ -x "$ODIN_ROOT/odin" ]]; then
+        export PATH="$ODIN_ROOT:$PATH"
+    else
+        echo "Error: 'odin' not found. Set ODIN_ROOT or install Odin." >&2
+        exit 1
+    fi
+fi
+
+echo "Running tests..."
+odin test ansuz -file </dev/null

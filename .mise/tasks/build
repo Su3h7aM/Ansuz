@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#MISE description="Build Ansuz examples"
+#MISE alias="b"
+#MISE sources=["ansuz/**/*.odin", "examples/**/*.odin"]
+#MISE outputs=["examples/hello_world", "examples/complex_demo", "examples/layout_demo"]
+
+set -euo pipefail
+
+if ! command -v odin &>/dev/null; then
+    if [[ -n "${ODIN_ROOT:-}" ]] && [[ -x "$ODIN_ROOT/odin" ]]; then
+        export PATH="$ODIN_ROOT:$PATH"
+    else
+        echo "Error: 'odin' not found. Set ODIN_ROOT or install Odin." >&2
+        exit 1
+    fi
+fi
+
+echo "Building hello_world..."
+odin build examples/hello_world.odin -file -out:examples/hello_world -debug
+
+echo "Build complete!"

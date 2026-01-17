@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Clean build artifacts"
+#MISE alias="c"
+
+set -euo pipefail
+
+echo "Cleaning build artifacts..."
+rm -f examples/hello_world examples/complex_demo examples/layout_demo
+echo "Clean complete!"

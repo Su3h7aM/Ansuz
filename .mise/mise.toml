@@ -1,0 +1,4 @@
+min_version = "2024.9.5"
+
+[tools]
+odin = "dev-2025-11-14"
