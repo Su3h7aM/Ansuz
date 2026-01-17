@@ -342,10 +342,9 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 				sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
 			})
 				// Progress fill (draws first, fills from left)
-				fill_width := int(state.progress * 100)
-				if fill_width > 0 {
+				if state.progress > 0 {
 					ansuz.layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
-						sizing = {ansuz.sizing_fixed(fill_width), ansuz.sizing_grow()},
+						sizing = {ansuz.sizing_percent(state.progress), ansuz.sizing_grow()},
 					})
 				}
 				// Progress background (empty space to the right)

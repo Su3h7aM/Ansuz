@@ -17,6 +17,7 @@ winsize :: struct {
 // It stores original termios settings for restoration on exit
 TerminalState :: struct {
 	original_termios: posix.termios,
+	original_fcntl_flags: int,
 	is_raw_mode:      bool,
 	is_initialized:   bool,
 }
@@ -45,6 +46,8 @@ init_terminal :: proc() -> TerminalError {
 	if result != .OK {
 		return .FailedToGetAttributes
 	}
+
+	_terminal_state.original_fcntl_flags = int(posix.fcntl(stdin_fd, .GETFL, 0))
 
 	_terminal_state.is_initialized = true
 	return .None
@@ -88,6 +91,17 @@ enter_raw_mode :: proc() -> TerminalError {
 		return .FailedToSetAttributes
 	}
 
+	// Set stdin to non-blocking mode for read_input() to work correctly
+	// Get current flags and add O_NONBLOCK
+	current_flags := posix.fcntl(stdin_fd, .GETFL, 0)
+	if current_flags < 0 {
+		return .FailedToSetAttributes
+	}
+	fcntl_result := posix.fcntl(stdin_fd, .SETFL, current_flags | posix.O_NONBLOCK)
+	if fcntl_result < 0 {
+		return .FailedToSetAttributes
+	}
+
 	_terminal_state.is_raw_mode = true
 	return .None
 }
@@ -101,8 +115,15 @@ leave_raw_mode :: proc() -> TerminalError {
 
 	stdin_fd := posix.FD(os.stdin)
 
+	// Restore original termios settings
 	result := posix.tcsetattr(stdin_fd, .TCSAFLUSH, &_terminal_state.original_termios)
 	if result != .OK {
+		return .FailedToSetAttributes
+	}
+
+	// Restore original fcntl flags (blocking mode)
+	fcntl_result := posix.fcntl(stdin_fd, .SETFL, _terminal_state.original_fcntl_flags)
+	if fcntl_result < 0 {
 		return .FailedToSetAttributes
 	}
 
