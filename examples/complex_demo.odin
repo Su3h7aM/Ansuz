@@ -7,11 +7,6 @@ import "core:strings"
 
 // DemoState holds the application state
 DemoState :: struct {
-	fps:                 f32,
-	frame_time:           time.Duration,
-	frame_count:          u64,
-	last_time:            time.Time,
-	last_fps_update:       time.Time,
 	running:             bool,
 	selected_tab:        int,
 	theme_color:          int,
@@ -29,11 +24,6 @@ main :: proc() {
 	defer ansuz.shutdown(ctx)
 
 	state := DemoState{
-		fps = 0.0,
-		frame_time = 0,
-		frame_count = 0,
-		last_time = time.now(),
-		last_fps_update = time.now(),
 		running = true,
 		selected_tab = 0,
 		theme_color = 0,
@@ -41,6 +31,9 @@ main :: proc() {
 		anim_direction = 1,
 		progress_start_time = time.now(),
 	}
+
+	// Enable FPS limiting at 60 FPS
+	ansuz.set_target_fps(ctx, 60)
 
 	for state.running {
 		start_time := time.now()
@@ -56,31 +49,6 @@ main :: proc() {
 
 		// Render
 		render_demo(ctx, &state)
-
-		// Calculate FPS
-		end_time := time.now()
-		frame_duration := time.diff(start_time, end_time)
-		frame_elapsed := time.diff(state.last_fps_update, end_time)
-
-		state.frame_count += 1
-
-		// Update FPS every 0.5 second for more responsive display
-		if frame_elapsed >= time.Second / 2 {
-			elapsed_seconds := f32(frame_elapsed) / f32(time.Second)
-			if elapsed_seconds > 0 {
-				state.fps = f32(state.frame_count) / elapsed_seconds
-			}
-			state.frame_count = 0
-			state.last_fps_update = end_time
-		}
-
-		state.frame_time = frame_duration
-
-		// Cap at ~60 FPS to avoid unrealistic values and reduce CPU usage
-		target_frame_time := 16 * time.Millisecond
-		if frame_duration < target_frame_time {
-			time.sleep(target_frame_time - frame_duration)
-		}
 	}
 }
 
@@ -209,8 +177,8 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		ansuz.layout_end_container(ctx)
 
 		// Stats
-		fps_text := fmt.tprintf("FPS: %.1f", state.fps)
-		frame_text := fmt.tprintf("Frame Time: %s", format_duration(state.frame_time))
+		fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
+		frame_text := fmt.tprintf("Frame Time: %s", format_duration(ansuz.get_last_frame_time(ctx)))
 		size_width, size_height := ansuz.get_size(ctx)
 		size_text := fmt.tprintf("Size: %dx%d", size_width, size_height)
 

@@ -33,6 +33,9 @@ Context :: struct {
     frame_time_history:   [dynamic]time.Duration,
     max_history_samples:  int,
 
+    // FPS limiting
+    target_fps:           f32,
+
     // Layout system
     layout_ctx:    LayoutContext,
 
@@ -124,7 +127,7 @@ shutdown :: proc(ctx: ^Context) {
     destroy_layout_context(&ctx.layout_ctx)
 
     // Clean up timing history
-    delete(ctx.frame_time_history, ctx.allocator)
+    delete(ctx.frame_time_history)
 
     // Restore terminal
     reset_terminal()
@@ -187,7 +190,15 @@ end_frame :: proc(ctx: ^Context) {
         }
         avg_time := total_time / time.Duration(len(ctx.frame_time_history))
         ctx.avg_frame_time = avg_time
-        ctx.fps = 1.0 / time.duration_seconds(avg_time)
+        ctx.fps = 1.0 / f32(time.duration_seconds(avg_time))
+    }
+
+    // FPS limiting
+    if ctx.target_fps > 0 {
+        target_frame_time_ns := time.Duration(i64(1000000000.0 / ctx.target_fps))
+        if frame_duration < target_frame_time_ns {
+            time.sleep(target_frame_time_ns - frame_duration)
+        }
     }
 
     ctx.frame_count += 1
@@ -206,6 +217,12 @@ get_avg_frame_time :: proc(ctx: ^Context) -> time.Duration {
 // get_last_frame_time returns the duration of the most recent frame
 get_last_frame_time :: proc(ctx: ^Context) -> time.Duration {
     return ctx.last_frame_time
+}
+
+// set_target_fps sets the target FPS for frame rate limiting
+// Set to 0 to disable limiting
+set_target_fps :: proc(ctx: ^Context, fps: f32) {
+    ctx.target_fps = fps
 }
 
 // poll_events reads and parses input events from the terminal
