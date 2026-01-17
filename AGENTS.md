@@ -12,6 +12,14 @@ bd close <id>         # Complete work
 bd sync               # Sync with jj
 ```
 
+## Agent Workflow Requirements
+
+All agents acting on this project MUST adhere to the following:
+
+- **Use jj exclusively**: Always use **jj** (Jujutsu) for version control operations instead of git
+- **Maintain TODO with beads**: Always use **beads** to maintain a TODO list of tasks to do and current work
+- **Prefer inline commands**: Use versions of commands that avoid opening editors where possible, for example `jj desc -m "message"` instead of `jj desc`
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `jj git push` succeeds.

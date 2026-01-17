@@ -4,6 +4,7 @@ package ansuz
 // It combines all the low-level components into a high-level immediate-mode API
 
 import "core:mem"
+import "core:time"
 
 // Context maintains the global state for the TUI library
 // This follows the immediate-mode pattern where the context is passed to widget functions
@@ -23,6 +24,14 @@ Context :: struct {
 
     // Frame timing (for future FPS limiting)
     frame_count:   u64,
+
+    // FPS and frame time measurement
+    frame_start_time:     time.Time,
+    last_frame_time:      time.Duration,
+    fps:                  f32,
+    avg_frame_time:       time.Duration,
+    frame_time_history:   [dynamic]time.Duration,
+    max_history_samples:  int,
 
     // Layout system
     layout_ctx:    LayoutContext,
@@ -89,7 +98,12 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     // Initial terminal setup
     hide_cursor()
     clear_screen()
-    
+
+    // Initialize timing for FPS/frame time measurement
+    ctx.frame_time_history = make([dynamic]time.Duration, 0, 60, allocator)
+    ctx.max_history_samples = 60
+    ctx.frame_start_time = time.now()
+
     return ctx, .None
 }
 
@@ -109,6 +123,9 @@ shutdown :: proc(ctx: ^Context) {
     // Clean up layout context
     destroy_layout_context(&ctx.layout_ctx)
 
+    // Clean up timing history
+    delete(ctx.frame_time_history, ctx.allocator)
+
     // Restore terminal
     reset_terminal()
 
@@ -120,6 +137,9 @@ shutdown :: proc(ctx: ^Context) {
 // Call this at the beginning of your render loop
 // In immediate mode, we clear the entire buffer each frame
 begin_frame :: proc(ctx: ^Context) {
+    // Record frame start time for FPS/frame time calculation
+    ctx.frame_start_time = time.now()
+
     // Check for terminal size changes (every frame)
     // Since we now use ioctl() which is non-blocking, this is safe and efficient
     current_width, current_height, size_err := get_terminal_size()
@@ -148,7 +168,44 @@ end_frame :: proc(ctx: ^Context) {
     // Show cursor again
     show_cursor()
 
+    // Calculate frame time and FPS
+    frame_end_time := time.now()
+    frame_duration := time.diff(ctx.frame_start_time, frame_end_time)
+    ctx.last_frame_time = frame_duration
+
+    // Update rolling average
+    append(&ctx.frame_time_history, frame_duration)
+    if len(ctx.frame_time_history) > ctx.max_history_samples {
+        ordered_remove(&ctx.frame_time_history, 0)
+    }
+
+    // Calculate FPS
+    if len(ctx.frame_time_history) > 0 {
+        total_time := time.Duration(0)
+        for t in ctx.frame_time_history {
+            total_time += t
+        }
+        avg_time := total_time / time.Duration(len(ctx.frame_time_history))
+        ctx.avg_frame_time = avg_time
+        ctx.fps = 1.0 / time.duration_seconds(avg_time)
+    }
+
     ctx.frame_count += 1
+}
+
+// get_fps returns the current calculated FPS based on rolling average
+get_fps :: proc(ctx: ^Context) -> f32 {
+    return ctx.fps
+}
+
+// get_avg_frame_time returns the average frame time over recent frames
+get_avg_frame_time :: proc(ctx: ^Context) -> time.Duration {
+    return ctx.avg_frame_time
+}
+
+// get_last_frame_time returns the duration of the most recent frame
+get_last_frame_time :: proc(ctx: ^Context) -> time.Duration {
+    return ctx.last_frame_time
 }
 
 // poll_events reads and parses input events from the terminal
