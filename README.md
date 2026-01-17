@@ -57,6 +57,32 @@ odin build examples/hello_world.odin -file -out:examples/hello_world
 
 Press `Ctrl+C` to exit.
 
+### Testing
+
+```bash
+# Run all tests
+./build.sh test
+
+# Or run directly with Odin
+odin test ansuz -file
+
+# Run specific test
+odin test ansuz -file -define:ODIN_TEST_NAMES=ansuz.test_buffer_init_destroy
+```
+
+**Test Coverage:**
+- **buffer_test.odin**: 25 tests - Frame buffer operations
+- **colors_test.odin**: 56 tests - Color and style conversions
+- **event_test.odin**: 110 tests - Input event parsing and handling
+- **layout_test.odin**: 24 tests - Layout system calculations
+- **api_test.odin**: 18 tests - High-level API integration
+- **terminal_test.odin**: 27 tests - Terminal I/O operations
+- **edge_case_test.odin**: 38 tests - Edge cases and error handling
+
+**Total: 210 tests**
+
+All tests can be run locally and are designed to pass in headless environments where possible.
+
 ## Example Usage
 
 ```odin
