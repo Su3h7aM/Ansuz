@@ -157,7 +157,7 @@ _add_node :: proc(l_ctx: ^LayoutContext, config: LayoutConfig, is_container: boo
 
     node_idx := len(l_ctx.nodes)
 
-    if parent_idx != -1 && node_idx < len(l_ctx.nodes) {
+    if parent_idx != -1 && parent_idx < len(l_ctx.nodes) {
         parent := &l_ctx.nodes[parent_idx]
         if parent.first_child == -1 {
             parent.first_child = node_idx
