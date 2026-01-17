@@ -81,7 +81,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     ctx.buffer = buf
 
     // Initialize event buffer
-    ctx.event_buffer = init_event_buffer()
+    ctx.event_buffer = init_event_buffer(128, allocator)
 
     // Initialize layout context
     ctx.layout_ctx = init_layout_context(allocator)

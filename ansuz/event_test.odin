@@ -379,7 +379,7 @@ test_event_to_string_mouse :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_init :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(64)
+    buffer := init_event_buffer(64, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     testing.expect(t, len(buffer.events) == 0, "New buffer should be empty")
@@ -388,7 +388,7 @@ test_event_buffer_init :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_init_default :: proc(t: ^testing.T) {
-    buffer := init_event_buffer()
+    buffer := init_event_buffer(128, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     testing.expect(t, buffer.max_size == 128, "Default max size should be 128")
@@ -396,7 +396,7 @@ test_event_buffer_init_default :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_push_event :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     event: Event = KeyEvent{key = .Enter}
@@ -407,7 +407,7 @@ test_event_buffer_push_event :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_push_multiple :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     for i in 0 ..< 5 {
@@ -420,7 +420,7 @@ test_event_buffer_push_multiple :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_push_full :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(3)
+    buffer := init_event_buffer(3, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     event: Event = KeyEvent{key = .Enter}
@@ -435,7 +435,7 @@ test_event_buffer_push_full :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_pop_event :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     event_in: Event = KeyEvent{key = .Enter, rune = 'A'}
@@ -452,7 +452,7 @@ test_event_buffer_pop_event :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_pop_empty :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     event, available := pop_event(&buffer)
@@ -462,7 +462,7 @@ test_event_buffer_pop_empty :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_fifo_order :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     push_event(&buffer, KeyEvent{key = .Char, rune = '1'})
@@ -484,7 +484,7 @@ test_event_buffer_fifo_order :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_clear :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     for i in 0 ..< 5 {
@@ -500,7 +500,7 @@ test_event_buffer_clear :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_has_events :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     testing.expect(t, !has_events(&buffer), "Empty buffer should not have events")
@@ -512,7 +512,7 @@ test_event_buffer_has_events :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_destroy :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
 
     for i in 0 ..< 5 {
@@ -594,7 +594,7 @@ test_parse_input_preserves_modifiers_default :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_various_events :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
 
     push_event(&buffer, KeyEvent{key = .Char, rune = 'A'})

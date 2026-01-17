@@ -284,7 +284,7 @@ test_generate_style_sequence_edge_cases :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_overflow :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(3)
+    buffer := init_event_buffer(3, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     // Fill buffer to capacity
@@ -302,7 +302,7 @@ test_event_buffer_overflow :: proc(t: ^testing.T) {
 
 @(test)
 test_event_buffer_pop_from_empty :: proc(t: ^testing.T) {
-    buffer := init_event_buffer(10)
+    buffer := init_event_buffer(10, context.allocator)
     defer destroy_event_buffer(&buffer)
     
     event, available := pop_event(&buffer)

@@ -1,6 +1,7 @@
 package ansuz
 
 import "core:fmt"
+import "core:mem"
 
 // EventType categorizes different kinds of terminal events
 EventType :: enum {
@@ -206,19 +207,23 @@ event_to_string :: proc(event: Event) -> string {
 EventBuffer :: struct {
     events:  [dynamic]Event,
     max_size: int,
+    allocator: mem.Allocator,
 }
 
 // init_event_buffer creates a new event buffer
-init_event_buffer :: proc(max_size := 128) -> EventBuffer {
+init_event_buffer :: proc(max_size := 128, allocator := context.allocator) -> EventBuffer {
+    events := make([dynamic]Event, 0, max_size, allocator)
     return EventBuffer{
-        events = make([dynamic]Event, 0, max_size),
+        events = events,
         max_size = max_size,
+        allocator = allocator,
     }
 }
 
 // destroy_event_buffer frees the event buffer
 destroy_event_buffer :: proc(buffer: ^EventBuffer) {
     delete(buffer.events)
+    buffer.events = nil
 }
 
 // push_event adds an event to the buffer
