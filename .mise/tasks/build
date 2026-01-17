@@ -18,4 +18,10 @@ fi
 echo "Building hello_world..."
 odin build examples/hello_world.odin -file -out:examples/hello_world -debug
 
+echo "Building complex_demo..."
+odin build examples/complex_demo.odin -file -out:examples/complex_demo -debug
+
+echo "Building layout_demo..."
+odin build examples/layout_demo.odin -file -out:examples/layout_demo -debug
+
 echo "Build complete!"
