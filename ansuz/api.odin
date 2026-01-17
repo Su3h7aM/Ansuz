@@ -310,29 +310,34 @@ end_layout :: proc(ctx: ^Context) {
     finish_layout(&ctx.layout_ctx, ctx)
 }
 
-// layout_begin_container starts a new layout container
-layout_begin_container :: proc(ctx: ^Context, config: LayoutConfig) {
+// Layout_begin_container starts a new layout container
+Layout_begin_container :: proc(ctx: ^Context, config: LayoutConfig) {
     begin_container(&ctx.layout_ctx, config)
 }
 
-// layout_end_container ends the current layout container
-layout_end_container :: proc(ctx: ^Context) {
+// Layout_end_container ends the current layout container
+Layout_end_container :: proc(ctx: ^Context) {
     end_container(&ctx.layout_ctx)
 }
 
-// layout_text adds a text node to the current layout container
-layout_text :: proc(ctx: ^Context, content: string, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+// Layout_text adds a text node to the current layout container
+Layout_text :: proc(ctx: ^Context, content: string, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
     add_text(&ctx.layout_ctx, content, style, config)
 }
 
-// layout_box adds a bordered box node to the current layout container
-layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+// Layout_box adds a bordered box node to the current layout container
+Layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
     add_box(&ctx.layout_ctx, style, config)
 }
 
-// layout_rect adds a filled rectangular node to the current layout container
-layout_rect :: proc(ctx: ^Context, char: rune, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+// Layout_rect adds a filled rectangular node to the current layout container
+Layout_rect :: proc(ctx: ^Context, char: rune, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
     add_rect(&ctx.layout_ctx, char, style, config)
+}
+
+// Layout_end_box ends the current layout box
+Layout_end_box :: proc(ctx: ^Context) {
+    Layout_end_container(ctx)
 }
 
 // Predefined styles for convenience

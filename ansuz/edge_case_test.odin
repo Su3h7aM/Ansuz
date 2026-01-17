@@ -402,7 +402,7 @@ test_layout_one_child :: proc(t: ^testing.T) {
     reset_layout_context(&l_ctx, root_rect)
     
     begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-    add_text(&l_ctx, "Single", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Single", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
     
     _calculate_min_sizes(&l_ctx, 0)
@@ -421,7 +421,7 @@ test_layout_zero_sizing :: proc(t: ^testing.T) {
     reset_layout_context(&l_ctx, root_rect)
     
     begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-    add_text(&l_ctx, "", STYLE_NORMAL, {sizing = {sizing_fixed(0), sizing_fixed(0)}})
+    add_text(&l_ctx, "", STYLE_NORMAL, {sizing = {Sizing_fixed(0), Sizing_fixed(0)}})
     end_container(&l_ctx)
     
     _calculate_min_sizes(&l_ctx, 0)
@@ -441,7 +441,7 @@ test_layout_very_large_sizing :: proc(t: ^testing.T) {
     reset_layout_context(&l_ctx, root_rect)
     
     begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-    add_text(&l_ctx, "Large", STYLE_NORMAL, {sizing = {sizing_fixed(10000), sizing_fixed(10000)}})
+    add_text(&l_ctx, "Large", STYLE_NORMAL, {sizing = {Sizing_fixed(10000), Sizing_fixed(10000)}})
     end_container(&l_ctx)
     
     _calculate_min_sizes(&l_ctx, 0)

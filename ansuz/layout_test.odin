@@ -14,10 +14,10 @@ test_layout_basic :: proc(t: ^testing.T) {
     // Simple vertical layout with two growing items
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Item 1", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
-    add_text(&l_ctx, "Item 2", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Item 1", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
+    add_text(&l_ctx, "Item 2", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     // Pass 1: Min sizes
@@ -43,12 +43,12 @@ test_layout_padding_gap :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         padding = {left = 2, right = 2, top = 1, bottom = 1},
         gap = 1,
     })
-    add_box(&l_ctx, STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
-    add_box(&l_ctx, STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_box(&l_ctx, STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
+    add_box(&l_ctx, STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -77,11 +77,11 @@ test_layout_alignment :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         alignment = {horizontal = .Center, vertical = .Center},
     })
     // Fixed size item in a growing container should be centered
-    add_text(&l_ctx, "Centered", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Centered", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -97,30 +97,30 @@ test_layout_alignment :: proc(t: ^testing.T) {
 
 @(test)
 test_sizing_constructors :: proc(t: ^testing.T) {
-    fixed := sizing_fixed(100)
+    fixed := Sizing_fixed(100)
     testing.expect(t, fixed.type == .Fixed)
     testing.expect_value(t, fixed.value, 100.0)
 
-    percent := sizing_percent(0.5)
+    percent := Sizing_percent(0.5)
     testing.expect(t, percent.type == .Percent)
     testing.expect_value(t, percent.value, 0.5)
 
-    fit := sizing_fit()
+    fit := Sizing_fit()
     testing.expect(t, fit.type == .FitContent)
 
-    grow := sizing_grow()
+    grow := Sizing_grow()
     testing.expect(t, grow.type == .Grow)
 }
 
 @(test)
-test_padding_all :: proc(t: ^testing.T) {
-    padding := padding_all(5)
+test_Padding_all :: proc(t: ^testing.T) {
+    padding := Padding_all(5)
     testing.expect_value(t, padding.left, 5)
     testing.expect_value(t, padding.right, 5)
     testing.expect_value(t, padding.top, 5)
     testing.expect_value(t, padding.bottom, 5)
 
-    padding2 := padding_all(0)
+    padding2 := Padding_all(0)
     testing.expect_value(t, padding2.left, 0)
     testing.expect_value(t, padding2.right, 0)
 }
@@ -135,10 +135,10 @@ test_layout_horizontal_direction :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "A", STYLE_NORMAL, {sizing = {sizing_fixed(5), sizing_fixed(1)}})
-    add_text(&l_ctx, "B", STYLE_NORMAL, {sizing = {sizing_fixed(5), sizing_fixed(1)}})
+    add_text(&l_ctx, "A", STYLE_NORMAL, {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
+    add_text(&l_ctx, "B", STYLE_NORMAL, {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -161,10 +161,10 @@ test_layout_mixed_sizing :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Fixed", STYLE_NORMAL, {sizing = {sizing_fixed(20), sizing_fixed(1)}})
-    add_text(&l_ctx, "Grow", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Fixed", STYLE_NORMAL, {sizing = {Sizing_fixed(20), Sizing_fixed(1)}})
+    add_text(&l_ctx, "Grow", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -185,10 +185,10 @@ test_layout_percent_sizing :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Half", STYLE_NORMAL, {sizing = {sizing_percent(0.5), sizing_grow()}})
-    add_text(&l_ctx, "Half", STYLE_NORMAL, {sizing = {sizing_percent(0.5), sizing_grow()}})
+    add_text(&l_ctx, "Half", STYLE_NORMAL, {sizing = {Sizing_percent(0.5), Sizing_grow()}})
+    add_text(&l_ctx, "Half", STYLE_NORMAL, {sizing = {Sizing_percent(0.5), Sizing_grow()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -209,20 +209,20 @@ test_layout_nested_containers :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Top", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Top", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         padding = {left = 2, right = 2},
     })
-    add_text(&l_ctx, "A", STYLE_NORMAL, {sizing = {sizing_fixed(5), sizing_fixed(1)}})
-    add_text(&l_ctx, "B", STYLE_NORMAL, {sizing = {sizing_fixed(5), sizing_fixed(1)}})
+    add_text(&l_ctx, "A", STYLE_NORMAL, {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
+    add_text(&l_ctx, "B", STYLE_NORMAL, {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    add_text(&l_ctx, "Bottom", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Bottom", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -243,9 +243,9 @@ test_layout_single_child :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Only Child", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Only Child", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -267,7 +267,7 @@ test_layout_empty_container :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
     end_container(&l_ctx)
 
@@ -288,10 +288,10 @@ test_layout_alignment_left :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         alignment = {horizontal = .Left, vertical = .Top},
     })
-    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -312,10 +312,10 @@ test_layout_alignment_right :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         alignment = {horizontal = .Right, vertical = .Top},
     })
-    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -335,10 +335,10 @@ test_layout_alignment_bottom :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .LeftToRight,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
         alignment = {horizontal = .Left, vertical = .Bottom},
     })
-    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {sizing_fixed(10), sizing_fixed(1)}})
+    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -382,16 +382,16 @@ test_layout_multiple_containers :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Container 1", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Container 1", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Container 2", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_grow()}})
+    add_text(&l_ctx, "Container 2", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
     testing.expect(t, len(l_ctx.nodes) == 4, "Should have 4 nodes (2 containers + 2 children)")
@@ -407,9 +407,9 @@ test_layout_fit_content_width :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Hello", STYLE_NORMAL, {sizing = {sizing_fit(), sizing_grow()}})
+    add_text(&l_ctx, "Hello", STYLE_NORMAL, {sizing = {Sizing_fit(), Sizing_grow()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)
@@ -429,9 +429,9 @@ test_layout_fit_content_height :: proc(t: ^testing.T) {
 
     begin_container(&l_ctx, {
         direction = .TopToBottom,
-        sizing = {sizing_grow(), sizing_grow()},
+        sizing = {Sizing_grow(), Sizing_grow()},
     })
-    add_text(&l_ctx, "Line1", STYLE_NORMAL, {sizing = {sizing_grow(), sizing_fit()}})
+    add_text(&l_ctx, "Line1", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_fit()}})
     end_container(&l_ctx)
 
     _calculate_min_sizes(&l_ctx, 0)

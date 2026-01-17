@@ -125,9 +125,9 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	width, height := ansuz.get_size(ctx)
 
 	// Main container
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 		padding = {left = 1, right = 1, top = 0, bottom = 0},
 		gap = 1,
 	})
@@ -136,9 +136,9 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		render_header(ctx, state)
 
 		// Content area
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			gap = 2,
 			padding = {left = 0, right = 0, top = 0, bottom = 1},
 		})
@@ -149,32 +149,32 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 			// Main content (tabbed)
 			render_content_area(ctx, state)
 
-		ansuz.layout_end_container(ctx)
+		ansuz.Layout_end_container(ctx)
 
 		// Footer
 		render_footer(ctx, state)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)},
 		gap = 2,
-		padding = ansuz.padding_all(1),
+		padding = ansuz.Padding_all(1),
 		alignment = {horizontal = .Center, vertical = .Center},
 	})
 
 		// Title
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_fit(), ansuz.sizing_fixed(3)},
+			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_fixed(3)},
 			alignment = {horizontal = .Center, vertical = .Center},
 		})
-		ansuz.layout_text(ctx, "ANSUZ COMPLEX DEMO", get_theme_style(.Bold, state.theme_color))
-		ansuz.layout_text(ctx, "Terminal UI Library for Odin", ansuz.STYLE_DIM)
-		ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, "ANSUZ COMPLEX DEMO", get_theme_style(.Bold, state.theme_color))
+		ansuz.Layout_text(ctx, "Terminal UI Library for Odin", ansuz.STYLE_DIM)
+		ansuz.Layout_end_container(ctx)
 
 		// Stats
 		fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
@@ -182,61 +182,61 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		size_width, size_height := ansuz.get_size(ctx)
 		size_text := fmt.tprintf("Size: %dx%d", size_width, size_height)
 
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_fixed(25), ansuz.sizing_fixed(3)},
+			sizing = {ansuz.Sizing_fixed(25), ansuz.Sizing_fixed(3)},
 			alignment = {horizontal = .Right, vertical = .Center},
 			gap = 0,
 		})
-		ansuz.layout_text(ctx, fps_text, get_stat_style())
-		ansuz.layout_text(ctx, frame_text, get_stat_style())
-		ansuz.layout_text(ctx, size_text, get_stat_style())
-		ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, fps_text, get_stat_style())
+		ansuz.Layout_text(ctx, frame_text, get_stat_style())
+		ansuz.Layout_text(ctx, size_text, get_stat_style())
+		ansuz.Layout_end_container(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 
 	// Separator
-	ansuz.layout_rect(ctx, '─', ansuz.STYLE_DIM, {
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+	ansuz.Layout_rect(ctx, '─', ansuz.STYLE_DIM, {
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
 	})
 }
 
 render_sidebar :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_percent(0.25), ansuz.sizing_grow()},
+		sizing = {ansuz.Sizing_percent(0.25), ansuz.Sizing_grow()},
 		gap = 1,
-		padding = ansuz.padding_all(1),
+		padding = ansuz.Padding_all(1),
 	})
 
 		// Navigation
-		ansuz.layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(7)},
-			padding = ansuz.padding_all(1),
+		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(7)},
+			padding = ansuz.Padding_all(1),
 		})
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			gap = 1,
 		})
 		render_tab(ctx, "Dashboard", 0, state.selected_tab, state.theme_color)
 		render_tab(ctx, "Terminal", 1, state.selected_tab, state.theme_color)
 		render_tab(ctx, "Settings", 2, state.selected_tab, state.theme_color)
-		ansuz.layout_end_container(ctx)
+		ansuz.Layout_end_container(ctx)
 
 		// Theme selector
-		ansuz.layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
-			padding = ansuz.padding_all(1),
+		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
+			padding = ansuz.Padding_all(1),
 		})
-		ansuz.layout_text(ctx, "Theme Colors", ansuz.STYLE_BOLD)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "Theme Colors", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
 		render_theme_option(ctx, "Red Theme", 0, state.theme_color, state.theme_color)
 		render_theme_option(ctx, "Green Theme", 1, state.theme_color, state.theme_color)
 		render_theme_option(ctx, "Blue Theme", 2, state.theme_color, state.theme_color)
 		render_theme_option(ctx, "Yellow Theme", 3, state.theme_color, state.theme_color)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 	render_tab :: proc(ctx: ^ansuz.Context, label: string, index, selected, theme_color: int) {
@@ -251,7 +251,7 @@ render_sidebar :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	}
 	strings.write_string(&builder, label)
 
-	ansuz.layout_text(ctx, strings.to_string(builder), style)
+	ansuz.Layout_text(ctx, strings.to_string(builder), style)
 }
 
 	render_theme_option :: proc(ctx: ^ansuz.Context, label: string, index, selected, theme_color: int) {
@@ -266,15 +266,15 @@ render_sidebar :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	}
 	strings.write_string(&builder, label)
 
-	ansuz.layout_text(ctx, strings.to_string(builder), style)
+	ansuz.Layout_text(ctx, strings.to_string(builder), style)
 }
 
 render_content_area :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 		gap = 1,
-		padding = ansuz.padding_all(1),
+		padding = ansuz.Padding_all(1),
 	})
 
 		switch state.selected_tab {
@@ -286,149 +286,149 @@ render_content_area :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 			render_settings_tab(ctx, state)
 		}
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	// Progress section
-		ansuz.layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
-			padding = ansuz.padding_all(1),
+		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
+			padding = ansuz.Padding_all(1),
 		})
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 		gap = 1,
 	})
-		ansuz.layout_text(ctx, "System Status", ansuz.STYLE_BOLD)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "System Status", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
 
 		// Progress bar
-		ansuz.layout_text(ctx, "Processing:", ansuz.STYLE_NORMAL)
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_text(ctx, "Processing:", ansuz.STYLE_NORMAL)
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)},
 			gap = 1,
 		})
 			// Progress bar container
-			ansuz.layout_begin_container(ctx, {
+			ansuz.Layout_begin_container(ctx, {
 				direction = .LeftToRight,
-				sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+				sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			})
 				// Progress fill (draws first, fills from left)
 				if state.progress > 0 {
-					ansuz.layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
-						sizing = {ansuz.sizing_percent(state.progress), ansuz.sizing_grow()},
+					ansuz.Layout_rect(ctx, '█', get_theme_style(.Normal, state.theme_color), {
+						sizing = {ansuz.Sizing_percent(state.progress), ansuz.Sizing_grow()},
 					})
 				}
 				// Progress background (empty space to the right)
-				ansuz.layout_rect(ctx, '░', ansuz.STYLE_DIM, {
-					sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+				ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
+					sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 				})
-			ansuz.layout_end_container(ctx)
+			ansuz.Layout_end_container(ctx)
 			// Percentage text
-			ansuz.layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_NORMAL)
-		ansuz.layout_end_container(ctx)
+			ansuz.Layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_NORMAL)
+		ansuz.Layout_end_container(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 
 	// Stats boxes
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 		gap = 1,
 	})
 		render_stat_box(ctx, "CPU Usage", "45%", ansuz.STYLE_INFO)
 		render_stat_box(ctx, "Memory", "2.4 GB", ansuz.STYLE_SUCCESS)
 		render_stat_box(ctx, "Network", "1.2 MB/s", ansuz.STYLE_WARNING)
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_stat_box :: proc(ctx: ^ansuz.Context, label: string, value: string, style: ansuz.Style) {
-	ansuz.layout_box(ctx, style, {
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
-		padding = ansuz.padding_all(1),
+	ansuz.Layout_box(ctx, style, {
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
+		padding = ansuz.Padding_all(1),
 	})
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 		alignment = {horizontal = .Center, vertical = .Center},
 	})
-		ansuz.layout_text(ctx, label, ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, value, style)
-	ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, label, ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, value, style)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_terminal_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
-		padding = ansuz.padding_all(1),
+	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+		padding = ansuz.Padding_all(1),
 	})
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 	})
-		ansuz.layout_text(ctx, "Terminal Output", ansuz.STYLE_BOLD)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "$ ./ansuz_demo", ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "> Initializing system...", ansuz.STYLE_SUCCESS)
-		ansuz.layout_text(ctx, "> Loading modules...", ansuz.STYLE_SUCCESS)
-		ansuz.layout_text(ctx, "> Starting services...", ansuz.STYLE_SUCCESS)
-		ansuz.layout_text(ctx, "> Ready!", ansuz.STYLE_SUCCESS)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "Press Tab to cycle views", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "Press Arrow keys to navigate", ansuz.STYLE_DIM)
-	ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, "Terminal Output", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "$ ./ansuz_demo", ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "> Initializing system...", ansuz.STYLE_SUCCESS)
+		ansuz.Layout_text(ctx, "> Loading modules...", ansuz.STYLE_SUCCESS)
+		ansuz.Layout_text(ctx, "> Starting services...", ansuz.STYLE_SUCCESS)
+		ansuz.Layout_text(ctx, "> Ready!", ansuz.STYLE_SUCCESS)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "Press Tab to cycle views", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "Press Arrow keys to navigate", ansuz.STYLE_DIM)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_settings_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
-		padding = ansuz.padding_all(1),
+	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+		padding = ansuz.Padding_all(1),
 	})
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 		gap = 1,
 	})
-		ansuz.layout_text(ctx, "Settings", ansuz.STYLE_BOLD)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "[x] Enable animations", ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "[ ] Enable sounds", ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "[x] Show FPS counter", ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "[ ] Debug mode", ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "Settings", ansuz.STYLE_BOLD)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "[x] Enable animations", ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "[ ] Enable sounds", ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "[x] Show FPS counter", ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "[ ] Debug mode", ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
 		theme_names := [?]string{"Red", "Green", "Blue", "Yellow"}
 		theme_text := fmt.tprintf("Theme: %s", theme_names[state.theme_color])
-		ansuz.layout_text(ctx, theme_text, ansuz.STYLE_NORMAL)
-		ansuz.layout_text(ctx, "Font size: 12px", ansuz.STYLE_NORMAL)
-	ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, theme_text, ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, "Font size: 12px", ansuz.STYLE_NORMAL)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_footer :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.layout_begin_container(ctx, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
-		sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
 		padding = {left = 1, right = 1, top = 0, bottom = 0},
 	})
 
 		// Left side: Controls
-		ansuz.layout_begin_container(ctx, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_fit(), ansuz.sizing_grow()},
+			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_grow()},
 			gap = 2,
 			alignment = {horizontal = .Left, vertical = .Center},
 		})
-		ansuz.layout_text(ctx, "[Tab] Views", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "[←→] Tabs", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "[↑↓] Theme", ansuz.STYLE_DIM)
-		ansuz.layout_text(ctx, "[Q] Quit", ansuz.STYLE_WARNING)
-		ansuz.layout_end_container(ctx)
+		ansuz.Layout_text(ctx, "[Tab] Views", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "[←→] Tabs", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "[↑↓] Theme", ansuz.STYLE_DIM)
+		ansuz.Layout_text(ctx, "[Q] Quit", ansuz.STYLE_WARNING)
+		ansuz.Layout_end_container(ctx)
 
 		// Right side: Status
-		ansuz.layout_text(ctx, "● Connected", ansuz.STYLE_SUCCESS)
+		ansuz.Layout_text(ctx, "● Connected", ansuz.STYLE_SUCCESS)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 // Helper functions

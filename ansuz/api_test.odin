@@ -102,19 +102,19 @@ test_begin_end_frame_api_signature :: proc(t: ^testing.T) {
 test_layout_api_signatures :: proc(t: ^testing.T) {
     begin_layout_proc := begin_layout
     end_layout_proc := end_layout
-    begin_container_proc := layout_begin_container
-    end_container_proc := layout_end_container
-    text_proc := layout_text
-    box_proc := layout_box
-    rect_proc := layout_rect
+    begin_container_proc := Layout_begin_container
+    end_container_proc := Layout_end_container
+    text_proc := Layout_text
+    box_proc := Layout_box
+    rect_proc := Layout_rect
     
     testing.expect(t, begin_layout_proc != nil, "begin_layout function should exist")
     testing.expect(t, end_layout_proc != nil, "end_layout function should exist")
-    testing.expect(t, begin_container_proc != nil, "layout_begin_container function should exist")
-    testing.expect(t, end_container_proc != nil, "layout_end_container function should exist")
-    testing.expect(t, text_proc != nil, "layout_text function should exist")
-    testing.expect(t, box_proc != nil, "layout_box function should exist")
-    testing.expect(t, rect_proc != nil, "layout_rect function should exist")
+    testing.expect(t, begin_container_proc != nil, "Layout_begin_container function should exist")
+    testing.expect(t, end_container_proc != nil, "Layout_end_container function should exist")
+    testing.expect(t, text_proc != nil, "Layout_text function should exist")
+    testing.expect(t, box_proc != nil, "Layout_box function should exist")
+    testing.expect(t, rect_proc != nil, "Layout_rect function should exist")
 }
 
 @(test)
