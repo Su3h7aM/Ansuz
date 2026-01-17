@@ -135,13 +135,19 @@ begin_frame :: proc(ctx: ^Context) {
 // end_frame finishes the current frame and outputs to terminal
 // In immediate mode, we render the entire buffer every frame
 end_frame :: proc(ctx: ^Context) {
+    // Hide cursor during render to prevent flicker
+    hide_cursor()
+
     // Generate full render output
     output := render_to_string(&ctx.buffer, context.temp_allocator)
-    
+
     // Write to terminal
     write_ansi(output)
     flush_output()
-    
+
+    // Show cursor again
+    show_cursor()
+
     ctx.frame_count += 1
 }
 
