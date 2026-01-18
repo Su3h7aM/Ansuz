@@ -5,5 +5,5 @@
 set -euo pipefail
 
 echo "Cleaning build artifacts..."
-rm -f examples/hello_world examples/complex_demo examples/layout_demo examples/btop_demo
+rm -rf bin/
 echo "Clean complete!"

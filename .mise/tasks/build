@@ -2,7 +2,7 @@
 #MISE description="Build Ansuz examples"
 #MISE alias="b"
 #MISE sources=["ansuz/**/*.odin", "examples/**/*.odin"]
-#MISE outputs=["examples/hello_world", "examples/complex_demo", "examples/layout_demo", "examples/btop_demo"]
+#MISE outputs=["bin/hello_world", "bin/complex_demo", "bin/layout_demo", "bin/btop_demo"]
 
 set -euo pipefail
 
@@ -34,20 +34,22 @@ fi
 
 if [[ "$CLEAN" == "1" ]]; then
     echo "Cleaning build artifacts..."
-    rm -f examples/hello_world examples/complex_demo examples/layout_demo examples/btop_demo
+    rm -f bin/hello_world bin/complex_demo bin/layout_demo bin/btop_demo
     echo "Clean complete."
 fi
 
+mkdir -p bin
+
 echo "Building hello_world..."
-odin build examples/hello_world.odin -file -out:examples/hello_world -debug
+odin build examples/hello_world.odin -file -out:bin/hello_world -debug
 
 echo "Building complex_demo..."
-odin build examples/complex_demo.odin -file -out:examples/complex_demo -debug
+odin build examples/complex_demo.odin -file -out:bin/complex_demo -debug
 
 echo "Building layout_demo..."
-odin build examples/layout_demo.odin -file -out:examples/layout_demo -debug
+odin build examples/layout_demo.odin -file -out:bin/layout_demo -debug
 
 echo "Building btop_demo..."
-odin build examples/btop_demo.odin -file -out:examples/btop_demo -debug
+odin build examples/btop_demo.odin -file -out:bin/btop_demo -debug
 
 echo "Build complete!"

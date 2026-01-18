@@ -41,8 +41,6 @@ luac.out
 
 # Odin specific
 *.bin
-hello_world
-examples/hello_world
-examples/layout_demo
+bin/
 test_build*
 
