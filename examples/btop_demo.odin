@@ -37,7 +37,19 @@ ProcessInfo :: struct {
 	mem:     f32,
 }
 
-main :: proc() {
+// Predefined color styles for each section
+STYLE_CPU :: ansuz.Style{.Cyan, .Default, {}}
+STYLE_CPU_DIM :: ansuz.Style{.Cyan, .Default, {.Dim}}
+STYLE_MEM :: ansuz.Style{.Green, .Default, {}}
+STYLE_MEM_DIM :: ansuz.Style{.Green, .Default, {.Dim}}
+STYLE_NET :: ansuz.Style{.Yellow, .Default, {}}
+STYLE_NET_DIM :: ansuz.Style{.Yellow, .Default, {.Dim}}
+STYLE_PROC :: ansuz.Style{.Magenta, .Default, {}}
+STYLE_PROC_DIM :: ansuz.Style{.Magenta, .Default, {.Dim}}
+STYLE_HEADER :: ansuz.Style{.BrightCyan, .Default, {.Bold}}
+STYLE_FOOTER :: ansuz.Style{.BrightBlack, .Default, {.Dim}}
+	
+	main :: proc() {
 	ctx, err := ansuz.init()
 	if err != .None {
 		fmt.eprintln("Failed to initialize Ansuz:", err)
@@ -157,68 +169,56 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 }
 
 render_header :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_BOLD, {
+	ansuz.Layout_box(ctx, STYLE_HEADER, {
 		direction = .LeftToRight,
 		padding = {1, 1, 1, 1},
 	})
 
-	ansuz.Layout_text(ctx, "BTOP SIMULATOR", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "BTOP SIMULATOR", STYLE_HEADER)
 
-	// FPS display (use different style to separate)
+	// FPS display
 	fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
-	ansuz.Layout_text(ctx, fps_text, ansuz.STYLE_NORMAL)
+	ansuz.Layout_text(ctx, fps_text, STYLE_HEADER)
 
 	ansuz.Layout_end_box(ctx)
 }
 
 render_footer :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_FOOTER, {
 		direction = .LeftToRight,
 		padding = {0, 1, 0, 1},
 	})
 
-	tabs := []string{"CPU", "MEM", "NET", "PROC"}
-	for tab, i in tabs {
-		style := ansuz.STYLE_NORMAL
-		if i == state.selected_tab {
-			style = ansuz.STYLE_BOLD
-		}
-		ansuz.Layout_text(ctx, fmt.tprintf("[%s]", tab), style)
-		if i < len(tabs) - 1 {
-			ansuz.Layout_text(ctx, " ", ansuz.STYLE_NORMAL)
-		}
-	}
-
-	ansuz.Layout_text(ctx, " | [Tab] Switch | [Esc] Quit", ansuz.STYLE_DIM)
+	ansuz.Layout_text(ctx, "[q] Quit", STYLE_FOOTER)
 
 	ansuz.Layout_end_box(ctx)
 }
 
 // Placeholder functions for each view
 render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 	})
 
 	// Title
-	ansuz.Layout_text(ctx, "CPU USAGE", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "CPU", STYLE_CPU_DIM)
 
 	// CPU bars
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .TopToBottom,
-		padding = {1, 1, 1, 1},
+		padding = {0, 0, 0, 0},
 	})
 
 	for i in 0..<8 {
 		usage := state.cpu_usage[i]
 
 		// CPU label and percentage
-		label := fmt.tprintf("CPU%d: %.1f%%", i, usage)
-		ansuz.Layout_text(ctx, label, ansuz.STYLE_NORMAL)
+		label := fmt.tprintf("Core %d: %.1f%%", i, usage)
+		ansuz.Layout_text(ctx, label, STYLE_CPU)
 
 		// Progress bar
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
 	})
@@ -227,7 +227,7 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	if usage > 0 {
 		fill_width := int(usage / 100.0 * 20.0)  // 20 chars wide
 		if fill_width > 0 {
-			ansuz.Layout_rect(ctx, '█', ansuz.STYLE_NORMAL, {
+			ansuz.Layout_rect(ctx, '█', STYLE_CPU, {
 				sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
 			})
 			ansuz.Layout_end_rect(ctx)
@@ -237,7 +237,7 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	// Empty portion
 	empty_width := 20 - int(usage / 100.0 * 20.0)
 	if empty_width > 0 {
-		ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
+		ansuz.Layout_rect(ctx, '░', STYLE_CPU_DIM, {
 			sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
 		})
 		ansuz.Layout_end_rect(ctx)
@@ -252,38 +252,38 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 }
 
 render_mem_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_MEM, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 	})
 
 	// Title
-	ansuz.Layout_text(ctx, "MEMORY USAGE", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "MEMORY", STYLE_MEM_DIM)
 
 	// Memory info
 	mem_percent := state.mem_used / state.mem_total * 100.0
-	mem_text := fmt.tprintf("RAM: %.1f/%.1f GB (%.1f%%)", state.mem_used, state.mem_total, mem_percent)
-	ansuz.Layout_text(ctx, mem_text, ansuz.STYLE_NORMAL)
+	mem_text := fmt.tprintf("%.1f/%.1f GB", state.mem_used, state.mem_total)
+	ansuz.Layout_text(ctx, mem_text, STYLE_MEM)
 
 	// Memory bar
-	render_progress_bar(ctx, mem_percent)
+	render_progress_bar(ctx, mem_percent, STYLE_MEM, STYLE_MEM_DIM)
 
 	// Swap info
 	if state.swap_total > 0 {
 		swap_percent := state.swap_used / state.swap_total * 100.0
-		swap_text := fmt.tprintf("SWAP: %.1f/%.1f GB (%.1f%%)", state.swap_used, state.swap_total, swap_percent)
-		ansuz.Layout_text(ctx, swap_text, ansuz.STYLE_NORMAL)
+		swap_text := fmt.tprintf("SWAP: %.1f/%.1f GB", state.swap_used, state.swap_total)
+		ansuz.Layout_text(ctx, swap_text, STYLE_MEM_DIM)
 
 		// Swap bar
-		render_progress_bar(ctx, swap_percent)
+		render_progress_bar(ctx, swap_percent, STYLE_MEM_DIM, STYLE_MEM_DIM)
 	}
 
 	ansuz.Layout_end_box(ctx)
 }
 
 // Helper for progress bars
-render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32, fill_style: ansuz.Style, empty_style: ansuz.Style) {
+	ansuz.Layout_box(ctx, fill_style, {
 		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
 	})
@@ -293,13 +293,13 @@ render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32) {
 	empty_width := bar_width - fill_width
 
 	if fill_width > 0 {
-		ansuz.Layout_rect(ctx, '█', ansuz.STYLE_NORMAL, {
+		ansuz.Layout_rect(ctx, '█', fill_style, {
 			sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
 		})
 		ansuz.Layout_end_rect(ctx)
 	}
 	if empty_width > 0 {
-		ansuz.Layout_rect(ctx, '░', ansuz.STYLE_DIM, {
+		ansuz.Layout_rect(ctx, '░', empty_style, {
 			sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
 		})
 		ansuz.Layout_end_rect(ctx)
@@ -309,40 +309,40 @@ render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32) {
 }
 
 render_net_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_NET, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 	})
 
 	// Title
-	ansuz.Layout_text(ctx, "NETWORK TRAFFIC", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "NETWORK", STYLE_NET_DIM)
 
 	// Current rates
 	rx_text := fmt.tprintf("RX: %.1f MB/s", state.net_rx)
 	tx_text := fmt.tprintf("TX: %.1f MB/s", state.net_tx)
 
-	ansuz.Layout_text(ctx, rx_text, ansuz.STYLE_NORMAL)
-	ansuz.Layout_text(ctx, tx_text, ansuz.STYLE_NORMAL)
+	ansuz.Layout_text(ctx, rx_text, STYLE_NET)
+	ansuz.Layout_text(ctx, tx_text, STYLE_NET)
 
 	// Simple sparkline graphs
 	if len(state.net_rx_history) > 0 {
-		ansuz.Layout_text(ctx, "RX History:", ansuz.STYLE_NORMAL)
-		render_sparkline(ctx, state.net_rx_history[:])
+		ansuz.Layout_text(ctx, "RX:", STYLE_NET_DIM)
+		render_sparkline(ctx, state.net_rx_history[:], STYLE_NET, STYLE_NET_DIM)
 
-		ansuz.Layout_text(ctx, "TX History:", ansuz.STYLE_NORMAL)
-		render_sparkline(ctx, state.net_tx_history[:])
+		ansuz.Layout_text(ctx, "TX:", STYLE_NET_DIM)
+		render_sparkline(ctx, state.net_tx_history[:], STYLE_NET, STYLE_NET_DIM)
 	}
 
 	ansuz.Layout_end_box(ctx)
 }
 
 // Simple sparkline renderer
-render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32) {
+render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32, fill_style: ansuz.Style, empty_style: ansuz.Style) {
 	if len(values) == 0 {
 		return
 	}
 
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, fill_style, {
 		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
 	})
@@ -376,30 +376,30 @@ render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32) {
 		case: char = '█'
 		}
 
-		ansuz.Layout_text(ctx, fmt.tprintf("%c", char), ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, fmt.tprintf("%c", char), fill_style)
 	}
 
 	ansuz.Layout_end_box(ctx)
 }
 
 render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_box(ctx, STYLE_PROC, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 	})
 
 	// Title
-	ansuz.Layout_text(ctx, "PROCESS LIST", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "PROCESSES", STYLE_PROC_DIM)
 
 // Header
-	ansuz.Layout_box(ctx, ansuz.STYLE_BOLD, {
+	ansuz.Layout_box(ctx, STYLE_PROC, {
 		direction = .LeftToRight,
 		padding = {1, 1, 1, 1},
 	})
-	ansuz.Layout_text(ctx, "PID", ansuz.STYLE_BOLD)
-	ansuz.Layout_text(ctx, "     NAME", ansuz.STYLE_BOLD)
-	ansuz.Layout_text(ctx, "   CPU%", ansuz.STYLE_BOLD)
-	ansuz.Layout_text(ctx, "   MEM%", ansuz.STYLE_BOLD)
+	ansuz.Layout_text(ctx, "PID", STYLE_PROC_DIM)
+	ansuz.Layout_text(ctx, "     NAME", STYLE_PROC_DIM)
+	ansuz.Layout_text(ctx, "   CPU%", STYLE_PROC_DIM)
+	ansuz.Layout_text(ctx, "   MEM%", STYLE_PROC_DIM)
 	ansuz.Layout_end_box(ctx)
 
 	// Process list (show first 10)
@@ -407,7 +407,7 @@ render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	for i in 0..<display_count {
 		process := state.processes[i]
 
-		ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		ansuz.Layout_box(ctx, STYLE_PROC, {
 			direction = .LeftToRight,
 			padding = {0, 0, 0, 0},
 		})
@@ -417,17 +417,17 @@ render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 		cpu_text := fmt.tprintf("%6.1f", process.cpu)
 		mem_text := fmt.tprintf("%6.1f", process.mem)
 
-		ansuz.Layout_text(ctx, pid_text, ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, name_text, ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, cpu_text, ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, mem_text, ansuz.STYLE_NORMAL)
+		ansuz.Layout_text(ctx, pid_text, STYLE_PROC)
+		ansuz.Layout_text(ctx, name_text, STYLE_PROC)
+		ansuz.Layout_text(ctx, cpu_text, STYLE_PROC)
+		ansuz.Layout_text(ctx, mem_text, STYLE_PROC)
 
 		ansuz.Layout_end_box(ctx)
 	}
 
 	if len(state.processes) > 10 {
-		more_text := fmt.tprintf("... and %d more processes", len(state.processes) - 10)
-		ansuz.Layout_text(ctx, more_text, ansuz.STYLE_DIM)
+		more_text := fmt.tprintf("... and %d more", len(state.processes) - 10)
+		ansuz.Layout_text(ctx, more_text, STYLE_PROC_DIM)
 	}
 
 	ansuz.Layout_end_box(ctx)
