@@ -136,12 +136,12 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		render_header(ctx, state)
 
 		// Content area
-		ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .LeftToRight,
 			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			gap = 2,
 			padding = {left = 0, right = 0, top = 0, bottom = 1},
-		}, .Rounded)
+		})
 
 			// Left sidebar
 			render_sidebar(ctx, state)
@@ -149,32 +149,36 @@ render_demo :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 			// Main content (tabbed)
 			render_content_area(ctx, state)
 
-		ansuz.Layout_end_box(ctx)
+		ansuz.Layout_end_container(ctx)
 
 		// Footer
+		ansuz.Layout_rect(ctx, '─', ansuz.STYLE_DIM, {
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
+		})
+		ansuz.Layout_end_rect(ctx)
 		render_footer(ctx, state)
 
 	ansuz.Layout_end_box(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)},
 		gap = 2,
 		padding = ansuz.Padding_all(1),
 		alignment = {horizontal = .Center, vertical = .Center},
-	}, .Rounded)
+	})
 
 		// Title
-		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_fixed(3)},
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)}, // Changed to grow to fill space between logo and stats
 			alignment = {horizontal = .Center, vertical = .Center},
-		}, .Rounded)
+		})
 			ansuz.Layout_text(ctx, "ANSUZ COMPLEX DEMO", get_theme_style(.Bold, state.theme_color))
 			ansuz.Layout_text(ctx, "Terminal UI Library for Odin", ansuz.STYLE_DIM)
-		ansuz.Layout_end_box(ctx)
+		ansuz.Layout_end_container(ctx)
 
 		// Stats
 		fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
@@ -182,18 +186,18 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		size_width, size_height := ansuz.get_size(ctx)
 		size_text := fmt.tprintf("Size: %dx%d", size_width, size_height)
 
-		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_fixed(25), ansuz.Sizing_fixed(3)},
+			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_fixed(3)},
 			alignment = {horizontal = .Right, vertical = .Center},
 			gap = 0,
-		}, .Rounded)
+		})
 			ansuz.Layout_text(ctx, fps_text, get_stat_style())
 			ansuz.Layout_text(ctx, frame_text, get_stat_style())
 			ansuz.Layout_text(ctx, size_text, get_stat_style())
-		ansuz.Layout_end_box(ctx)
+		ansuz.Layout_end_container(ctx)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 
 	// Separator
 	ansuz.Layout_rect(ctx, '─', ansuz.STYLE_DIM, {
@@ -278,11 +282,11 @@ render_content_area :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 
 render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 	// Progress section
-	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 		padding = ansuz.Padding_all(1),
-	}, .Rounded)
+	})
 
 		ansuz.Layout_text(ctx, "System Status", ansuz.STYLE_BOLD)
 		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
@@ -290,10 +294,10 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		// Progress bar
 		ansuz.Layout_text(ctx, "Processing:", ansuz.STYLE_NORMAL)
 
-		ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .LeftToRight,
 			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
-		}, .Rounded)
+		})
 
 			// Progress fill (draws first, fills from left)
 			if state.progress > 0 {
@@ -308,25 +312,28 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 			})
 			ansuz.Layout_end_rect(ctx)
 
-		ansuz.Layout_end_box(ctx)
+		ansuz.Layout_end_container(ctx)
+
+
+
 
 		// Percentage text
 		ansuz.Layout_text(ctx, fmt.tprintf("%.0f%% Complete", state.progress * 100), ansuz.STYLE_NORMAL)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 		gap = 1,
 		padding = ansuz.Padding_all(1),
-	}, .Rounded)
+	})
 
 		render_stat_box(ctx, "CPU Usage", "45%", ansuz.STYLE_INFO)
 		render_stat_box(ctx, "Memory", "2.4 GB", ansuz.STYLE_SUCCESS)
 		render_stat_box(ctx, "Network", "1.2 MB/s", ansuz.STYLE_WARNING)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_stat_box :: proc(ctx: ^ansuz.Context, label: string, value: string, style: ansuz.Style) {
@@ -340,15 +347,15 @@ render_stat_box :: proc(ctx: ^ansuz.Context, label: string, value: string, style
 		ansuz.Layout_text(ctx, label, ansuz.STYLE_DIM)
 		ansuz.Layout_text(ctx, value, style)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_terminal_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 		padding = ansuz.Padding_all(1),
-	}, .Rounded)
+	})
 
 		ansuz.Layout_text(ctx, "Terminal Output", ansuz.STYLE_BOLD)
 		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
@@ -361,15 +368,15 @@ render_terminal_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		ansuz.Layout_text(ctx, "Press Tab to cycle views", ansuz.STYLE_DIM)
 		ansuz.Layout_text(ctx, "Press Arrow keys to navigate", ansuz.STYLE_DIM)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_settings_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.Layout_box(ctx, get_theme_style(.Normal, state.theme_color), {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 		padding = ansuz.Padding_all(1),
-	}, .Rounded)
+	})
 
 		ansuz.Layout_text(ctx, "Settings", ansuz.STYLE_BOLD)
 		ansuz.Layout_text(ctx, "", ansuz.STYLE_DIM)
@@ -383,33 +390,33 @@ render_settings_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		ansuz.Layout_text(ctx, theme_text, ansuz.STYLE_NORMAL)
 		ansuz.Layout_text(ctx, "Font size: 12px", ansuz.STYLE_NORMAL)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 render_footer :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .LeftToRight,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
 		padding = {left = 1, right = 1, top = 0, bottom = 0},
-	}, .Rounded)
+	})
 
 		// Left side: Controls
-		ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		ansuz.Layout_begin_container(ctx, {
 			direction = .LeftToRight,
 			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_grow()},
 			gap = 2,
 			alignment = {horizontal = .Left, vertical = .Center},
-		}, .Rounded)
+		})
 			ansuz.Layout_text(ctx, "[Tab] Views", ansuz.STYLE_DIM)
 			ansuz.Layout_text(ctx, "[←→] Tabs", ansuz.STYLE_DIM)
 			ansuz.Layout_text(ctx, "[↑↓] Theme", ansuz.STYLE_DIM)
 			ansuz.Layout_text(ctx, "[Q] Quit", ansuz.STYLE_WARNING)
-		ansuz.Layout_end_box(ctx)
+		ansuz.Layout_end_container(ctx)
 
 		// Right side: Status
 		ansuz.Layout_text(ctx, "● Connected", ansuz.STYLE_SUCCESS)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 }
 
 // Helper functions

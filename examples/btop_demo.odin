@@ -38,14 +38,15 @@ ProcessInfo :: struct {
 }
 
 // Predefined color styles for each section
-STYLE_CPU :: ansuz.Style{.Cyan, .Default, {}}
-STYLE_CPU_DIM :: ansuz.Style{.Cyan, .Default, {.Dim}}
+// Predefined color styles for each section
+STYLE_CPU :: ansuz.Style{.Magenta, .Default, {}}
+STYLE_CPU_DIM :: ansuz.Style{.Magenta, .Default, {.Dim}}
 STYLE_MEM :: ansuz.Style{.Green, .Default, {}}
 STYLE_MEM_DIM :: ansuz.Style{.Green, .Default, {.Dim}}
-STYLE_NET :: ansuz.Style{.Yellow, .Default, {}}
-STYLE_NET_DIM :: ansuz.Style{.Yellow, .Default, {.Dim}}
-STYLE_PROC :: ansuz.Style{.Magenta, .Default, {}}
-STYLE_PROC_DIM :: ansuz.Style{.Magenta, .Default, {.Dim}}
+STYLE_NET :: ansuz.Style{.Red, .Default, {}}
+STYLE_NET_DIM :: ansuz.Style{.Red, .Default, {.Dim}}
+STYLE_PROC :: ansuz.Style{.Cyan, .Default, {}}
+STYLE_PROC_DIM :: ansuz.Style{.Cyan, .Default, {.Dim}}
 STYLE_HEADER :: ansuz.Style{.BrightCyan, .Default, {.Bold}}
 STYLE_FOOTER :: ansuz.Style{.BrightBlack, .Default, {.Dim}}
 	
@@ -118,69 +119,60 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.begin_layout(ctx)
 
 	// Main container for all content
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	}, .Rounded)
+	})
 
-	// Header
-	render_header(ctx, state)
-
-	// Container for all 4 sections in 2x2 grid
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
-		direction = .LeftToRight,
-		padding = {1, 1, 1, 1},
-		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	}, .Rounded)
-
-	// Left column: CPU and Memory
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
-		direction = .TopToBottom,
-		padding = {0, 0, 0, 0},
-		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	}, .Rounded)
-
+	// 1. Top Section: CPU (Full Width)
 	render_cpu_view(ctx, state)
-	render_mem_view(ctx, state)
 
-	ansuz.Layout_end_box(ctx)
-
-	// Right column: Network and Processes
-	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
-		direction = .TopToBottom,
+	// 2. Bottom Section: Split Columns
+	ansuz.Layout_begin_container(ctx, {
+		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	}, .Rounded)
+		gap = 1, 
+	})
 
-	render_net_view(ctx, state)
-	render_proc_view(ctx, state)
+		// Left Column: Memory and Network
+		ansuz.Layout_begin_container(ctx, {
+			direction = .TopToBottom,
+			padding = {0, 0, 0, 0},
+			sizing = {ansuz.Sizing_percent(0.5), ansuz.Sizing_grow()},
+			gap = 1,
+		})
+			render_mem_view(ctx, state)
+			render_net_view(ctx, state)
+		ansuz.Layout_end_container(ctx)
 
-	ansuz.Layout_end_box(ctx)
+		// Right Column: Processes
+		ansuz.Layout_begin_container(ctx, {
+			direction = .TopToBottom,
+			padding = {0, 0, 0, 0},
+			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+		})
+			render_proc_view(ctx, state)
+		ansuz.Layout_end_container(ctx)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 
 	// Footer with controls
 	render_footer(ctx, state)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.Layout_end_container(ctx)
 
 	ansuz.end_layout(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
-	ansuz.Layout_box(ctx, STYLE_HEADER, {
-		direction = .LeftToRight,
-		padding = {1, 1, 1, 1},
-	}, .Rounded)
-
-	ansuz.Layout_text(ctx, "BTOP SIMULATOR", STYLE_HEADER)
-
-	// FPS display
-	fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
-	ansuz.Layout_text(ctx, fps_text, STYLE_HEADER)
-
-	ansuz.Layout_end_box(ctx)
+    // Header is now integrated into components or removed/simplified
+    // We will just draw a simple text line if needed, but the screenshot shows
+    // titles inside the boxes. We can remove this separate header function's usage
+    // or repurpose it.
+    // For now, let's remove its explicit call from main layout and perhaps
+    // use it to draw the top "logo" line if we want, but better to follow screenshot layout.
 }
 
 render_footer :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
@@ -204,50 +196,60 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	// Title
 	ansuz.Layout_text(ctx, "CPU", STYLE_CPU_DIM)
 
-	// CPU bars
-	ansuz.Layout_box(ctx, STYLE_CPU, {
+    // Layout tweak: Horizontal bars for cores
+	ansuz.Layout_begin_container(ctx, {
 		direction = .TopToBottom,
 		padding = {0, 0, 0, 0},
-	}, .Rounded)
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}, 
+	})
 
 	for i in 0..<8 {
 		usage := state.cpu_usage[i]
+        
+        // Horizontal container for Label + Bar
+	    ansuz.Layout_begin_container(ctx, {
+		    direction = .LeftToRight,
+		    padding = {0, 0, 0, 0},
+            sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
+            gap = 1,
+	    })
 
 		// CPU label and percentage
 		label := fmt.tprintf("Core %d: %.1f%%", i, usage)
 		ansuz.Layout_text(ctx, label, STYLE_CPU)
 
-		// Progress bar
-	ansuz.Layout_box(ctx, STYLE_CPU, {
-		direction = .LeftToRight,
-		padding = {0, 0, 0, 0},
-        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
-	})
+		// Progress bar container
+        ansuz.Layout_begin_container(ctx, {
+            direction = .LeftToRight,
+            sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
+        })
 
-	// Filled portion
-	if usage > 0 {
-		fill_width := int(usage / 100.0 * 20.0)  // 20 chars wide
-		if fill_width > 0 {
-			ansuz.Layout_rect(ctx, '█', STYLE_CPU, {
-				sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
-			})
-			ansuz.Layout_end_rect(ctx)
-		}
+	    // Filled portion
+	    if usage > 0 {
+		    fill_width := int(usage / 100.0 * 20.0)  // 20 chars wide
+		    if fill_width > 0 {
+			    ansuz.Layout_rect(ctx, '█', STYLE_CPU, {
+				    sizing = {ansuz.Sizing_fixed(fill_width), ansuz.Sizing_fixed(1)},
+			    })
+			    ansuz.Layout_end_rect(ctx)
+		    }
+	    }
+
+	    // Empty portion
+	    empty_width := 20 - int(usage / 100.0 * 20.0)
+	    if empty_width > 0 {
+		    ansuz.Layout_rect(ctx, '░', STYLE_CPU_DIM, {
+			    sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
+		    })
+		    ansuz.Layout_end_rect(ctx)
+	    }
+        
+        ansuz.Layout_end_container(ctx) // End bar container
+
+	    ansuz.Layout_end_container(ctx)  // End row container
 	}
 
-	// Empty portion
-	empty_width := 20 - int(usage / 100.0 * 20.0)
-	if empty_width > 0 {
-		ansuz.Layout_rect(ctx, '░', STYLE_CPU_DIM, {
-			sizing = {ansuz.Sizing_fixed(empty_width), ansuz.Sizing_fixed(1)},
-		})
-		ansuz.Layout_end_rect(ctx)
-	}
-
-	ansuz.Layout_end_box(ctx)  // End horizontal box
-	}
-
-	ansuz.Layout_end_box(ctx)  // End vertical box
+	ansuz.Layout_end_container(ctx)  // End inner vertical container
 
 	ansuz.Layout_end_box(ctx)  // End main box
 }
@@ -256,6 +258,7 @@ render_mem_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_MEM, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()}, // Memory box is smaller height-wise
 	}, .Rounded)
 
 	// Title
@@ -314,6 +317,7 @@ render_net_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_NET, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}, 
 	}, .Rounded)
 
 	// Title
@@ -339,6 +343,7 @@ render_net_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 }
 
 // Simple sparkline renderer
+// Simple sparkline renderer
 render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32, fill_style: ansuz.Style, empty_style: ansuz.Style) {
 	if len(values) == 0 {
 		return
@@ -356,14 +361,18 @@ render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32, fill_style: ansuz.S
 		}
 	}
 
-	width := 40
-	if len(values) < width {
-		width = len(values)
-	}
-
+	// Use smaller width to fit in panel
+	width := 20
+	
+	builder := strings.builder_make(context.temp_allocator)
+	
+	// Draw from the end of values
+	count := 0
 	for i in 0..<width {
 		idx := len(values) - width + i
 		if idx < 0 {
+			// Pad with space if not enough values
+			strings.write_rune(&builder, ' ')
 			continue
 		}
 
@@ -371,15 +380,16 @@ render_sparkline :: proc(ctx: ^ansuz.Context, values: []f32, fill_style: ansuz.S
 		height := int(val / max_val * 4.0) if max_val > 0.0 else 0
 		char: rune
 		switch height {
-		case 0: char = '▁'
+		case 0: char = ' ' // Empty
 		case 1: char = '▂'
 		case 2: char = '▃'
 		case 3: char = '▄'
 		case: char = '█'
 		}
-
-		ansuz.Layout_text(ctx, fmt.tprintf("%c", char), fill_style)
+		strings.write_rune(&builder, char)
 	}
+
+	ansuz.Layout_text(ctx, strings.to_string(builder), fill_style)
 
 	ansuz.Layout_end_box(ctx)
 }
@@ -388,6 +398,7 @@ render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_PROC, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 	}, .Rounded)
 
 	// Title
