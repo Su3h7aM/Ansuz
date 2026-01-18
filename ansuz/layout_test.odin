@@ -3,6 +3,15 @@ package ansuz
 import "core:testing"
 import "core:fmt"
 
+// Helper to run all layout passes for testing
+_run_layout_passes :: proc(l_ctx: ^LayoutContext) {
+    if len(l_ctx.nodes) == 0 do return
+    _pass1_measure(l_ctx, 0)
+    l_ctx.nodes[0].final_rect = l_ctx.root_rect
+    _pass2_resolve(l_ctx, 0)
+    _pass3_position(l_ctx, 0)
+}
+
 @(test)
 test_layout_basic :: proc(t: ^testing.T) {
     l_ctx := init_layout_context(context.allocator)
@@ -20,25 +29,42 @@ test_layout_basic :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Item 2", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
-    // Pass 1: Min sizes
-    _calculate_min_sizes(&l_ctx, 0)
-    // Pass 2: Positions
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
     // Check results
-    testing.expect_value(t, l_ctx.nodes[1].rect.h, 12)
-    testing.expect_value(t, l_ctx.nodes[2].rect.h, 12)
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 0)
-    testing.expect_value(t, l_ctx.nodes[2].rect.y, 12)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.h, 12)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.h, 12)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 0)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.y, 12)
+}
+
+@(test)
+test_layout_weighted_grow :: proc(t: ^testing.T) {
+    l_ctx := init_layout_context(context.allocator)
+    defer destroy_layout_context(&l_ctx)
+
+    root_rect := Rect{0, 0, 100, 20}
+    reset_layout_context(&l_ctx, root_rect)
+
+    begin_container(&l_ctx, {
+        direction = .LeftToRight,
+        sizing = {Sizing_grow(), Sizing_grow()},
+    })
+    // 1:3 ratio. Total weight = 4.
+    // Width 100. Item 1 gets 25, Item 2 gets 75.
+    add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_grow(1), Sizing_grow()}})
+    add_text(&l_ctx, "Big", STYLE_NORMAL, {sizing = {Sizing_grow(3), Sizing_grow()}})
+    end_container(&l_ctx)
+
+    _run_layout_passes(&l_ctx)
+
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 25)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.w, 75)
 }
 
 @(test)
 test_layout_padding_gap :: proc(t: ^testing.T) {
-    // NOTE: This test uses internal layout functions and may need updates
-    // when the layout implementation changes. Skipping for now to ensure
-    // the public API tests pass.
-    fmt.println("test_layout_padding_gap skipped - requires internal function updates")
+     // TODO: Implement valid padding/gap test with new system
 }
 
 @(test)
@@ -58,15 +84,14 @@ test_layout_alignment :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Centered", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
     // Horizontal: (80 - 10) / 2 = 35
     // Vertical: (24 - 1) / 2 = 11
+    // Padding is 0 default
     
-    testing.expect_value(t, l_ctx.nodes[1].rect.x, 35)
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 11)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.x, 35)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 11)
 }
 
 @(test)
@@ -84,6 +109,7 @@ test_sizing_constructors :: proc(t: ^testing.T) {
 
     grow := Sizing_grow()
     testing.expect(t, grow.type == .Grow)
+    testing.expect_value(t, grow.value, 1.0) // Default weight check
 }
 
 @(test)
@@ -115,14 +141,12 @@ test_layout_horizontal_direction :: proc(t: ^testing.T) {
     add_text(&l_ctx, "B", STYLE_NORMAL, {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.x, 0)
-    testing.expect_value(t, l_ctx.nodes[2].rect.x, 5)
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 0)
-    testing.expect_value(t, l_ctx.nodes[2].rect.y, 0)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.x, 0)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.x, 5)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 0)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.y, 0)
 }
 
 @(test)
@@ -141,12 +165,11 @@ test_layout_mixed_sizing :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Grow", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.w, 20)
-    testing.expect_value(t, l_ctx.nodes[2].rect.w, 60)
+    // Container 80. Fixed 20. Remaining 60 to Grow.
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 20)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.w, 60)
 }
 
 @(test)
@@ -165,12 +188,11 @@ test_layout_percent_sizing :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Half", STYLE_NORMAL, {sizing = {Sizing_percent(0.5), Sizing_grow()}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.w, 50)
-    testing.expect_value(t, l_ctx.nodes[2].rect.w, 50)
+    // Each is 50% of parent width (100) -> 50
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 50)
+    testing.expect_value(t, l_ctx.nodes[2].final_rect.w, 50)
 }
 
 @(test)
@@ -199,12 +221,10 @@ test_layout_nested_containers :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Bottom", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
     testing.expect(t, len(l_ctx.nodes) == 6, "Should have 6 nodes")
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 0)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 0)
 }
 
 @(test)
@@ -222,13 +242,11 @@ test_layout_single_child :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Only Child", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
     testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes")
-    testing.expect_value(t, l_ctx.nodes[1].rect.w, 80)
-    testing.expect_value(t, l_ctx.nodes[1].rect.h, 24)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 80)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.h, 24)
 }
 
 @(test)
@@ -245,9 +263,7 @@ test_layout_empty_container :: proc(t: ^testing.T) {
     })
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
     testing.expect(t, len(l_ctx.nodes) == 1, "Should have 1 node (container only)")
 }
@@ -268,12 +284,10 @@ test_layout_alignment_left :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.x, 0)
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 0)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.x, 0)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 0)
 }
 
 @(test)
@@ -292,11 +306,9 @@ test_layout_alignment_right :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.x, 70)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.x, 70)
 }
 
 @(test)
@@ -315,11 +327,9 @@ test_layout_alignment_bottom :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Small", STYLE_NORMAL, {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.y, 23)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 23)
 }
 
 @(test)
@@ -368,7 +378,7 @@ test_layout_multiple_containers :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Container 2", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
 
-    testing.expect(t, len(l_ctx.nodes) == 4, "Should have 4 nodes (2 containers + 2 children)")
+    testing.expect(t, len(l_ctx.nodes) == 4, "Should have 4 nodes")
 }
 
 @(test)
@@ -386,11 +396,9 @@ test_layout_fit_content_width :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Hello", STYLE_NORMAL, {sizing = {Sizing_fit(), Sizing_grow()}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.w, 5)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 5)
 }
 
 @(test)
@@ -408,11 +416,9 @@ test_layout_fit_content_height :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Line1", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_fit()}})
     end_container(&l_ctx)
 
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
 
-    testing.expect_value(t, l_ctx.nodes[1].rect.h, 1)
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.h, 1)
 }
 
 @(test)

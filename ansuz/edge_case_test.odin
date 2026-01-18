@@ -385,9 +385,7 @@ test_layout_no_children :: proc(t: ^testing.T) {
     begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
     end_container(&l_ctx)
     
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
     
     // Should not crash
     testing.expect(t, len(l_ctx.nodes) == 1, "Should have 1 node")
@@ -405,9 +403,7 @@ test_layout_one_child :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Single", STYLE_NORMAL, {sizing = {Sizing_grow(), Sizing_grow()}})
     end_container(&l_ctx)
     
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
     
     testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes")
 }
@@ -424,9 +420,7 @@ test_layout_zero_sizing :: proc(t: ^testing.T) {
     add_text(&l_ctx, "", STYLE_NORMAL, {sizing = {Sizing_fixed(0), Sizing_fixed(0)}})
     end_container(&l_ctx)
     
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
     
     // Should not crash
     testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes")
@@ -444,9 +438,7 @@ test_layout_very_large_sizing :: proc(t: ^testing.T) {
     add_text(&l_ctx, "Large", STYLE_NORMAL, {sizing = {Sizing_fixed(10000), Sizing_fixed(10000)}})
     end_container(&l_ctx)
     
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
     
     // Should not crash, sizing will be clamped by container
     testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes")
@@ -471,9 +463,7 @@ test_layout_deep_nesting :: proc(t: ^testing.T) {
     end_container(&l_ctx)
     end_container(&l_ctx)
     
-    _calculate_min_sizes(&l_ctx, 0)
-    l_ctx.nodes[0].rect = root_rect
-    _calculate_positions(&l_ctx, 0)
+    _run_layout_passes(&l_ctx)
     
     testing.expect(t, len(l_ctx.nodes) == 5, "Should have 5 nodes")
 }
