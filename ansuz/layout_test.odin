@@ -429,3 +429,31 @@ test_layout_rect :: proc(t: ^testing.T) {
     testing.expect_value(t, rect.w, 30)
     testing.expect_value(t, rect.h, 40)
 }
+
+@(test)
+test_layout_scrolling :: proc(t: ^testing.T) {
+    l_ctx := init_layout_context(context.allocator)
+    defer destroy_layout_context(&l_ctx)
+
+    root_rect := Rect{0, 0, 100, 100}
+    reset_layout_context(&l_ctx, root_rect)
+
+    begin_container(&l_ctx, {
+        direction = .TopToBottom,
+        sizing = {Sizing_fixed(50), Sizing_fixed(50)},
+        scroll_offset = {0, 10},
+        overflow = .Scroll,
+    })
+    
+    add_text(&l_ctx, "Item 1", STYLE_NORMAL, {sizing = {Sizing_fixed(50), Sizing_fixed(20)}})
+    
+    end_container(&l_ctx)
+
+    _run_layout_passes(&l_ctx)
+
+    // Parent at 0,0.
+    // Child relative 0,0.
+    // Scroll offset y=10.
+    // Child absolute y should be 0 + 0 - 10 = -10.
+    testing.expect_value(t, l_ctx.nodes[1].final_rect.y, -10)
+}

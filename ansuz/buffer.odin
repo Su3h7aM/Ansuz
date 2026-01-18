@@ -20,6 +20,7 @@ FrameBuffer :: struct {
     height:    int,
     cells:     []Cell,
     allocator: mem.Allocator,
+    clip_rect: Rect, // x, y, w, h. If w/h <= 0, clipping is disabled.
 }
 
 // BufferError represents errors that can occur during buffer operations
@@ -56,8 +57,34 @@ init_buffer :: proc(width, height: int, allocator := context.allocator) -> (buff
 
     // Initialize all cells to default state
     clear_buffer(&buffer)
+    clear_clip_rect(&buffer)
 
     return buffer, .None
+}
+
+// set_clip_rect sets the clipping region. Only drawing within this rect will occur.
+set_clip_rect :: proc(buffer: ^FrameBuffer, rect: Rect) {
+    buffer.clip_rect = rect
+}
+
+// clear_clip_rect disables clipping checks (sets clip rect to full buffer)
+clear_clip_rect :: proc(buffer: ^FrameBuffer) {
+    buffer.clip_rect = Rect{0, 0, buffer.width, buffer.height}
+}
+
+// _is_clipped checks if a point is outside the current clip rect
+_is_clipped :: proc(buffer: ^FrameBuffer, x, y: int) -> bool {
+    // If clip rect has no area (or inverted), valid range is empty -> everything is clipped
+    // But we use width/height check instead.
+    
+    // Check clip rect bounds
+    if x < buffer.clip_rect.x || x >= buffer.clip_rect.x + buffer.clip_rect.w {
+        return true
+    }
+    if y < buffer.clip_rect.y || y >= buffer.clip_rect.y + buffer.clip_rect.h {
+        return true
+    }
+    return false
 }
 
 // destroy_buffer frees the memory used by a FrameBuffer
@@ -107,6 +134,10 @@ set_cell :: proc(buffer: ^FrameBuffer, x, y: int, r: rune, fg, bg: Color, style:
     if cell == nil {
         return .OutOfBounds
     }
+    
+    if _is_clipped(buffer, x, y) {
+        return .None // Clipped out, not an error
+    }
 
     cell.rune = r
     cell.fg_color = fg
@@ -138,13 +169,16 @@ write_string :: proc(buffer: ^FrameBuffer, x, y: int, text: string, fg, bg: Colo
 		}
 
 		if current_x >= 0 {
-			// Direct array access - faster than set_cell()
-			index := y * buffer.width + current_x
-			buffer.cells[index].rune = r
-			buffer.cells[index].fg_color = fg
-			buffer.cells[index].bg_color = bg
-			buffer.cells[index].style = style
-			chars_written += 1
+            // Check clipping
+            if !_is_clipped(buffer, current_x, y) {
+			    // Direct array access - faster than set_cell()
+			    index := y * buffer.width + current_x
+			    buffer.cells[index].rune = r
+			    buffer.cells[index].fg_color = fg
+			    buffer.cells[index].bg_color = bg
+			    buffer.cells[index].style = style
+			    chars_written += 1
+            }
 		}
 
 		current_x += 1
@@ -196,29 +230,29 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
         VERTICAL = '║'
     }
 
-    // Corners - direct array access for speed
-    if x >= 0 && x < buffer.width && y >= 0 && y < buffer.height {
+    // Corners - direct array access for speed (with clipping check)
+    if x >= 0 && x < buffer.width && y >= 0 && y < buffer.height && !_is_clipped(buffer, x, y) {
         index := y * buffer.width + x
         buffer.cells[index].rune = TOP_LEFT
         buffer.cells[index].fg_color = fg
         buffer.cells[index].bg_color = bg
         buffer.cells[index].style = style
     }
-    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y >= 0 && y < buffer.height {
+    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y >= 0 && y < buffer.height && !_is_clipped(buffer, x + width - 1, y) {
         index := y * buffer.width + (x + width - 1)
         buffer.cells[index].rune = TOP_RIGHT
         buffer.cells[index].fg_color = fg
         buffer.cells[index].bg_color = bg
         buffer.cells[index].style = style
     }
-    if x >= 0 && x < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+    if x >= 0 && x < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height && !_is_clipped(buffer, x, y + height - 1) {
         index := (y + height - 1) * buffer.width + x
         buffer.cells[index].rune = BOTTOM_LEFT
         buffer.cells[index].fg_color = fg
         buffer.cells[index].bg_color = bg
         buffer.cells[index].style = style
     }
-    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+    if x + width - 1 >= 0 && x + width - 1 < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height && !_is_clipped(buffer, x + width - 1, y + height - 1) {
         index := (y + height - 1) * buffer.width + (x + width - 1)
         buffer.cells[index].rune = BOTTOM_RIGHT
         buffer.cells[index].fg_color = fg
@@ -229,14 +263,14 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
     // Top and bottom edges - direct array access
     for dx in 1..<width-1 {
         px := x + dx
-        if px >= 0 && px < buffer.width && y >= 0 && y < buffer.height {
+        if px >= 0 && px < buffer.width && y >= 0 && y < buffer.height && !_is_clipped(buffer, px, y) {
             index := y * buffer.width + px
             buffer.cells[index].rune = HORIZONTAL
             buffer.cells[index].fg_color = fg
             buffer.cells[index].bg_color = bg
             buffer.cells[index].style = style
         }
-        if px >= 0 && px < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height {
+        if px >= 0 && px < buffer.width && y + height - 1 >= 0 && y + height - 1 < buffer.height && !_is_clipped(buffer, px, y + height - 1) {
             index := (y + height - 1) * buffer.width + px
             buffer.cells[index].rune = HORIZONTAL
             buffer.cells[index].fg_color = fg
@@ -248,14 +282,14 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
     // Left and right edges - direct array access
     for dy in 1..<height-1 {
         py := y + dy
-        if x >= 0 && x < buffer.width && py >= 0 && py < buffer.height {
+        if x >= 0 && x < buffer.width && py >= 0 && py < buffer.height && !_is_clipped(buffer, x, py) {
             index := py * buffer.width + x
             buffer.cells[index].rune = VERTICAL
             buffer.cells[index].fg_color = fg
             buffer.cells[index].bg_color = bg
             buffer.cells[index].style = style
         }
-        if x + width - 1 >= 0 && x + width - 1 < buffer.width && py >= 0 && py < buffer.height {
+        if x + width - 1 >= 0 && x + width - 1 < buffer.width && py >= 0 && py < buffer.height && !_is_clipped(buffer, x + width - 1, py) {
             index := py * buffer.width + (x + width - 1)
             buffer.cells[index].rune = VERTICAL
             buffer.cells[index].fg_color = fg

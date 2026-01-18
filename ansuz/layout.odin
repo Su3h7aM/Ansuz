@@ -65,23 +65,33 @@ Padding :: struct {
 }
 
 Padding_all :: proc(value: int) -> Padding {
-	return Padding{value, value, value, value}
+    return Padding{value, value, value, value}
+}
+
+Overflow :: enum {
+    Visible,
+    Hidden,
+    Scroll,
 }
 
 LayoutConfig :: struct {
-	direction:  LayoutDirection,
-	sizing:     [2]Sizing, // [0] = width, [1] = height
-	padding:    Padding,
-	gap:        int,
-	alignment:  Alignment,
+    direction:     LayoutDirection,
+    sizing:        [2]Sizing,
+    padding:       Padding,
+    gap:           int,
+    alignment:     Alignment,
+    overflow:      Overflow,
+    scroll_offset: [2]int, // x, y offset
 }
 
 DEFAULT_LAYOUT_CONFIG :: LayoutConfig{
-	direction = .TopToBottom,
-	sizing    = {Sizing{.FitContent, 0}, Sizing{.FitContent, 0}},
-	padding   = {0, 0, 0, 0},
-	gap       = 0,
-	alignment = {.Left, .Top},
+    direction     = .TopToBottom,
+    sizing        = {Sizing{.FitContent, 0}, Sizing{.FitContent, 0}},
+    padding       = {0, 0, 0, 0},
+    gap           = 0,
+    alignment     = {.Left, .Top},
+    overflow      = .Visible,
+    scroll_offset = {0, 0},
 }
 
 Rect :: struct {
@@ -280,6 +290,18 @@ _get_cross_axis :: proc(dir: LayoutDirection) -> int {
     return dir == .LeftToRight ? AXIS_Y : AXIS_X
 }
 
+rect_intersection :: proc(r1, r2: Rect) -> Rect {
+    x1 := max(r1.x, r2.x)
+    y1 := max(r1.y, r2.y)
+    x2 := min(r1.x + r1.w, r2.x + r2.w)
+    y2 := min(r1.y + r1.h, r2.y + r2.h)
+    
+    w := max(0, x2 - x1)
+    h := max(0, y2 - y1)
+    
+    return Rect{x1, y1, w, h}
+}
+
 finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 	if len(l_ctx.nodes) == 0 do return
 
@@ -294,28 +316,54 @@ finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 	// Pass 3: Position, Top-Down
 	_pass3_position(l_ctx, 0)
 
-	// Rendering
-	for &node in l_ctx.nodes {
-		cmd := &node.render_cmd
-		if cmd.type == .None && !node.is_container do continue
+	// Rendering (Recursive for Clipping)
+    initial_clip := Rect{0, 0, ansuz_ctx.width, ansuz_ctx.height}
+    
+    // Find absolute roots (usually just 0, but safe to check)
+    // Actually nodes[0] is strictly the root in our usage.
+    if len(l_ctx.nodes) > 0 {
+        _render_recursive(l_ctx, ansuz_ctx, 0, initial_clip)
+    }
+}
 
-		cmd.rect = node.final_rect
-
-		switch cmd.type {
-		case .None:
-		case .Text:
-			text(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.text, cmd.style)
-		case .Box:
-            // Ensure w/h are at least 0
+_render_recursive :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context, node_idx: int, parent_clip: Rect) {
+    node := &l_ctx.nodes[node_idx]
+    
+    // 1. Render Self
+    // Ensure clip rect is set to what we expect
+    set_clip_rect(&ansuz_ctx.buffer, parent_clip)
+    
+    cmd := &node.render_cmd
+    if cmd.type != .None || node.is_container {
+        cmd.rect = node.final_rect
+        
+        switch cmd.type {
+        case .None:
+        case .Text:
+            text(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.text, cmd.style)
+        case .Box:
             w := max(0, cmd.rect.w)
             h := max(0, cmd.rect.h)
-			box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
-		case .Rect:
+            box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
+        case .Rect:
             w := max(0, cmd.rect.w)
             h := max(0, cmd.rect.h)
-			rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
-		}
-	}
+            rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
+        }
+    }
+    
+    // 2. Determine Clip for Children
+    child_clip := parent_clip
+    if node.config.overflow != .Visible {
+        child_clip = rect_intersection(parent_clip, node.final_rect)
+    }
+    
+    // 3. Recurse
+    child_idx := node.first_child
+    for child_idx != -1 {
+        _render_recursive(l_ctx, ansuz_ctx, child_idx, child_clip)
+        child_idx = l_ctx.nodes[child_idx].next_sibling
+    }
 }
 
 _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
@@ -578,10 +626,10 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
         
         // Main Axis Position
         if main_axis == AXIS_X {
-            child.final_rect.x = start_x + current_pos
+            child.final_rect.x = start_x + current_pos - node.config.scroll_offset.x
             current_pos += child.final_rect.w + node.config.gap
         } else {
-            child.final_rect.y = start_y + current_pos
+            child.final_rect.y = start_y + current_pos - node.config.scroll_offset.y
             current_pos += child.final_rect.h + node.config.gap
         }
         
@@ -607,9 +655,9 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
         if is_cross_end do cross_offset = free_cross
         
         if cross_axis == AXIS_X {
-             child.final_rect.x = start_x + cross_offset
+             child.final_rect.x = start_x + cross_offset - node.config.scroll_offset.x
         } else {
-             child.final_rect.y = start_y + cross_offset
+             child.final_rect.y = start_y + cross_offset - node.config.scroll_offset.y
         }
         
         // Recurse
