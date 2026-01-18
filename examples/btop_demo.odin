@@ -221,6 +221,7 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 	})
 
 	// Filled portion
@@ -286,6 +287,7 @@ render_progress_bar :: proc(ctx: ^ansuz.Context, percent: f32, fill_style: ansuz
 	ansuz.Layout_box(ctx, fill_style, {
 		direction = .LeftToRight,
 		padding = {0, 0, 0, 0},
+        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},
 	})
 
 	bar_width := 40

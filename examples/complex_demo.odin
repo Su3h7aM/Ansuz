@@ -315,7 +315,6 @@ render_dashboard_tab :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 
 	ansuz.Layout_end_box(ctx)
 
-	// Stats boxes
 	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
 		direction = .LeftToRight,
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()},

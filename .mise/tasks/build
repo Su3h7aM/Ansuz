@@ -2,7 +2,7 @@
 #MISE description="Build Ansuz examples"
 #MISE alias="b"
 #MISE sources=["ansuz/**/*.odin", "examples/**/*.odin"]
-#MISE outputs=["bin/hello_world", "bin/complex_demo", "bin/layout_demo", "bin/btop_demo"]
+#MISE outputs=["bin/hello_world", "bin/complex_demo", "bin/layout_demo", "bin/btop_demo", "bin/features_demo"]
 
 set -euo pipefail
 
@@ -34,7 +34,7 @@ fi
 
 if [[ "$CLEAN" == "1" ]]; then
     echo "Cleaning build artifacts..."
-    rm -f bin/hello_world bin/complex_demo bin/layout_demo bin/btop_demo
+    rm -f bin/hello_world bin/complex_demo bin/layout_demo bin/btop_demo bin/features_demo
     echo "Clean complete."
 fi
 
@@ -51,5 +51,8 @@ odin build examples/layout_demo.odin -file -out:bin/layout_demo -debug
 
 echo "Building btop_demo..."
 odin build examples/btop_demo.odin -file -out:bin/btop_demo -debug
+
+echo "Building features_demo..."
+odin build examples/features_demo.odin -file -out:bin/features_demo -debug
 
 echo "Build complete!"
