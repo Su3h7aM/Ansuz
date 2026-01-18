@@ -107,6 +107,13 @@ handle_input :: proc(state: ^BtopDemoState, event: ansuz.Event) {
 render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.begin_layout(ctx)
 
+	// Main container for all content
+	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		direction = .TopToBottom,
+		padding = {1, 1, 1, 1},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+	})
+
 	// Header
 	render_header(ctx, state)
 
@@ -141,6 +148,8 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	// Footer with controls
 	render_footer(ctx, state)
 
+	ansuz.Layout_end_box(ctx)
+
 	ansuz.end_layout(ctx)
 }
 
@@ -152,9 +161,9 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 
 	ansuz.Layout_text(ctx, "BTOP SIMULATOR", ansuz.STYLE_BOLD)
 
-	// FPS display
+	// FPS display (use different style to separate)
 	fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
-	ansuz.Layout_text(ctx, fps_text, ansuz.STYLE_DIM)
+	ansuz.Layout_text(ctx, fps_text, ansuz.STYLE_NORMAL)
 
 	ansuz.Layout_end_box(ctx)
 }
