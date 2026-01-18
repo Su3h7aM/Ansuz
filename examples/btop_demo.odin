@@ -122,7 +122,7 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	})
+	}, .Rounded)
 
 	// Header
 	render_header(ctx, state)
@@ -132,14 +132,14 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 		direction = .LeftToRight,
 		padding = {1, 1, 1, 1},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	})
+	}, .Rounded)
 
 	// Left column: CPU and Memory
 	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
 		direction = .TopToBottom,
 		padding = {0, 0, 0, 0},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	})
+	}, .Rounded)
 
 	render_cpu_view(ctx, state)
 	render_mem_view(ctx, state)
@@ -151,7 +151,7 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 		direction = .TopToBottom,
 		padding = {0, 0, 0, 0},
 		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-	})
+	}, .Rounded)
 
 	render_net_view(ctx, state)
 	render_proc_view(ctx, state)
@@ -172,7 +172,7 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_HEADER, {
 		direction = .LeftToRight,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 
 	ansuz.Layout_text(ctx, "BTOP SIMULATOR", STYLE_HEADER)
 
@@ -187,7 +187,7 @@ render_footer :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_FOOTER, {
 		direction = .LeftToRight,
 		padding = {0, 1, 0, 1},
-	})
+	}, .Rounded)
 
 	ansuz.Layout_text(ctx, "[q] Quit", STYLE_FOOTER)
 
@@ -199,7 +199,7 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 
 	// Title
 	ansuz.Layout_text(ctx, "CPU", STYLE_CPU_DIM)
@@ -208,7 +208,7 @@ render_cpu_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_CPU, {
 		direction = .TopToBottom,
 		padding = {0, 0, 0, 0},
-	})
+	}, .Rounded)
 
 	for i in 0..<8 {
 		usage := state.cpu_usage[i]
@@ -255,7 +255,7 @@ render_mem_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_MEM, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 
 	// Title
 	ansuz.Layout_text(ctx, "MEMORY", STYLE_MEM_DIM)
@@ -312,7 +312,7 @@ render_net_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_NET, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 
 	// Title
 	ansuz.Layout_text(ctx, "NETWORK", STYLE_NET_DIM)
@@ -386,7 +386,7 @@ render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_PROC, {
 		direction = .TopToBottom,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 
 	// Title
 	ansuz.Layout_text(ctx, "PROCESSES", STYLE_PROC_DIM)
@@ -395,7 +395,7 @@ render_proc_view :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	ansuz.Layout_box(ctx, STYLE_PROC, {
 		direction = .LeftToRight,
 		padding = {1, 1, 1, 1},
-	})
+	}, .Rounded)
 	ansuz.Layout_text(ctx, "PID", STYLE_PROC_DIM)
 	ansuz.Layout_text(ctx, "     NAME", STYLE_PROC_DIM)
 	ansuz.Layout_text(ctx, "   CPU%", STYLE_PROC_DIM)

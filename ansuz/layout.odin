@@ -95,11 +95,12 @@ RenderCommandType :: enum {
 }
 
 RenderCommand :: struct {
-    type:   RenderCommandType,
-    rect:   Rect,
-    text:   string,
-    style:  Style,
-    char:   rune, // For Rect command
+    type:      RenderCommandType,
+    rect:      Rect,
+    text:      string,
+    style:     Style,
+    char:      rune, // For Rect command
+    box_style: BoxStyle, // For Box command
 }
 
 // LayoutNode represents an element in the layout tree
@@ -213,12 +214,13 @@ add_box :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFA
     }
 }
 
-add_box_container :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+add_box_container :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG, box_style: BoxStyle = .Sharp) {
     node_idx := _add_node(l_ctx, config, true)
     node := &l_ctx.nodes[node_idx]
     node.render_cmd = RenderCommand{
         type = .Box,
         style = style,
+        box_style = box_style,
     }
     append(&l_ctx.stack, node_idx)
 }
@@ -281,7 +283,7 @@ finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
         case .Text:
             text(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.text, cmd.style)
         case .Box:
-            box(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.rect.w, cmd.rect.h, cmd.style)
+            box(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.rect.w, cmd.rect.h, cmd.style, cmd.box_style)
         case .Rect:
             rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, cmd.rect.w, cmd.rect.h, cmd.char, cmd.style)
         }

@@ -273,8 +273,8 @@ text :: proc(ctx: ^Context, x, y: int, content: string, style: Style) {
 }
 
 // box draws a bordered box
-box :: proc(ctx: ^Context, x, y, width, height: int, style: Style) {
-    draw_box(&ctx.buffer, x, y, width, height, style.fg_color, style.bg_color, style.flags)
+box :: proc(ctx: ^Context, x, y, width, height: int, style: Style, box_style: BoxStyle = .Sharp) {
+    draw_box(&ctx.buffer, x, y, width, height, style.fg_color, style.bg_color, style.flags, box_style)
 }
 
 // rect fills a rectangular region with a character
@@ -329,8 +329,8 @@ Layout_text :: proc(ctx: ^Context, content: string, style: Style = STYLE_NORMAL,
 }
 
 // Layout_box adds a bordered box node to the current layout container
-Layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
-    add_box_container(&ctx.layout_ctx, style, config)
+Layout_box :: proc(ctx: ^Context, style: Style = STYLE_NORMAL, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG, box_style: BoxStyle = .Sharp) {
+    add_box_container(&ctx.layout_ctx, style, config, box_style)
 }
 
 // Layout_rect adds a filled rectangular node to the current layout container

@@ -30,6 +30,13 @@ BufferError :: enum {
     AllocationFailed,
 }
 
+// BoxStyle defines the style of box border characters
+BoxStyle :: enum {
+    Sharp,   // ┌─┐│└┘ (default)
+    Rounded, // ╭╮╰╯─│
+    Double,  // ╔═╗║╚╝
+}
+
 // init_buffer creates a new FrameBuffer with the specified dimensions
 // All cells are initialized with default values (space character, default colors)
 init_buffer :: proc(width, height: int, allocator := context.allocator) -> (buffer: FrameBuffer, err: BufferError) {
@@ -157,18 +164,37 @@ fill_rect :: proc(buffer: ^FrameBuffer, x, y, width, height: int, r: rune, fg, b
 
 // draw_box draws a box border using box-drawing characters
 // Uses Unicode box-drawing characters for clean borders
-draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, style: StyleFlags) {
+// Box style can be Sharp (┌─┐│└┘), Rounded (╭╮╰╯─│), or Double (╔═╗║╚╝)
+draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, style: StyleFlags, box_style: BoxStyle = .Sharp) {
     if width < 2 || height < 2 {
         return // Too small to draw a box
     }
 
-    // Box drawing characters
-    TOP_LEFT :: '┌'
-    TOP_RIGHT :: '┐'
-    BOTTOM_LEFT :: '└'
-    BOTTOM_RIGHT :: '┘'
-    HORIZONTAL :: '─'
-    VERTICAL :: '│'
+    // Box drawing characters based on style
+    TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, HORIZONTAL, VERTICAL: rune
+    switch box_style {
+    case .Sharp:
+        TOP_LEFT = '┌'
+        TOP_RIGHT = '┐'
+        BOTTOM_LEFT = '└'
+        BOTTOM_RIGHT = '┘'
+        HORIZONTAL = '─'
+        VERTICAL = '│'
+    case .Rounded:
+        TOP_LEFT = '╭'
+        TOP_RIGHT = '╮'
+        BOTTOM_LEFT = '╰'
+        BOTTOM_RIGHT = '╯'
+        HORIZONTAL = '─'
+        VERTICAL = '│'
+    case .Double:
+        TOP_LEFT = '╔'
+        TOP_RIGHT = '╗'
+        BOTTOM_LEFT = '╚'
+        BOTTOM_RIGHT = '╝'
+        HORIZONTAL = '═'
+        VERTICAL = '║'
+    }
 
     // Corners - direct array access for speed
     if x >= 0 && x < buffer.width && y >= 0 && y < buffer.height {
