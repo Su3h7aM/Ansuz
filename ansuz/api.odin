@@ -102,6 +102,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     ctx.layout_ctx = init_layout_context(allocator)
 
     // Initial terminal setup
+    disable_auto_wrap()
     hide_cursor()
     clear_screen()
 
@@ -161,8 +162,13 @@ begin_frame :: proc(ctx: ^Context) {
 // end_frame finishes the current frame and outputs to terminal
 // In immediate mode, we render the entire buffer every frame
 end_frame :: proc(ctx: ^Context) {
-	// Generate full render output
-	output := render_to_string(&ctx.buffer, context.temp_allocator)
+    // Check terminal size one last time before rendering
+    // This handles the race condition where terminal shrinks *during* the frame
+    // If we don't do this, we might write a line that no longer exists, causing scroll/flicker
+    real_w, real_h, _ := get_terminal_size()
+
+	// Generate full render output, clipping to actual terminal size
+	output := render_to_string(&ctx.buffer, context.temp_allocator, real_w, real_h)
 
 	// Write to terminal
 	write_ansi(output)
@@ -289,8 +295,8 @@ handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
 
     // Re-enter alternate screen to ensure proper resize behavior
     // This prevents flicker when resizing
-    leave_alternate_buffer()
-    enter_alternate_buffer()
+    // leave_alternate_buffer()
+    // enter_alternate_buffer()
 
     resize_buffer(&ctx.buffer, new_width, new_height)
 }

@@ -301,17 +301,36 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
 
 // render_to_string converts the entire buffer to a string with ANSI codes
 // Renders the complete buffer every frame (immediate mode)
-render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocator) -> string {
+// optional max_width/height allow clipping to actual terminal size to prevent scrolling on shrink
+render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocator, max_width: int = -1, max_height: int = -1) -> string {
     builder := strings.builder_make(allocator)
 
-    // Start from home position
-    strings.write_string(&builder, "\x1b[H")
+    // Clear string builder with standard clear logic if needed, or just start new
+    // builder is new here so it's empty.
 
     current_style := default_style()
     needs_style_reset := false
 
-    for y in 0..<buffer.height {
-        for x in 0..<buffer.width {
+    // Determine render limits
+    render_w := buffer.width
+    if max_width >= 0 && max_width < render_w {
+        render_w = max_width
+    }
+
+    render_h := buffer.height
+    if max_height >= 0 && max_height < render_h {
+        render_h = max_height
+    }
+
+    for y in 0..<render_h {
+        // ABSOLUTE POSITIONING STRATEGY
+        // Instead of writing a newline, we explicitly move the cursor to the start of the current line.
+        // This prevents the terminal from scrolling if we accidentally write to the last line
+        // when the terminal has shrunk.
+        // Format: ESC [ <y+1> ; 1 H  (1-based coordinates)
+        fmt.sbprintf(&builder, "\x1b[%d;1H", y + 1)
+
+        for x in 0..<render_w {
             cell := get_cell(buffer, x, y)
 
             if cell == nil {
@@ -343,11 +362,7 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
                 strings.write_rune(&builder, cell.rune)
             }
         }
-
-        // Move to next line (unless it's the last line)
-        if y < buffer.height - 1 {
-            strings.write_string(&builder, "\r\n")
-        }
+        // No newline emission here!
     }
 
     // Reset style at the end

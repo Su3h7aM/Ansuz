@@ -186,6 +186,18 @@ leave_alternate_buffer :: proc() -> TerminalError {
 	return write_ansi("\x1b[?1049l")
 }
 
+// disable_auto_wrap disables automatic line wrapping (DECAWM)
+// Prevents screen scrolling when writing to the last column
+disable_auto_wrap :: proc() -> TerminalError {
+	return write_ansi("\x1b[?7l")
+}
+
+// enable_auto_wrap enables automatic line wrapping (DECAWM)
+// Restores default terminal behavior
+enable_auto_wrap :: proc() -> TerminalError {
+	return write_ansi("\x1b[?7h")
+}
+
 // get_terminal_size retrieves current terminal dimensions
 // Returns (width, height) in characters
 //
@@ -229,6 +241,8 @@ read_input :: proc() -> (byte: u8, available: bool) {
 // Should be called before exiting the program
 reset_terminal :: proc() {
 	leave_raw_mode()
+	// Restore terminal state
+	enable_auto_wrap()
 	show_cursor()
 	leave_alternate_buffer()
 	clear_screen()
