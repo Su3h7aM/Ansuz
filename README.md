@@ -23,12 +23,22 @@ ansuz/
 │   ├── terminal.odin      # Terminal I/O and raw mode
 │   ├── buffer.odin        # Frame buffer and rendering
 │   ├── colors.odin        # Color and style system
-│   └── event.odin         # Input event handling
+│   ├── event.odin         # Input event handling
+│   ├── layout.odin        # Layout system (Clay-inspired)
+│   └── *_test.odin        # Unit tests
 ├── examples/
-│   └── hello_world.odin   # Basic example
-├── research/
-│   └── ARCHITECTURE.md    # Technical documentation
-└── build.sh               # Build script
+│   ├── hello_world.odin   # Basic example
+│   ├── features_demo.odin  # Layout and features demo
+│   ├── layout_demo.odin     # Layout system demo
+│   ├── complex_demo.odin   # Complex UI demo
+│   └── btop_demo.odin      # Dashboard-style demo (in progress)
+├── docs/                  # Documentation
+│   ├── ARCHITECTURE.md     # Technical documentation
+│   ├── API.md             # API reference
+│   ├── LAYOUT.md          # Layout system docs
+│   ├── TESTING.md          # Testing guide
+│   └── ODIN_PATTERNS.md   # Odin patterns used
+└── .beads/               # Issue tracking configuration
 ```
 
 ## Quick Start
@@ -225,39 +235,224 @@ Style :: struct {
 
 ## Documentation
 
-See [research/ARCHITECTURE.md](research/ARCHITECTURE.md) for:
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for:
 - Detailed technical documentation
 - ANSI escape sequence reference
 - TUI architecture patterns
 - Immediate mode concepts
 - Implementation details
 
-## Roadmap
+See also:
+- [docs/LAYOUT.md](docs/LAYOUT.md) - Layout system documentation
+- [docs/API.md](docs/API.md) - API reference
+- [docs/TESTING.md](docs/TESTING.md) - Testing guide
+- [docs/ODIN_PATTERNS.md](docs/ODIN_PATTERNS.md) - Odin patterns used
 
-### MVP (Current)
-- [x] Terminal raw mode control
-- [x] Frame buffer system
-- [x] Basic rendering
-- [x] Color and style support
-- [x] Hello World example
+## Essential Features Roadmap
 
-### Phase 2
-- [ ] Complete event parsing (arrow keys, function keys)
-- [ ] Basic widgets (button, text input)
-- [ ] Layout system (containers, alignment)
-- [ ] Focus management
+Based on analysis of modern TUI libraries (Ratatui, Textual, BubbleTea, TUI.zig), here are the essential features yet to be implemented:
 
-### Phase 3
-- [ ] Rich widget library (list, table, progress bar)
-- [ ] Mouse support
-- [ ] 256-color and RGB color modes
-- [ ] Windows support
+### 🟢 High Priority - Core Features
 
-### Phase 4
-- [ ] Advanced layout (flexbox-like)
-- [ ] Animation support
-- [ ] Themes and styling system
-- [ ] Documentation and examples
+#### 1. Widget Library (Most Critical)
+**Basic Interactive Widgets:**
+- [ ] `TextInput` - Text field with cursor, editing, password mask
+- [ ] `Button` - Clickable with variants (primary/secondary/danger/success)
+- [ ] `CheckBox`/`Switch` - Toggle widgets
+- [ ] `ListBox`/`ListView` - List with selection and navigation
+- [ ] `Select`/`OptionList` - Dropdown options
+
+**Advanced Interactive Widgets:**
+- [ ] `ProgressBar`/`Gauge` - Progress indicator (block + line)
+- [ ] `Scrollbar` - Interactive visual scrollbar
+- [ ] `Tabs`/`TabbedContent` - Tab system
+- [ ] `Table` - Table with columns, sorting, selection
+
+#### 2. Mouse Support (Critical for Modern UX)
+- [ ] Click events (left/right/middle buttons)
+- [ ] Mouse wheel scrolling
+- [ ] Hover states
+- [ ] Drag and drop (basic)
+- [ ] Text selection
+
+#### 3. Focus Management (Essential for Interactivity)
+- [ ] Focus system (can_focus, focus, blur)
+- [ ] Tab/Shift+Tab navigation
+- [ ] Visual focus indicators
+- [ ] Focus trap in modals
+- [ ] Focus events (gain/loss)
+
+#### 4. Modal/Dialog System
+- [ ] Popups and dialogs
+- [ ] Backdrop overlay
+- [ ] Keyboard blocking in modals
+- [ ] Exclusive focus management
+
+#### 5. Virtualization (Performance Critical)
+- [ ] Lazy rendering for large lists
+- [ ] Virtual scrolling
+- [ ] Widget recycling
+
+#### 6. Context Menus & Popups
+- [ ] Widget context menus
+- [ ] Dropdown menus
+- [ ] Command palette
+
+### 🟡 Medium Priority - Important Features
+
+#### 7. Advanced Color System
+- [ ] 256-color palette
+- [ ] True color (RGB hex)
+- [ ] Color gradients
+- [ ] Theme system (light/dark)
+- [ ] Color variables
+
+#### 8. Clipboard Integration
+- [ ] Copy/paste operations
+- [ ] Bracketed paste mode
+- [ ] Multi-line paste handling
+
+#### 9. Animations
+- [ ] Smooth transitions
+- [ ] Loading indicators
+- [ ] Toast notifications
+- [ ] Fade/slide effects
+
+#### 10. Advanced Layout
+- [ ] Grid layout
+- [ ] Responsive design (breakpoints)
+- [ ] Split panes
+- [ ] Docking system
+
+#### 11. Advanced Input Handling
+- [ ] Command history
+- [ ] Autocomplete/suggestions
+- [ ] Multi-key bindings
+- [ ] Bracketed paste
+- [ ] Complete special sequence parsing
+
+#### 12. Tooltips
+- [ ] Hover tooltips
+- [ ] Rich content support
+- [ ] Custom positioning
+- [ ] Timer delays
+
+#### 13. Forms & Validation
+- [ ] Form widget integration
+- [ ] Validation framework
+- [ ] Error feedback
+- [ ] Auto-save
+
+#### 14. Region Updates (Performance)
+- [ ] Partial redraws
+- [ ] Optimized dirty tracking
+- [ ] Region-based refreshing
+
+#### 15. Unicode & Complex Text
+- [ ] Emoji rendering
+- [ ] RTL (right-to-left) support
+- [ ] Text wrapping/truncation
+- [ ] Hyphenation
+
+#### 16. Tree Widget
+- [ ] Hierarchical data display
+- [ ] Expand/collapse
+- [ ] Keyboard/mouse selection
+
+#### 17. Data Display Widgets
+- [ ] `Sparkline` - Compact graph
+- [ ] `BarChart` - Data visualization
+- [ ] `RichLog` - Log with syntax highlighting
+- [ ] `Calendar` - Calendar widget
+
+#### 18. File Picker
+- [ ] Integrated file browser
+- [ ] Directory navigation
+- [ ] File preview
+- [ ] Bookmarks
+
+### 🟠 Low Priority - Nice-to-Have
+
+#### 19. Windows Platform Support
+- [ ] Windows Terminal compatibility
+- [ ] Console API
+- [ ] ANSI fallbacks
+
+#### 20. DevTools
+- [ ] Widget inspector
+- [ ] Layout tree visualization
+- [ ] Performance profiler
+- [ ] Debug overlay
+
+#### 21. Plugin System
+- [ ] Widget registry
+- [ ] Extension API
+- [ ] Middleware hooks
+
+#### 22. Advanced Animation
+- [ ] Canvas drawing
+- [ ] Shape rendering
+- [ ] Sprite animations
+- [ ] Keyframe animations
+
+#### 23. Z-Index & Layers
+- [ ] Layer stacking
+- [ ] Transparency/alpha blending
+- [ ] Compositing
+
+#### 24. Testing Utilities
+- [ ] Event mocks
+- [ ] Snapshot testing
+- [ ] Widget test helpers
+
+#### 25. State Management
+- [ ] Reactive variables
+- [ ] Data binding
+- [ ] Persistence
+- [ ] Save/restore
+
+### 📊 Current Status
+
+**✅ Already Implemented:**
+- Terminal raw mode & ANSI codes
+- Frame buffer system
+- 16-color + styles (bold, dim, underline, etc.)
+- Basic event system (keyboard, resize)
+- Advanced layout system (Clay-inspired)
+  - Containers (row/column)
+  - Sizing (fixed, percent, grow, fit-content)
+  - Padding, gap, alignment
+  - 3-pass algorithm
+- Drawing API (text, box, rect)
+- Box styles (sharp, rounded, double)
+- FPS tracking
+- Basic scrolling with offset
+
+### 🎯 Recommended Implementation Order
+
+**Phase 1 (Core Widgets):**
+1. Mouse support (basic)
+2. Focus management
+3. Button, TextInput, CheckBox, ListBox
+4. Modal/Dialog system
+
+**Phase 2 (Advanced Widgets):**
+5. ProgressBar, Scrollbar, Tabs, Table
+6. Context menus
+7. Tooltips
+8. Clipboard integration
+
+**Phase 3 (Polish & Performance):**
+9. 256-color/RGB colors
+10. Theme system
+11. Basic animations
+12. Virtualization
+13. Region updates
+
+**Phase 4 (Platform & Tools):**
+14. Windows support
+15. DevTools
+16. Advanced features (calendar, file picker, etc.)
 
 ## Contributing
 
