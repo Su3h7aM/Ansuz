@@ -12,6 +12,8 @@ main :: proc() {
     defer ansuz.shutdown(ctx)
 
     running := true
+    scroll_y := 0
+
     for running {
         // Handle input
         events := ansuz.poll_events(ctx)
@@ -20,6 +22,12 @@ main :: proc() {
             case ansuz.KeyEvent:
                 if e.key == .Escape || (e.key == .Char && e.rune == 'q') {
                     running = false
+                }
+                if e.key == .Up {
+                    scroll_y = max(0, scroll_y - 1)
+                }
+                if e.key == .Down {
+                    scroll_y += 1
                 }
             }
         }
@@ -38,7 +46,7 @@ main :: proc() {
             gap = 2,
         })
         ansuz.Layout_text(ctx, "ANSUZ LAYOUT SYSTEM", ansuz.STYLE_BOLD)
-        ansuz.Layout_text(ctx, "(Press 'q' to quit)", ansuz.STYLE_DIM)
+        ansuz.Layout_text(ctx, "(Press 'q' to quit, Arrows to Scroll)", ansuz.STYLE_DIM)
         ansuz.Layout_end_container(ctx)
         
         // Main content area
@@ -49,10 +57,10 @@ main :: proc() {
             padding = ansuz.Padding_all(1),
         })
         
-            // Sidebar
+            // Sidebar (Weighted Grow Example)
             ansuz.Layout_begin_container(ctx, {
                 direction = .TopToBottom,
-                sizing = {ansuz.Sizing_percent(0.2), ansuz.Sizing_grow()},
+                sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()}, // Weight 1
                 gap = 1,
             })
                 ansuz.Layout_box(ctx, ansuz.STYLE_INFO, {
@@ -60,14 +68,13 @@ main :: proc() {
                     padding = ansuz.Padding_all(1),
                 })
                 ansuz.Layout_end_box(ctx)
-                // We'd need a way to put text inside that box in the layout system...
-                // In clay, you'd use a container with a border.
+                ansuz.Layout_text(ctx, "Sidebar (Weight 1)", ansuz.STYLE_DIM)
             ansuz.Layout_end_container(ctx)
             
-            // Content
+            // Content (Weighted Grow Example)
             ansuz.Layout_begin_container(ctx, {
                 direction = .TopToBottom,
-                sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+                sizing = {ansuz.Sizing_grow(3), ansuz.Sizing_grow()}, // Weight 3
                 gap = 1,
             })
                 ansuz.Layout_begin_container(ctx, {
@@ -76,25 +83,21 @@ main :: proc() {
                     padding = ansuz.Padding_all(1),
                     alignment = {horizontal = .Center, vertical = .Center},
                 })
-                    ansuz.Layout_text(ctx, "Centered Content", ansuz.STYLE_SUCCESS)
-                    ansuz.Layout_rect(ctx, '-', ansuz.STYLE_DIM, {
-                        sizing = {ansuz.Sizing_fixed(20), ansuz.Sizing_fixed(1)},
+                    ansuz.Layout_text(ctx, "Weighted Grow Example (Weight 3)", ansuz.STYLE_SUCCESS)
+                    
+                    // Scrolling Container Example
+                    ansuz.Layout_text(ctx, "Scrolling Container (arrows):", ansuz.STYLE_NORMAL)
+                    ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+                        sizing = {ansuz.Sizing_percent(0.8), ansuz.Sizing_fixed(10)},
+                        overflow = .Scroll,
+                        scroll_offset = {0, scroll_y},
                     })
-                    ansuz.Layout_end_rect(ctx)
-                    ansuz.Layout_text(ctx, "This layout is calculated using a Clay-inspired system.", ansuz.STYLE_NORMAL)
-                ansuz.Layout_end_container(ctx)
-                
-                ansuz.Layout_begin_container(ctx, {
-                    direction = .LeftToRight,
-                    sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(5)},
-                    gap = 3,
-                })
-                    ansuz.Layout_box(ctx, ansuz.STYLE_WARNING, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
+                        // Scrollable content
+                        for i in 1..=20 {
+                            ansuz.Layout_text(ctx, fmt.tprintf("Scrollable Item %d", i), ansuz.STYLE_DIM)
+                        }
                     ansuz.Layout_end_box(ctx)
-                    ansuz.Layout_box(ctx, ansuz.STYLE_ERROR, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
-                    ansuz.Layout_end_box(ctx)
-                    ansuz.Layout_box(ctx, ansuz.STYLE_INFO, {sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}})
-                    ansuz.Layout_end_box(ctx)
+                    
                 ansuz.Layout_end_container(ctx)
                 
             ansuz.Layout_end_container(ctx)
@@ -108,7 +111,7 @@ main :: proc() {
             padding = {left = 2, right = 2, top = 0, bottom = 0},
             alignment = {horizontal = .Right, vertical = .Top},
         })
-            ansuz.Layout_text(ctx, "Status: OK", ansuz.STYLE_INFO)
+            ansuz.Layout_text(ctx, fmt.tprintf("Scroll Y: %d", scroll_y), ansuz.STYLE_INFO)
         ansuz.Layout_end_container(ctx)
         
         ansuz.end_layout(ctx)
