@@ -88,19 +88,17 @@ main :: proc() {
 	}
 }
 
-handle_input :: proc(state: ^BtopDemoState, event: ansuz.Event) {
+	handle_input :: proc(state: ^BtopDemoState, event: ansuz.Event) {
 	#partial switch e in event {
 	case ansuz.KeyEvent:
 		#partial switch e.key {
 		case .Ctrl_C, .Ctrl_D, .Escape:
 			state.running = false
-		case .Tab:
-			state.selected_tab = (state.selected_tab + 1) % 4
-		case .Right:
-			state.selected_tab = (state.selected_tab + 1) % 4
-		case .Left:
-			state.selected_tab = (state.selected_tab - 1 + 4) % 4
-	}
+		case .Char:
+			if e.rune == 'q' || e.rune == 'Q' {
+				state.running = false
+			}
+		}
 	}
 }
 
@@ -117,33 +115,38 @@ render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {
 	// Header
 	render_header(ctx, state)
 
-	// Main content based on tab
-	switch state.selected_tab {
-	case 0: {
-		ansuz.Layout_text(ctx, "CPU VIEW - Press Tab to switch", ansuz.STYLE_BOLD)
-		ansuz.Layout_text(ctx, fmt.tprintf("Core 0: %.1f%%", state.cpu_usage[0]), ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, fmt.tprintf("Core 1: %.1f%%", state.cpu_usage[1]), ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, fmt.tprintf("Core 2: %.1f%%", state.cpu_usage[2]), ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, fmt.tprintf("Core 3: %.1f%%", state.cpu_usage[3]), ansuz.STYLE_NORMAL)
-	}
-	case 1: {
-		ansuz.Layout_text(ctx, "MEMORY VIEW", ansuz.STYLE_BOLD)
-		ansuz.Layout_text(ctx, fmt.tprintf("RAM: %.1f/%.1f GB", state.mem_used, state.mem_total), ansuz.STYLE_NORMAL)
-		render_progress_bar(ctx, state.mem_used / state.mem_total * 100.0)
-	}
-	case 2: {
-		ansuz.Layout_text(ctx, "NETWORK VIEW", ansuz.STYLE_BOLD)
-		ansuz.Layout_text(ctx, fmt.tprintf("RX: %.1f MB/s", state.net_rx), ansuz.STYLE_NORMAL)
-		ansuz.Layout_text(ctx, fmt.tprintf("TX: %.1f MB/s", state.net_tx), ansuz.STYLE_NORMAL)
-	}
-	case 3: {
-		ansuz.Layout_text(ctx, "PROCESS VIEW", ansuz.STYLE_BOLD)
-		for i in 0..<min(5, len(state.processes)) {
-			p := state.processes[i]
-			ansuz.Layout_text(ctx, fmt.tprintf("%d %s %.1f%% %.1f%%", p.pid, p.name, p.cpu, p.mem), ansuz.STYLE_NORMAL)
-		}
-	}
-	}
+	// Container for all 4 sections in 2x2 grid
+	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		direction = .LeftToRight,
+		padding = {1, 1, 1, 1},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+	})
+
+	// Left column: CPU and Memory
+	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		direction = .TopToBottom,
+		padding = {0, 0, 0, 0},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+	})
+
+	render_cpu_view(ctx, state)
+	render_mem_view(ctx, state)
+
+	ansuz.Layout_end_box(ctx)
+
+	// Right column: Network and Processes
+	ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
+		direction = .TopToBottom,
+		padding = {0, 0, 0, 0},
+		sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+	})
+
+	render_net_view(ctx, state)
+	render_proc_view(ctx, state)
+
+	ansuz.Layout_end_box(ctx)
+
+	ansuz.Layout_end_box(ctx)
 
 	// Footer with controls
 	render_footer(ctx, state)
