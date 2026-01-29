@@ -148,10 +148,11 @@ test_terminal_functions_return_types :: proc(t: ^testing.T) {
 
 @(test)
 test_read_input_function_type :: proc(t: ^testing.T) {
-    byte, available := read_input()
-    _ = byte
-    _ = available
-    testing.expect(t, true, "read_input returns correct types")
+    // Only verify function signature - don't actually call read_input() 
+    // as it blocks waiting for stdin input
+    fn_type: proc() -> (u8, bool)
+    fn_type = read_input
+    testing.expect(t, fn_type != nil, "read_input should exist")
 }
 
 @(test)

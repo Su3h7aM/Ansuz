@@ -69,8 +69,8 @@ Padding_all :: proc(value: int) -> Padding {
 }
 
  Overflow :: enum {
-    Visible,
     Hidden,
+    Visible,
     Scroll,
  }
 
@@ -255,7 +255,14 @@ add_box :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFA
 }
 
 add_box_container :: proc(l_ctx: ^LayoutContext, style: Style, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG, box_style: BoxStyle = .Sharp) {
-	node_idx := _add_node(l_ctx, config, true)
+    // Automatically add padding for the border so content doesn't overlap it
+    modified_config := config
+    modified_config.padding.left += 1
+    modified_config.padding.right += 1
+    modified_config.padding.top += 1
+    modified_config.padding.bottom += 1
+
+	node_idx := _add_node(l_ctx, modified_config, true)
 	node := &l_ctx.nodes[node_idx]
 	node.render_cmd = RenderCommand{
 		type      = .Box,
@@ -320,6 +327,11 @@ rect_intersection :: proc(r1, r2: Rect) -> Rect {
     return Rect{x1, y1, w, h}
 }
 
+// Check if a rect has positive dimensions and is visible
+_rect_is_visible :: proc(rect: Rect) -> bool {
+    return rect.w > 0 && rect.h > 0
+}
+
 finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 	if len(l_ctx.nodes) == 0 do return
 
@@ -347,8 +359,13 @@ finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 _render_recursive :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context, node_idx: int, parent_clip: Rect) {
     node := &l_ctx.nodes[node_idx]
     
-    // 1. Render Self
-    // Ensure clip rect is set to what we expect
+    // Early exit: compute visible rect and skip if completely invisible
+    visible_rect := rect_intersection(node.final_rect, parent_clip)
+    if !_rect_is_visible(visible_rect) {
+        return  // Element is completely outside clip bounds, skip entirely
+    }
+    
+    // Set clip rect for rendering
     set_clip_rect(&ansuz_ctx.buffer, parent_clip)
     
     cmd := &node.render_cmd
@@ -362,21 +379,41 @@ _render_recursive :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context, node_idx: 
         case .Box:
             w := max(0, cmd.rect.w)
             h := max(0, cmd.rect.h)
-            box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
+            if w > 0 && h > 0 {
+                box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
+            }
         case .Rect:
             w := max(0, cmd.rect.w)
             h := max(0, cmd.rect.h)
-            rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
+            if w > 0 && h > 0 {
+                rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
+            }
         }
     }
     
-    // 2. Determine Clip for Children
+    // Determine clip for children
     child_clip := parent_clip
     if node.config.overflow != .Visible {
-        child_clip = rect_intersection(parent_clip, node.final_rect)
+        clip_source := node.final_rect
+        
+        // If this node draws a box, inset the clip rect so children 
+        // don't draw over the border
+        if node.render_cmd.type == .Box {
+             clip_source.x += 1
+             clip_source.y += 1
+             clip_source.w = max(0, clip_source.w - 2)
+             clip_source.h = max(0, clip_source.h - 2)
+        }
+        
+        child_clip = rect_intersection(parent_clip, clip_source)
     }
     
-    // 3. Recurse
+    // Early exit for children if child clip is invalid
+    if !_rect_is_visible(child_clip) {
+        return
+    }
+    
+    // Recurse into children
     child_idx := node.first_child
     for child_idx != -1 {
         _render_recursive(l_ctx, ansuz_ctx, child_idx, child_clip)
