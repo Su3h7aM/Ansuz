@@ -68,11 +68,29 @@ Padding_all :: proc(value: int) -> Padding {
     return Padding{value, value, value, value}
 }
 
-Overflow :: enum {
+ Overflow :: enum {
     Visible,
     Hidden,
     Scroll,
-}
+ }
+
+_clamp_rect :: proc(rect: ^Rect, bounds_x, bounds_y, bounds_w, bounds_h: int, overflow: Overflow) {
+    // Only clamp for Hidden overflow - Scroll and Visible allow content outside bounds
+    if overflow != .Hidden do return
+
+    rect.x = max(bounds_x, rect.x)
+    rect.y = max(bounds_y, rect.y)
+
+    max_x := bounds_x + bounds_w
+    max_y := bounds_y + bounds_h
+
+    if rect.x + rect.w > max_x {
+        rect.w = max(0, max_x - rect.x)
+    }
+    if rect.y + rect.h > max_y {
+        rect.h = max(0, max_y - rect.y)
+    }
+ }
 
 LayoutConfig :: struct {
     direction:     LayoutDirection,
@@ -82,7 +100,7 @@ LayoutConfig :: struct {
     alignment:     Alignment,
     overflow:      Overflow,
     scroll_offset: [2]int, // x, y offset
-}
+ }
 
 DEFAULT_LAYOUT_CONFIG :: LayoutConfig{
     direction     = .TopToBottom,
@@ -659,7 +677,9 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
         } else {
              child.final_rect.y = start_y + cross_offset - node.config.scroll_offset.y
         }
-        
+
+        _clamp_rect(&child.final_rect, start_x, start_y, content_w, content_h, node.config.overflow)
+
         // Recurse
         _pass3_position(l_ctx, child_idx)
         
