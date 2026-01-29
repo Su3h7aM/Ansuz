@@ -108,7 +108,7 @@ DEFAULT_LAYOUT_CONFIG :: LayoutConfig{
     padding       = {0, 0, 0, 0},
     gap           = 0,
     alignment     = {.Left, .Top},
-    overflow      = .Visible,
+    overflow      = .Hidden,
     scroll_offset = {0, 0},
 }
 
