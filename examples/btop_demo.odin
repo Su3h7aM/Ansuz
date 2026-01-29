@@ -50,66 +50,75 @@ STYLE_PROC_DIM :: ansuz.Style{.Cyan, .Default, {.Dim}}
 STYLE_HEADER :: ansuz.Style{.BrightCyan, .Default, {.Bold}}
 STYLE_FOOTER :: ansuz.Style{.BrightBlack, .Default, {.Dim}}
 	
-	main :: proc() {
-	ctx, err := ansuz.init()
-	if err != .None {
-		fmt.eprintln("Failed to initialize Ansuz:", err)
-		return
-	}
-	defer ansuz.shutdown(ctx)
+// Global state for simple demo access
+g_state: BtopDemoState
 
-	state := BtopDemoState{
-		running = true,
-		selected_tab = 0,
-		mem_total = 16.0,  // 16 GB
-		swap_total = 8.0,  // 8 GB
-		last_update = time.now(),
-	}
+main :: proc() {
+    ctx, err := ansuz.init()
+    if err != .None {
+        fmt.eprintln("Failed to initialize Ansuz:", err)
+        return
+    }
+    defer ansuz.shutdown(ctx)
 
-	// Initialize histories
-	state.mem_history = make([dynamic]f32, 0, 60, context.allocator)
-	state.net_rx_history = make([dynamic]f32, 0, 60, context.allocator)
-	state.net_tx_history = make([dynamic]f32, 0, 60, context.allocator)
-	state.processes = make([dynamic]ProcessInfo, 0, 20, context.allocator)
+    // Initialize global state
+    g_state = BtopDemoState{
+        running = true,
+        selected_tab = 0,
+        mem_total = 16.0,  // 16 GB
+        swap_total = 8.0,  // 8 GB
+        last_update = time.now(),
+    }
 
-	// Generate initial fake data
-	generate_fake_data(&state)
+    // Initialize histories
+    g_state.mem_history = make([dynamic]f32, 0, 60, context.allocator)
+    g_state.net_rx_history = make([dynamic]f32, 0, 60, context.allocator)
+    g_state.net_tx_history = make([dynamic]f32, 0, 60, context.allocator)
+    g_state.processes = make([dynamic]ProcessInfo, 0, 20, context.allocator)
 
-	for state.running {
-		ansuz.begin_frame(ctx)
+    // Generate initial fake data
+    generate_fake_data(&g_state)
 
-		// Handle input
-		events := ansuz.poll_events(ctx)
-		for ev in events {
-			handle_input(&state, ev)
-		}
-
-		// Update data occasionally
-		now := time.now()
-		if time.diff(state.last_update, now) >= 500 * time.Millisecond {
-			update_fake_data(&state)
-			state.last_update = now
-		}
-
-		// Render
-		render_btop(ctx, &state)
-
-		ansuz.end_frame(ctx)
-	}
+    // Use the library's event-driven run loop
+    ansuz.run(ctx, update_app)
 }
 
-	handle_input :: proc(state: ^BtopDemoState, event: ansuz.Event) {
-	#partial switch e in event {
-	case ansuz.KeyEvent:
-		#partial switch e.key {
-		case .Ctrl_C, .Ctrl_D, .Escape:
-			state.running = false
-		case .Char:
-			if e.rune == 'q' || e.rune == 'Q' {
-				state.running = false
-			}
-		}
-	}
+update_app :: proc(ctx: ^ansuz.Context) -> bool {
+    // Handle input
+    events := ansuz.poll_events(ctx)
+    for ev in events {
+        handle_input(&g_state, ev)
+    }
+
+    if !g_state.running {
+        return false
+    }
+
+    // Update data occasionally
+    now := time.now()
+    if time.diff(g_state.last_update, now) >= 500 * time.Millisecond {
+        update_fake_data(&g_state)
+        g_state.last_update = now
+    }
+
+    // Render
+    render_btop(ctx, &g_state)
+    
+    return true
+}
+
+handle_input :: proc(state: ^BtopDemoState, event: ansuz.Event) {
+    #partial switch e in event {
+    case ansuz.KeyEvent:
+        #partial switch e.key {
+        case .Ctrl_C, .Ctrl_D, .Escape:
+            state.running = false
+        case .Char:
+            if e.rune == 'q' || e.rune == 'Q' {
+                state.running = false
+            }
+        }
+    }
 }
 
 render_btop :: proc(ctx: ^ansuz.Context, state: ^BtopDemoState) {

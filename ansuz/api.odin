@@ -176,6 +176,8 @@ end_frame :: proc(ctx: ^Context) {
 
 	// Write to terminal
 	write_ansi(output)
+	// Move cursor to home (1,1) to prevent scrolling on shrink if cursor was at bottom
+	write_ansi("\x1b[H")
 	flush_output()
 
     // Calculate frame time (for debug purposes)
@@ -306,10 +308,9 @@ handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
     ctx.width = new_width
     ctx.height = new_height
 
-    // Re-enter alternate screen to ensure proper resize behavior
-    // This prevents flicker when resizing
-    // leave_alternate_buffer()
-    // enter_alternate_buffer()
+// Ensure terminal state is clean on resize
+    disable_auto_wrap()
+    move_cursor_home()
 
     resize_buffer(&ctx.buffer, new_width, new_height)
 }
