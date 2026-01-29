@@ -58,9 +58,6 @@ STYLE_FOOTER :: ansuz.Style{.BrightBlack, .Default, {.Dim}}
 	}
 	defer ansuz.shutdown(ctx)
 
-	// Enable FPS limiting
-	ansuz.set_target_fps(ctx, 30)
-
 	state := BtopDemoState{
 		running = true,
 		selected_tab = 0,

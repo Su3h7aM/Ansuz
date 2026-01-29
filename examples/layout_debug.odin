@@ -11,8 +11,6 @@ main :: proc() {
 	}
 	defer ansuz.shutdown(ctx)
 
-	ansuz.set_target_fps(ctx, 30)
-
 	running := true
 	for running {
 		ansuz.begin_frame(ctx)

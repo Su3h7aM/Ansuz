@@ -5,6 +5,7 @@ package ansuz
 
 import "core:fmt"
 import "core:mem"
+import "core:strings"
 import "core:time"
 
 // Context maintains the global state for the TUI library
@@ -23,7 +24,7 @@ Context :: struct {
     width:         int,
     height:        int,
 
-    // Frame timing (for future FPS limiting)
+    // Frame timing
     frame_count:   u64,
 
     // FPS and frame time measurement
@@ -34,8 +35,8 @@ Context :: struct {
     frame_time_history:   [dynamic]time.Duration,
     max_history_samples:  int,
 
-    // FPS limiting
-    target_fps:           f32,
+    // Reusable string builder for rendering (avoids per-frame allocations)
+    render_buffer: strings.Builder,
 
     // Layout system
     layout_ctx:    LayoutContext,
@@ -101,6 +102,14 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     // Initialize layout context
     ctx.layout_ctx = init_layout_context(allocator)
 
+    // Initialize reusable render buffer with pre-allocated capacity
+    // For 80x24 terminal with ANSI codes: ~1920 chars + styles, use 16KB for safety
+    render_buf, render_buf_err := strings.builder_make_len_cap(0, 16384, allocator)
+    if render_buf_err != .None {
+        return ctx, .BufferInitFailed
+    }
+    ctx.render_buffer = render_buf
+
     // Initial terminal setup
     disable_auto_wrap()
     hide_cursor()
@@ -132,6 +141,9 @@ shutdown :: proc(ctx: ^Context) {
 
     // Clean up timing history
     delete(ctx.frame_time_history)
+
+    // Clean up render buffer
+    strings.builder_destroy(&ctx.render_buffer)
 
     // Restore terminal
     reset_terminal()
@@ -168,7 +180,8 @@ end_frame :: proc(ctx: ^Context) {
     real_w, real_h, _ := get_terminal_size()
 
 	// Generate full render output, clipping to actual terminal size
-	output := render_to_string(&ctx.buffer, context.temp_allocator, real_w, real_h)
+	// Reusable builder avoids per-frame allocations
+	output := render_to_string(&ctx.buffer, &ctx.render_buffer, real_w, real_h)
 
 	// Write to terminal
 	write_ansi(output)
@@ -196,14 +209,6 @@ end_frame :: proc(ctx: ^Context) {
         ctx.fps = 1.0 / f32(time.duration_seconds(avg_time))
     }
 
-    // FPS limiting
-    if ctx.target_fps > 0 {
-        target_frame_time_ns := time.Duration(i64(1000000000.0 / ctx.target_fps))
-        if frame_duration < target_frame_time_ns {
-            time.sleep(target_frame_time_ns - frame_duration)
-        }
-    }
-
     ctx.frame_count += 1
 }
 
@@ -220,12 +225,6 @@ get_avg_frame_time :: proc(ctx: ^Context) -> time.Duration {
 // get_last_frame_time returns the duration of the most recent frame
 get_last_frame_time :: proc(ctx: ^Context) -> time.Duration {
     return ctx.last_frame_time
-}
-
-// set_target_fps sets the target FPS for frame rate limiting
-// Set to 0 to disable limiting
-set_target_fps :: proc(ctx: ^Context, fps: f32) {
-    ctx.target_fps = fps
 }
 
 // poll_events reads and parses input events from the terminal

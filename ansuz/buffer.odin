@@ -302,8 +302,10 @@ draw_box :: proc(buffer: ^FrameBuffer, x, y, width, height: int, fg, bg: Color, 
 // render_to_string converts the entire buffer to a string with ANSI codes
 // Renders the complete buffer every frame (immediate mode)
 // optional max_width/height allow clipping to actual terminal size to prevent scrolling on shrink
-render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocator, max_width: int = -1, max_height: int = -1) -> string {
-    builder := strings.builder_make(allocator)
+// Builder is reused to avoid per-frame allocations - caller should reset before calling
+render_to_string :: proc(buffer: ^FrameBuffer, builder: ^strings.Builder, max_width: int = -1, max_height: int = -1) -> string {
+    // Reset and reuse builder
+    strings.builder_reset(builder)
 
     // Clear string builder with standard clear logic if needed, or just start new
     // builder is new here so it's empty.
@@ -328,7 +330,7 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
         // This prevents the terminal from scrolling if we accidentally write to the last line
         // when the terminal has shrunk.
         // Format: ESC [ <y+1> ; 1 H  (1-based coordinates)
-        fmt.sbprintf(&builder, "\x1b[%d;1H", y + 1)
+        fmt.sbprintf(builder, "\x1b[%d;1H", y + 1)
 
         for x in 0..<render_w {
             cell := get_cell(buffer, x, y)
@@ -337,11 +339,11 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
                 // Out of bounds - write space with default style
                 if current_style != default_style() {
                     style_seq := to_ansi(default_style())
-                    strings.write_string(&builder, style_seq)
+                    strings.write_string(builder, style_seq)
                     current_style = default_style()
                     needs_style_reset = true
                 }
-                strings.write_rune(&builder, ' ')
+                strings.write_rune(builder, ' ')
             } else {
 
             // Generate style sequence if style changed
@@ -353,13 +355,13 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
 
             if new_style != current_style {
                 style_seq := to_ansi(new_style)
-                strings.write_string(&builder, style_seq)
+                strings.write_string(builder, style_seq)
                 current_style = new_style
                 needs_style_reset = true
             }
 
                 // Write the character
-                strings.write_rune(&builder, cell.rune)
+                strings.write_rune(builder, cell.rune)
             }
         }
         // No newline emission here!
@@ -367,10 +369,10 @@ render_to_string :: proc(buffer: ^FrameBuffer, allocator := context.temp_allocat
 
     // Reset style at the end
     if needs_style_reset {
-        strings.write_string(&builder, reset_style())
+        strings.write_string(builder, reset_style())
     }
 
-    return strings.to_string(builder)
+    return strings.to_string(builder^)
 }
 
 // resize_buffer changes the dimensions of an existing buffer

@@ -254,12 +254,15 @@ test_buffer_draw_box_too_small :: proc(t: ^testing.T) {
 test_buffer_render_to_string :: proc(t: ^testing.T) {
     buffer, _ := init_buffer(5, 3, context.allocator)
     defer destroy_buffer(&buffer)
-    
+
     write_string(&buffer, 0, 0, "ABC", .Red, .Blue, {})
-    
-    output := render_to_string(&buffer, context.temp_allocator)
+
+    builder := strings.builder_make(context.temp_allocator)
+    defer strings.builder_destroy(&builder)
+
+    output := render_to_string(&buffer, &builder)
     testing.expect(t, len(output) > 0, "Render output should not be empty")
-    testing.expect(t, strings.contains(output, "\x1b[H"), "Output should contain home sequence")
+    testing.expect(t, strings.contains(output, "\x1b[1;1H"), "Output should contain absolute positioning")
 }
 
 @(test)

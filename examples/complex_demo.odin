@@ -32,9 +32,6 @@ main :: proc() {
 		progress_start_time = time.now(),
 	}
 
-	// Enable FPS limiting at 60 FPS
-	ansuz.set_target_fps(ctx, 60)
-
 	for state.running {
 		start_time := time.now()
 
