@@ -1,5 +1,6 @@
 package ansuz
 
+import "base:intrinsics"
 import "core:fmt"
 import "core:os"
 import "core:sys/posix"
@@ -12,6 +13,21 @@ winsize :: struct {
 	ws_xpixel: u16,  // horizontal size, pixels (unused)
 	ws_ypixel: u16,  // vertical size, pixels (unused)
 }
+
+// Poll_Fd struct for poll() syscall
+Poll_Fd :: struct {
+	fd:      i32,   // file descriptor
+	events:  i16,   // events to monitor
+	revents: i16,   // events that occurred (output)
+}
+
+// Poll event flags
+POLLIN  :: i16(0x0001)  // There is data to read
+POLLPRI :: i16(0x0002)  // There is urgent data to read
+POLLOUT :: i16(0x0004)  // Writing is possible
+POLLERR :: i16(0x0008)  // Error condition
+POLLHUP :: i16(0x0010)  // Hang up
+POLLNVAL :: i16(0x0020) // Invalid request: fd not open
 
 // TerminalState maintains state of terminal configuration
 // It stores original termios settings for restoration on exit
@@ -235,6 +251,86 @@ read_input :: proc() -> (byte: u8, available: bool) {
 	}
 
 	return buffer[0], true
+}
+// WaitResult indicates what caused wait_for_event to return
+WaitResult :: enum {
+	None,        // Timeout with no events
+	Input,       // Input available on stdin
+	Resize,      // Terminal size changed
+	Error,       // Error occurred
+}
+
+// wait_for_event blocks until an event occurs (input, resize, or timeout)
+// Uses poll() on stdin with periodic timeout to detect terminal resize via ioctl
+// 
+// Parameters:
+//   last_width, last_height: Previous terminal dimensions (to detect resize)
+//   timeout_ms: Maximum time to wait (-1 = infinite, but will use internal timeout for resize detection)
+//
+// Returns: (result, new_width, new_height)
+wait_for_event :: proc(last_width, last_height: int, timeout_ms: i32 = -1) -> (WaitResult, int, int) {
+	// SYS_poll = 7 on amd64
+	SYS_poll :: uintptr(7)
+	
+	// Use 100ms internal timeout for resize detection if infinite wait requested
+	poll_timeout := timeout_ms == -1 ? i32(100) : timeout_ms
+	
+	fds: [1]Poll_Fd
+	fds[0] = Poll_Fd{
+		fd      = i32(os.stdin),
+		events  = POLLIN,
+		revents = 0,
+	}
+	
+	// poll(fds, nfds, timeout)
+	ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(poll_timeout))
+	
+	// Check for terminal resize by querying current size
+	new_width, new_height, _ := get_terminal_size()
+	if new_width != last_width || new_height != last_height {
+		return .Resize, new_width, new_height
+	}
+	
+	// Check poll result
+	if int(ret) < 0 {
+		return .Error, new_width, new_height
+	}
+	
+	if int(ret) > 0 && (fds[0].revents & POLLIN) != 0 {
+		return .Input, new_width, new_height
+	}
+	
+	// Timeout - if user requested infinite wait, loop internally
+	if timeout_ms == -1 {
+		// Recursive call to continue waiting
+		return wait_for_event(new_width, new_height, timeout_ms)
+	}
+	
+	return .None, new_width, new_height
+}
+
+// wait_for_input blocks until stdin has data available or timeout expires
+// timeout_ms: -1 for infinite wait, 0 for immediate return, >0 for milliseconds
+// Returns: true if data is available, false if timeout or error
+// DEPRECATED: Use wait_for_event() for event-driven rendering
+wait_for_input :: proc(timeout_ms: i32 = -1) -> bool {
+	// SYS_poll = 7 on amd64
+	SYS_poll :: uintptr(7)
+	
+	fds: [1]Poll_Fd
+	fds[0] = Poll_Fd{
+		fd      = i32(os.stdin),
+		events  = POLLIN,
+		revents = 0,
+	}
+	
+	// poll(fds, nfds, timeout)
+	ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(timeout_ms))
+	
+	// ret > 0: number of fds with events
+	// ret = 0: timeout
+	// ret < 0: error
+	return int(ret) > 0 && (fds[0].revents & POLLIN) != 0
 }
 
 // reset_terminal performs full terminal cleanup

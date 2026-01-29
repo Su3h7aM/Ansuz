@@ -178,18 +178,16 @@ render_header :: proc(ctx: ^ansuz.Context, state: ^DemoState) {
 		ansuz.Layout_end_container(ctx)
 
 		// Stats
-		fps_text := fmt.tprintf("FPS: %.1f", ansuz.get_fps(ctx))
 		frame_text := fmt.tprintf("Frame Time: %s", format_duration(ansuz.get_last_frame_time(ctx)))
 		size_width, size_height := ansuz.get_size(ctx)
 		size_text := fmt.tprintf("Size: %dx%d", size_width, size_height)
 
 		ansuz.Layout_begin_container(ctx, {
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_fixed(3)},
+			sizing = {ansuz.Sizing_fit(), ansuz.Sizing_fixed(2)},
 			alignment = {horizontal = .Right, vertical = .Center},
 			gap = 0,
 		})
-			ansuz.Layout_text(ctx, fps_text, get_stat_style())
 			ansuz.Layout_text(ctx, frame_text, get_stat_style())
 			ansuz.Layout_text(ctx, size_text, get_stat_style())
 		ansuz.Layout_end_container(ctx)

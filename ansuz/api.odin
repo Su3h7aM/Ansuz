@@ -27,13 +27,9 @@ Context :: struct {
     // Frame timing
     frame_count:   u64,
 
-    // FPS and frame time measurement
+    // Frame time measurement (for debug purposes)
     frame_start_time:     time.Time,
     last_frame_time:      time.Duration,
-    fps:                  f32,
-    avg_frame_time:       time.Duration,
-    frame_time_history:   [dynamic]time.Duration,
-    max_history_samples:  int,
 
     // Reusable string builder for rendering (avoids per-frame allocations)
     render_buffer: strings.Builder,
@@ -115,9 +111,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
     hide_cursor()
     clear_screen()
 
-    // Initialize timing for FPS/frame time measurement
-    ctx.frame_time_history = make([dynamic]time.Duration, 0, 60, allocator)
-    ctx.max_history_samples = 60
+    // Initialize frame timing
     ctx.frame_start_time = time.now()
 
     return ctx, .None
@@ -138,9 +132,6 @@ shutdown :: proc(ctx: ^Context) {
 
     // Clean up layout context
     destroy_layout_context(&ctx.layout_ctx)
-
-    // Clean up timing history
-    delete(ctx.frame_time_history)
 
     // Clean up render buffer
     strings.builder_destroy(&ctx.render_buffer)
@@ -187,39 +178,62 @@ end_frame :: proc(ctx: ^Context) {
 	write_ansi(output)
 	flush_output()
 
-    // Calculate frame time and FPS
+    // Calculate frame time (for debug purposes)
     frame_end_time := time.now()
-    frame_duration := time.diff(ctx.frame_start_time, frame_end_time)
-    ctx.last_frame_time = frame_duration
-
-    // Update rolling average
-    append(&ctx.frame_time_history, frame_duration)
-    if len(ctx.frame_time_history) > ctx.max_history_samples {
-        ordered_remove(&ctx.frame_time_history, 0)
-    }
-
-    // Calculate FPS
-    if len(ctx.frame_time_history) > 0 {
-        total_time := time.Duration(0)
-        for t in ctx.frame_time_history {
-            total_time += t
-        }
-        avg_time := total_time / time.Duration(len(ctx.frame_time_history))
-        ctx.avg_frame_time = avg_time
-        ctx.fps = 1.0 / f32(time.duration_seconds(avg_time))
-    }
+    ctx.last_frame_time = time.diff(ctx.frame_start_time, frame_end_time)
 
     ctx.frame_count += 1
 }
 
-// get_fps returns the current calculated FPS based on rolling average
-get_fps :: proc(ctx: ^Context) -> f32 {
-    return ctx.fps
+// run executes the event-driven main loop
+// This is the primary entry point for event-driven TUI applications.
+// The callback is called whenever an event occurs (input or resize).
+// 
+// The callback receives the context and returns true to continue, false to exit.
+// Inside the callback, you should:
+//   1. Call poll_events() to get pending input events
+//   2. Process events and update your application state
+//   3. Use Layout API to define your UI
+//
+// Example:
+//   ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+//       for event in ansuz.poll_events(ctx) {
+//           if is_quit(event) do return false
+//       }
+//       render_my_ui(ctx)
+//       return true
+//   })
+//
+run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
+    for {
+        // Wait for events (input or resize) - blocks until something happens
+        result, new_w, new_h := wait_for_event(ctx.width, ctx.height)
+        
+        // Handle resize
+        if result == .Resize {
+            handle_resize(ctx, new_w, new_h)
+        }
+        
+        // Start frame
+        begin_frame(ctx)
+        
+        // Call user's update/render callback
+        should_continue := update(ctx)
+        
+        // End frame (renders to terminal)
+        end_frame(ctx)
+        
+        if !should_continue {
+            break
+        }
+    }
 }
 
-// get_avg_frame_time returns the average frame time over recent frames
-get_avg_frame_time :: proc(ctx: ^Context) -> time.Duration {
-    return ctx.avg_frame_time
+// request_redraw can be used to force a re-render on the next wait_for_event cycle
+// Currently a no-op placeholder for future timer-based animations
+request_redraw :: proc(ctx: ^Context) {
+    // Future: set a flag that causes wait_for_event to return immediately
+    // For now, the 100ms poll timeout ensures periodic refreshes
 }
 
 // get_last_frame_time returns the duration of the most recent frame
