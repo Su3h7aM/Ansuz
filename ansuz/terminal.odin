@@ -232,6 +232,20 @@ enable_auto_wrap :: proc() -> TerminalError {
 	return write_ansi("\x1b[?7h")
 }
 
+// begin_sync_update begins a synchronized output update (Mode 2026)
+// Terminals that support this will buffer all output until end_sync_update()
+// This prevents flickering/tearing during screen updates (especially in Ghostty)
+// Terminals that don't support it will safely ignore this sequence
+begin_sync_update :: proc() -> TerminalError {
+	return write_ansi("\x1b[?2026h")
+}
+
+// end_sync_update ends a synchronized output update (Mode 2026)
+// This causes the terminal to flush all buffered output atomically
+end_sync_update :: proc() -> TerminalError {
+	return write_ansi("\x1b[?2026l")
+}
+
 // get_terminal_size retrieves current terminal dimensions
 // Returns (width, height) in characters
 //

@@ -165,6 +165,10 @@ begin_frame :: proc(ctx: ^Context) {
 // end_frame finishes the current frame and outputs to terminal
 // In immediate mode, we render the entire buffer every frame
 end_frame :: proc(ctx: ^Context) {
+	// Begin synchronized update to prevent flickering (Mode 2026)
+	// This is especially important for Ghostty terminal emulator
+	begin_sync_update()
+
 	// Check terminal size one last time before rendering
 	// This handles the race condition where terminal shrinks *during* the frame
 	// If we don't do this, we might write a line that no longer exists, causing scroll/flicker
@@ -178,6 +182,9 @@ end_frame :: proc(ctx: ^Context) {
 	write_ansi(output)
 	// Move cursor to home (1,1) to prevent scrolling on shrink if cursor was at bottom
 	write_ansi("\x1b[H")
+
+	// End synchronized update - terminal atomically displays the frame
+	end_sync_update()
 	flush_output()
 
 	// Calculate frame time (for debug purposes)
