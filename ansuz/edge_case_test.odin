@@ -617,12 +617,3 @@ test_context_shutdown_nil :: proc(t: ^testing.T) {
 	// This should not crash
 	shutdown(nil)
 }
-
-@(test)
-test_api_functions_with_nil_context :: proc(t: ^testing.T) {
-	// Most API functions should handle nil context gracefully or be tested separately
-	// We can't call them safely with nil, but we can verify they exist
-
-	// These functions should handle nil internally or require valid context
-	// For now, we just verify the functions exist
-}

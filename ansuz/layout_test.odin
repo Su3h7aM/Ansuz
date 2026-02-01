@@ -58,7 +58,46 @@ test_layout_weighted_grow :: proc(t: ^testing.T) {
 
 @(test)
 test_layout_padding_gap :: proc(t: ^testing.T) {
-	// TODO: Implement valid padding/gap test with new system
+	l_ctx := init_layout_context(context.allocator)
+	defer destroy_layout_context(&l_ctx)
+
+	root_rect := Rect{0, 0, 100, 100}
+	reset_layout_context(&l_ctx, root_rect)
+
+	// Container with padding 10 on all sides and gap 5
+	begin_container(
+		&l_ctx,
+		{
+			direction = .TopToBottom,
+			sizing = {Sizing_grow(), Sizing_grow()},
+			padding = {10, 10, 10, 10},
+			gap = 5,
+		},
+	)
+
+	// Item 1
+	add_text(&l_ctx, "Item 1", style_normal(), {sizing = {Sizing_grow(), Sizing_fixed(10)}})
+	// Gap of 5 here
+	// Item 2
+	add_text(&l_ctx, "Item 2", style_normal(), {sizing = {Sizing_grow(), Sizing_fixed(10)}})
+
+	end_container(&l_ctx)
+
+	_run_layout_passes(&l_ctx)
+
+	// Root is 100x100
+	// Padding left/top is 10.
+	// Item 1 position: x=10, y=10
+	testing.expect_value(t, l_ctx.nodes[1].final_rect.x, 10)
+	testing.expect_value(t, l_ctx.nodes[1].final_rect.y, 10)
+
+	// Item 1 height is 10.
+	// Gap is 5.
+	// Item 2 y = 10 (start) + 10 (h) + 5 (gap) = 25
+	testing.expect_value(t, l_ctx.nodes[2].final_rect.y, 25)
+
+	// Width check: 100 - 10(L) - 10(R) = 80
+	testing.expect_value(t, l_ctx.nodes[1].final_rect.w, 80)
 }
 
 @(test)
