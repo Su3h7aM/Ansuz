@@ -135,14 +135,14 @@ render :: proc(ctx: ^ansuz.Context) {
 render_header :: proc(ctx: ^ansuz.Context) {
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.BrightBlue, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.BrightBlue),
 		{sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)}, alignment = {.Center, .Center}},
 		.Double,
 	)
 	ansuz.Layout_text(
 		ctx,
 		"ANSUZ PERFORMANCE BENCHMARK",
-		ansuz.Style{.BrightYellow, .Default, {.Bold}},
+		ansuz.style(ansuz.Ansi.BrightYellow, ansuz.Ansi.Default, {.Bold}),
 	)
 	ansuz.Layout_end_box(ctx)
 }
@@ -161,7 +161,7 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 	// FPS Box
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.Green, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.Green),
 		{
 			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
 			padding = {1, 1, 1, 1},
@@ -169,24 +169,24 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(ctx, "FPS", ansuz.Style{.BrightGreen, .Default, {.Bold}})
+	ansuz.Layout_text(ctx, "FPS", ansuz.style(ansuz.Ansi.BrightGreen, ansuz.Ansi.Default, {.Bold}))
 
 	fps := calculate_fps()
 	fps_str := fmt.tprintf("%.1f", fps)
-	ansuz.Layout_text(ctx, fps_str, ansuz.Style{get_fps_color(fps), .Default, {.Bold}})
+	ansuz.Layout_text(ctx, fps_str, ansuz.style(get_fps_color(fps), ansuz.Ansi.Default, {.Bold}))
 
-	ansuz.Layout_text(ctx, "", ansuz.Style{.Default, .Default, {}})
+	ansuz.Layout_text(ctx, "", ansuz.style_normal())
 	ansuz.Layout_text(
 		ctx,
 		fmt.tprintf("Frames: %d", g_stats.frame_count),
-		ansuz.Style{.BrightBlack, .Default, {.Dim}},
+		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
 	)
 	ansuz.Layout_end_box(ctx)
 
 	// Frame Time Box
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.Cyan, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.Cyan),
 		{
 			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
 			padding = {1, 1, 1, 1},
@@ -194,29 +194,37 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(ctx, "Frame Time", ansuz.Style{.BrightCyan, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		"Frame Time",
+		ansuz.style(ansuz.Ansi.BrightCyan, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
-	ansuz.Layout_text(ctx, fmt.tprintf("%.2f ms", avg_ms), ansuz.Style{.White, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		fmt.tprintf("%.2f ms", avg_ms),
+		ansuz.style(ansuz.Ansi.White, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
 	max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
 	ansuz.Layout_text(
 		ctx,
 		fmt.tprintf("Min: %.2f ms", min_ms),
-		ansuz.Style{.BrightBlack, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.BrightBlack),
 	)
 	ansuz.Layout_text(
 		ctx,
 		fmt.tprintf("Max: %.2f ms", max_ms),
-		ansuz.Style{.BrightBlack, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.BrightBlack),
 	)
 	ansuz.Layout_end_box(ctx)
 
 	// Stress Level Box
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.Magenta, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.Magenta),
 		{
 			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
 			padding = {1, 1, 1, 1},
@@ -224,19 +232,23 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(ctx, "Stress Level", ansuz.Style{.BrightMagenta, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		"Stress Level",
+		ansuz.style(ansuz.Ansi.BrightMagenta, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	ansuz.Layout_text(
 		ctx,
 		fmt.tprintf("%d / 10", g_stats.stress_level),
-		ansuz.Style{get_stress_color(g_stats.stress_level), .Default, {.Bold}},
+		ansuz.style(get_stress_color(g_stats.stress_level), ansuz.Ansi.Default, {.Bold}),
 	)
 
-	ansuz.Layout_text(ctx, "", ansuz.Style{.Default, .Default, {}})
+	ansuz.Layout_text(ctx, "", ansuz.style_normal())
 	ansuz.Layout_text(
 		ctx,
 		fmt.tprintf("Elements: %d", g_stats.elements_count),
-		ansuz.Style{.BrightBlack, .Default, {.Dim}},
+		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
 	)
 	ansuz.Layout_end_box(ctx)
 
@@ -246,7 +258,7 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.Yellow, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.Yellow),
 		{
 			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			padding = {1, 1, 1, 1},
@@ -262,7 +274,11 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		g_stats.stress_level,
 		g_stats.stress_level * 20,
 	)
-	ansuz.Layout_text(ctx, title, ansuz.Style{.BrightYellow, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		title,
+		ansuz.style(ansuz.Ansi.BrightYellow, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	// Container principal para stress test
 	ansuz.Layout_begin_container(
@@ -296,7 +312,7 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		for col in 0 ..< cols {
 			pattern := generate_stress_pattern(row, col, g_stats.frame_count)
 			color := get_rainbow_color(row + col)
-			ansuz.Layout_text(ctx, pattern, ansuz.Style{color, .Default, {}})
+			ansuz.Layout_text(ctx, pattern, ansuz.style_fg(color))
 			elements += 1
 		}
 
@@ -322,7 +338,7 @@ render_controls :: proc(ctx: ^ansuz.Context) {
 	ansuz.Layout_text(
 		ctx,
 		" [Up/Down] Stress | [Q/ESC] Sair",
-		ansuz.Style{.BrightBlack, .Default, {.Dim}},
+		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
 	)
 	ansuz.Layout_end_container(ctx)
 }
@@ -336,36 +352,36 @@ calculate_fps :: proc() -> f64 {
 	return f64(time.Second) / f64(g_stats.avg_frame_time)
 }
 
-get_fps_color :: proc(fps: f64) -> ansuz.Color {
+get_fps_color :: proc(fps: f64) -> ansuz.TerminalColor {
 	if fps >= 60 {
-		return .BrightGreen
+		return ansuz.Ansi.BrightGreen
 	} else if fps >= 30 {
-		return .BrightYellow
+		return ansuz.Ansi.BrightYellow
 	} else if fps >= 15 {
-		return .Yellow
+		return ansuz.Ansi.Yellow
 	}
-	return .BrightRed
+	return ansuz.Ansi.BrightRed
 }
 
-get_stress_color :: proc(level: int) -> ansuz.Color {
+get_stress_color :: proc(level: int) -> ansuz.TerminalColor {
 	if level <= 3 {
-		return .BrightGreen
+		return ansuz.Ansi.BrightGreen
 	} else if level <= 6 {
-		return .BrightYellow
+		return ansuz.Ansi.BrightYellow
 	} else if level <= 8 {
-		return .Yellow
+		return ansuz.Ansi.Yellow
 	}
-	return .BrightRed
+	return ansuz.Ansi.BrightRed
 }
 
-get_rainbow_color :: proc(idx: int) -> ansuz.Color {
-	colors := [?]ansuz.Color {
-		.BrightRed,
-		.BrightYellow,
-		.BrightGreen,
-		.BrightCyan,
-		.BrightBlue,
-		.BrightMagenta,
+get_rainbow_color :: proc(idx: int) -> ansuz.TerminalColor {
+	colors := [?]ansuz.TerminalColor {
+		ansuz.Ansi.BrightRed,
+		ansuz.Ansi.BrightYellow,
+		ansuz.Ansi.BrightGreen,
+		ansuz.Ansi.BrightCyan,
+		ansuz.Ansi.BrightBlue,
+		ansuz.Ansi.BrightMagenta,
 	}
 	return colors[idx % len(colors)]
 }

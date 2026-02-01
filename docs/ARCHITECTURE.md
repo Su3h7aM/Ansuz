@@ -29,11 +29,15 @@ Where `ESC` is the escape character (ASCII 27, or `\x1b` in hexadecimal).
 **Foreground Colors:**
 - `30`-`37`: Standard (Black, Red, Green, Yellow, Blue, Magenta, Cyan, White)
 - `90`-`97`: Bright Variants
+- `38;5;n`: 256-color palette (n=0-255)
+- `38;2;r;g;b`: 24-bit TrueColor (RGB)
 - `39`: Default
 
 **Background Colors:**
 - `40`-`47`: Standard
 - `100`-`107`: Bright Variants
+- `48;5;n`: 256-color palette
+- `48;2;r;g;b`: 24-bit TrueColor
 - `49`: Default
 
 #### Text Attributes
@@ -134,8 +138,8 @@ ansuz/
 ```odin
 Cell :: struct {
     rune:       rune,
-    fg_color:   Color,
-    bg_color:   Color,
+    fg:         TerminalColor, // Union: Ansi, Color256, RGB
+    bg:         TerminalColor,
     style:      StyleFlags,
     dirty:      bool,
 }

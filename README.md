@@ -9,7 +9,7 @@ Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nic
 - **True Immediate Mode API** - Simple, declarative UI that's easy to reason about
 - **Full Frame Rendering** - Complete screen redraw each frame for maximum simplicity
 - **Raw Terminal Control** - Direct ANSI escape sequence management
-- **16-Color Support** - Standard ANSI color palette
+- **Full Color Support** - 16-color ANSI, 256-color palette, and 24-bit TrueColor (RGB)
 - **Layout System** - Flexible layout engine inspired by Clay (flex-like)
 - **Cross-Platform** - Unix/Linux support (Windows planned)
 
@@ -65,7 +65,7 @@ main :: proc() {
         ansuz.begin_frame(ctx)
         
         ansuz.write_text(ctx, 10, 5, "Hello, Ansuz!", 
-            ansuz.Style{fg_color = .BrightYellow, flags = {.Bold}})
+            ansuz.Style{fg = ansuz.Ansi.BrightYellow, bg = ansuz.Ansi.Default, flags = {.Bold}})
         
         ansuz.end_frame(ctx)
     }

@@ -213,7 +213,7 @@ render :: proc(ctx: ^ansuz.Context) {
 render_header :: proc(ctx: ^ansuz.Context) {
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.BrightBlue, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.BrightBlue),
 		{
 			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)},
 			padding = {1, 1, 1, 1},
@@ -221,21 +221,25 @@ render_header :: proc(ctx: ^ansuz.Context) {
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(ctx, "File Explorer", ansuz.Style{.BrightCyan, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		"File Explorer",
+		ansuz.style(ansuz.Ansi.BrightCyan, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	// Caminho atual (truncado se muito longo)
 	path_display := g_state.current_path
 	if len(path_display) > 60 {
 		path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
 	}
-	ansuz.Layout_text(ctx, path_display, ansuz.Style{.White, .Default, {}})
+	ansuz.Layout_text(ctx, path_display, ansuz.style_fg(ansuz.Ansi.White))
 	ansuz.Layout_end_box(ctx)
 }
 
 render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.Yellow, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.Yellow),
 		{
 			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
 			padding = {1, 1, 1, 1},
@@ -246,13 +250,21 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 	)
 
 	if g_state.error_msg != "" {
-		ansuz.Layout_text(ctx, g_state.error_msg, ansuz.Style{.BrightRed, .Default, {.Bold}})
+		ansuz.Layout_text(
+			ctx,
+			g_state.error_msg,
+			ansuz.style(ansuz.Ansi.BrightRed, ansuz.Ansi.Default, {.Bold}),
+		)
 		ansuz.Layout_end_box(ctx)
 		return
 	}
 
 	if len(g_state.entries) == 0 {
-		ansuz.Layout_text(ctx, "(diretorio vazio)", ansuz.Style{.BrightBlack, .Default, {.Dim}})
+		ansuz.Layout_text(
+			ctx,
+			"(diretorio vazio)",
+			ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+		)
 		ansuz.Layout_end_box(ctx)
 		return
 	}
@@ -278,7 +290,7 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 
 		// Ícone e cor baseado no tipo
 		icon: string
-		color: ansuz.Color
+		color: ansuz.Ansi
 		if entry.is_dir {
 			icon = "[D]"
 			color = .BrightBlue
@@ -309,7 +321,7 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 			style = {.Bold}
 		}
 
-		ansuz.Layout_text(ctx, line, ansuz.Style{color, .Default, style})
+		ansuz.Layout_text(ctx, line, ansuz.style(color, ansuz.Ansi.Default, style))
 	}
 
 	ansuz.Layout_end_box(ctx)
@@ -347,7 +359,7 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 		info = " [Q/ESC] Sair"
 	}
 
-	ansuz.Layout_text(ctx, info, ansuz.Style{.BrightBlack, .Default, {.Dim}})
+	ansuz.Layout_text(ctx, info, ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}))
 	ansuz.Layout_end_container(ctx)
 }
 

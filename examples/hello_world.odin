@@ -54,7 +54,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	// Box com bordas arredondadas
 	ansuz.Layout_box(
 		ctx,
-		ansuz.Style{.BrightCyan, .Default, {}},
+		ansuz.style_fg(ansuz.Ansi.BrightCyan),
 		{
 			sizing = {ansuz.Sizing_fixed(40), ansuz.Sizing_fixed(9)},
 			padding = ansuz.Padding_all(1),
@@ -65,13 +65,21 @@ render :: proc(ctx: ^ansuz.Context) {
 		.Rounded,
 	)
 	// Título com estilo
-	ansuz.Layout_text(ctx, "Hello, Ansuz!", ansuz.Style{.BrightYellow, .Default, {.Bold}})
+	ansuz.Layout_text(
+		ctx,
+		"Hello, Ansuz!",
+		ansuz.style(ansuz.Ansi.BrightYellow, ansuz.Ansi.Default, {.Bold}),
+	)
 
 	// Subtítulo
-	ansuz.Layout_text(ctx, "Uma biblioteca TUI para Odin", ansuz.Style{.White, .Default, {}})
+	ansuz.Layout_text(ctx, "Uma biblioteca TUI para Odin", ansuz.style_fg(ansuz.Ansi.White))
 
 	// Instruções
-	ansuz.Layout_text(ctx, "[Q/ESC] sair", ansuz.Style{.BrightBlack, .Default, {.Dim}})
+	ansuz.Layout_text(
+		ctx,
+		"[Q/ESC] sair",
+		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+	)
 
 	ansuz.Layout_end_box(ctx)
 

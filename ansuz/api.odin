@@ -299,27 +299,17 @@ poll_events :: proc(ctx: ^Context) -> []Event {
 // text is a convenience function to write styled text to the buffer
 // This is a building block for more complex widget functions
 text :: proc(ctx: ^Context, x, y: int, content: string, style: Style) {
-	write_string(&ctx.buffer, x, y, content, style.fg_color, style.bg_color, style.flags)
+	write_string(&ctx.buffer, x, y, content, style.fg, style.bg, style.flags)
 }
 
 // box draws a bordered box
 box :: proc(ctx: ^Context, x, y, width, height: int, style: Style, box_style: BoxStyle = .Sharp) {
-	draw_box(
-		&ctx.buffer,
-		x,
-		y,
-		width,
-		height,
-		style.fg_color,
-		style.bg_color,
-		style.flags,
-		box_style,
-	)
+	draw_box(&ctx.buffer, x, y, width, height, style.fg, style.bg, style.flags, box_style)
 }
 
 // rect fills a rectangular region with a character
 rect :: proc(ctx: ^Context, x, y, width, height: int, char: rune, style: Style) {
-	fill_rect(&ctx.buffer, x, y, width, height, char, style.fg_color, style.bg_color, style.flags)
+	fill_rect(&ctx.buffer, x, y, width, height, char, style.fg, style.bg, style.flags)
 }
 
 // get_size returns the current terminal dimensions
@@ -366,7 +356,7 @@ Layout_end_container :: proc(ctx: ^Context) {
 Layout_text :: proc(
 	ctx: ^Context,
 	content: string,
-	style: Style = STYLE_NORMAL,
+	style: Style,
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ) {
 	add_text(&ctx.layout_ctx, content, style, config)
@@ -375,7 +365,7 @@ Layout_text :: proc(
 // Layout_box adds a bordered box node to the current layout container
 Layout_box :: proc(
 	ctx: ^Context,
-	style: Style = STYLE_NORMAL,
+	style: Style,
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 	box_style: BoxStyle = .Sharp,
 ) {
@@ -386,7 +376,7 @@ Layout_box :: proc(
 Layout_rect :: proc(
 	ctx: ^Context,
 	char: rune,
-	style: Style = STYLE_NORMAL,
+	style: Style,
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ) {
 	add_rect_container(&ctx.layout_ctx, char, style, config)
@@ -401,13 +391,3 @@ Layout_end_box :: proc(ctx: ^Context) {
 Layout_end_rect :: proc(ctx: ^Context) {
 	end_rect_container(&ctx.layout_ctx)
 }
-
-// Predefined styles for convenience
-STYLE_NORMAL :: Style{.Default, .Default, {}}
-STYLE_BOLD :: Style{.Default, .Default, {.Bold}}
-STYLE_DIM :: Style{.Default, .Default, {.Dim}}
-STYLE_UNDERLINE :: Style{.Default, .Default, {.Underline}}
-STYLE_ERROR :: Style{.Red, .Default, {.Bold}}
-STYLE_SUCCESS :: Style{.Green, .Default, {}}
-STYLE_WARNING :: Style{.Yellow, .Default, {}}
-STYLE_INFO :: Style{.Cyan, .Default, {}}
