@@ -3,5 +3,16 @@
     "enable_document_symbols": true,
     "enable_hover": true,
     "enable_snippets": true,
-    "thread_pool_size": 4
+    "enable_auto_import": true,
+    "thread_pool_size": 4,
+    "checker_args": "-strict-style",
+    "profile": "default",
+    "profiles": [
+        {
+            "name": "default",
+            "checker_path": [
+                "ansuz"
+            ]
+        }
+    ]
 }
