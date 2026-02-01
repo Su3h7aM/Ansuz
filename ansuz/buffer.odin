@@ -205,6 +205,119 @@ write_string :: proc(
 	return chars_written
 }
 
+// measure_text_wrapped calculates the dimensions of text if it were wrapped
+// Returns: width (max line width), height (number of lines)
+measure_text_wrapped :: proc(text: string, max_width: int) -> (width, height: int) {
+	if len(text) == 0 {
+		return 0, 0
+	}
+	if max_width <= 0 {
+		return 0, 0 // Or decide if 0 width means everything is hidden
+	}
+
+	max_line_w := 0
+	line_count := 1
+	current_line_w := 0
+
+	// iterate by words
+	// simplistic approach: split by space.
+	// robust approach: iterate rune by rune, tracking last space.
+
+	last_space_idx := -1
+	line_start_idx := 0
+	current_idx := 0
+
+	// We'll iterate words for simplicity and standard behavior
+	// "Hello World" max 5 -> "Hello" (5), "World" (5)
+
+	words := strings.split(text, " ")
+	defer delete(words)
+
+	for word, i in words {
+		word_len := len(word)
+
+		// If this is not the first word on the line, we need a space
+		space_needed := current_line_w > 0 ? 1 : 0
+
+		if current_line_w + space_needed + word_len <= max_width {
+			// Fits on current line
+			current_line_w += space_needed + word_len
+		} else {
+			// Must wrap
+			max_line_w = max(max_line_w, current_line_w)
+			line_count += 1
+			current_line_w = word_len
+
+			// Edge case: Word itself is wider than max_width
+			// We force it to wrap but it will just overflow effectively or take full width
+			if current_line_w > max_width {
+				current_line_w = max_width
+				// In reality it would clip, but for metric we treat it as taking full line
+				// Or we could split the word? For now, stick to standard word wrap.
+			}
+		}
+	}
+
+	max_line_w = max(max_line_w, current_line_w)
+
+	return max_line_w, line_count
+}
+
+// write_string_wrapped writes text with automatic word wrapping
+write_string_wrapped :: proc(
+	buffer: ^FrameBuffer,
+	x, y: int,
+	max_width: int,
+	text: string,
+	fg, bg: TerminalColor,
+	style: StyleFlags,
+) -> int {
+	if max_width <= 0 {
+		return 0
+	}
+
+	words := strings.split(text, " ")
+	defer delete(words)
+
+	current_x := x
+	current_y := y
+
+	chars_written := 0
+
+	for word, i in words {
+		word_len := len(word)
+
+		// If this is not the first word on the line, we check space
+		space_needed := current_x > x ? 1 : 0
+
+		// Check if word fits
+		remaining_space := max_width - (current_x - x)
+
+		if space_needed + word_len > remaining_space {
+			// Wrap to next line
+			current_y += 1
+			current_x = x
+			space_needed = 0 // New line, no leading space
+		}
+
+		// Write space if needed
+		if space_needed > 0 {
+			_ = set_cell(buffer, current_x, current_y, ' ', fg, bg, style)
+			current_x += 1
+			chars_written += 1
+		}
+
+		// Write word
+		// If word itself is longer than max_width, it will be clipped by set_cell internally (via clip rect or bounds)
+		// But we should just write it out.
+		written := write_string(buffer, current_x, current_y, word, fg, bg, style)
+		chars_written += written
+		current_x += word_len
+	}
+
+	return chars_written
+}
+
 // fill_rect fills a rectangular region with a character and style
 fill_rect :: proc(
 	buffer: ^FrameBuffer,

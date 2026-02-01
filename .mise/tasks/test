@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Run Ansuz test suite"
 #MISE alias="t"
-#MISE sources=["ansuz/**/*_test.odin"]
 
 set -euo pipefail
 

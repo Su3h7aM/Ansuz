@@ -2,7 +2,7 @@
 #MISE description="Build Ansuz examples"
 #MISE alias="b"
 #MISE sources=["ansuz/**/*.odin", "examples/**/*.odin"]
-#MISE outputs=["bin/hello_world", "bin/sysmon", "bin/benchmark", "bin/explorer", "bin/color_demo"]
+#MISE outputs=["bin/hello_world", "bin/sysmon", "bin/benchmark", "bin/explorer", "bin/color_demo", "bin/wrap_demo"]
 
 set -euo pipefail
 
@@ -54,5 +54,8 @@ odin build examples/explorer.odin -file -out:bin/explorer -debug
 
 echo "Building color_demo..."
 odin build examples/color_demo.odin -file -out:bin/color_demo -debug
+
+echo "Building wrap_demo..."
+odin build examples/wrap_demo.odin -file -out:bin/wrap_demo -debug
 
 echo "Build complete!"
