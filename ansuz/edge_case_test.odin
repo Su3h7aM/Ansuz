@@ -435,7 +435,7 @@ test_layout_one_child :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(&l_ctx, "Single", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	add_text(&l_ctx, "Single", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -452,7 +452,7 @@ test_layout_zero_sizing :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(&l_ctx, "", style_normal(), {sizing = {Sizing_fixed(0), Sizing_fixed(0)}})
+	add_text(&l_ctx, "", default_style(), {sizing = {sizing_fixed(0), sizing_fixed(0)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -473,8 +473,8 @@ test_layout_very_large_sizing :: proc(t: ^testing.T) {
 	add_text(
 		&l_ctx,
 		"Large",
-		style_normal(),
-		{sizing = {Sizing_fixed(10000), Sizing_fixed(10000)}},
+		default_style(),
+		{sizing = {sizing_fixed(10000), sizing_fixed(10000)}},
 	)
 	end_container(&l_ctx)
 
@@ -497,7 +497,7 @@ test_layout_deep_nesting :: proc(t: ^testing.T) {
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(&l_ctx, "Deep", style_normal(), DEFAULT_LAYOUT_CONFIG)
+	add_text(&l_ctx, "Deep", default_style(), DEFAULT_LAYOUT_CONFIG)
 	end_container(&l_ctx)
 	end_container(&l_ctx)
 	end_container(&l_ctx)

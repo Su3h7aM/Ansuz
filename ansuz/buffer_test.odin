@@ -81,24 +81,6 @@ test_buffer_get_cell :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_buffer_get_cell_safe :: proc(t: ^testing.T) {
-	buffer, _ := init_buffer(10, 10, context.allocator)
-	defer destroy_buffer(&buffer)
-
-	cell := get_cell_safe(&buffer, 5, 5)
-	testing.expect(t, cell.rune == ' ', "Cell should have default rune")
-	testing.expect(t, cell.fg == Ansi.Default, "Cell should have default fg")
-	testing.expect(t, cell.bg == Ansi.Default, "Cell should have default bg")
-
-	cell_out := get_cell_safe(&buffer, 100, 100)
-	testing.expect(t, cell.rune == ' ', "Out of bounds cell should return default")
-	testing.expect(t, cell.fg == Ansi.Default, "Out of bounds cell should have default fg")
-
-	cell_neg := get_cell_safe(&buffer, -5, -5)
-	testing.expect(t, cell.rune == ' ', "Negative indices should return default")
-}
-
-@(test)
 test_buffer_set_cell :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
@@ -123,12 +105,13 @@ test_buffer_set_cell :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_buffer_set_cell_simple :: proc(t: ^testing.T) {
+test_buffer_set_cell_with_defaults :: proc(t: ^testing.T) {
+	// Test set_cell with default values (replaces removed set_cell_simple)
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	err := set_cell_simple(&buffer, 5, 5, 'X')
-	testing.expect(t, err == .None, "Setting simple cell should succeed")
+	err := set_cell(&buffer, 5, 5, 'X', Ansi.Default, Ansi.Default, {})
+	testing.expect(t, err == .None, "Setting cell should succeed")
 
 	cell := get_cell(&buffer, 5, 5)
 	testing.expect(t, cell.rune == 'X', "Cell should have correct rune")
@@ -409,4 +392,18 @@ test_buffer_write_multiple_lines :: proc(t: ^testing.T) {
 
 	cell = get_cell(&buffer, 0, 2)
 	testing.expect(t, cell.rune == 'L', "First char of line 2 should be 'L'")
+}
+
+@(test)
+test_buffer_get_cell_returns_nil_out_of_bounds :: proc(t: ^testing.T) {
+	// Test that get_cell returns nil for out-of-bounds access
+	// Users should check for nil before dereferencing
+	buffer, _ := init_buffer(10, 10, context.allocator)
+	defer destroy_buffer(&buffer)
+
+	cell := get_cell(&buffer, 100, 100)
+	testing.expect(t, cell == nil, "Should return nil for way out of bounds")
+
+	cell = get_cell(&buffer, -5, -5)
+	testing.expect(t, cell == nil, "Should return nil for negative indices")
 }

@@ -1,8 +1,5 @@
 package ansuz
 
-// This file provides the public API for the Ansuz TUI library
-// It combines all the low-level components into a high-level immediate-mode API
-
 import "core:fmt"
 import "core:mem"
 import "core:strings"
@@ -155,7 +152,7 @@ begin_frame :: proc(ctx: ^Context) {
 	current_width, current_height, size_err := get_terminal_size()
 	if size_err == .None && (current_width != ctx.width || current_height != ctx.height) {
 		// Terminal was resized - update context
-		handle_resize(ctx, current_width, current_height)
+		_handle_resize(ctx, current_width, current_height)
 	}
 
 	// Clear buffer for new frame
@@ -228,7 +225,7 @@ run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
 
 		// Handle resize
 		if result == .Resize {
-			handle_resize(ctx, new_w, new_h)
+			_handle_resize(ctx, new_w, new_h)
 		}
 
 		// Start frame
@@ -246,17 +243,7 @@ run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
 	}
 }
 
-// request_redraw can be used to force a re-render on the next wait_for_event cycle
-// Currently a no-op placeholder for future timer-based animations
-request_redraw :: proc(ctx: ^Context) {
-	// Future: set a flag that causes wait_for_event to return immediately
-	// For now, the 100ms poll timeout ensures periodic refreshes
-}
 
-// get_last_frame_time returns the duration of the most recent frame
-get_last_frame_time :: proc(ctx: ^Context) -> time.Duration {
-	return ctx.last_frame_time
-}
 
 // poll_events reads and parses input events from the terminal
 // Returns a slice of events that occurred since last poll
@@ -312,14 +299,9 @@ rect :: proc(ctx: ^Context, x, y, width, height: int, char: rune, style: Style) 
 	fill_rect(&ctx.buffer, x, y, width, height, char, style.fg, style.bg, style.flags)
 }
 
-// get_size returns the current terminal dimensions
-get_size :: proc(ctx: ^Context) -> (width, height: int) {
-	return ctx.width, ctx.height
-}
-
-// handle_resize updates the context when terminal size changes
-// Should be called when a resize event is detected
-handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
+// _handle_resize updates the context when terminal size changes
+// Called automatically by begin_frame and run()
+_handle_resize :: proc(ctx: ^Context, new_width, new_height: int) {
 	ctx.width = new_width
 	ctx.height = new_height
 
@@ -342,18 +324,18 @@ end_layout :: proc(ctx: ^Context) {
 	finish_layout(&ctx.layout_ctx, ctx)
 }
 
-// Layout_begin_container starts a new layout container
-Layout_begin_container :: proc(ctx: ^Context, config: LayoutConfig) {
+// layout_begin_container starts a new layout container
+layout_begin_container :: proc(ctx: ^Context, config: LayoutConfig) {
 	begin_container(&ctx.layout_ctx, config)
 }
 
-// Layout_end_container ends the current layout container
-Layout_end_container :: proc(ctx: ^Context) {
+// layout_end_container ends the current layout container
+layout_end_container :: proc(ctx: ^Context) {
 	end_container(&ctx.layout_ctx)
 }
 
-// Layout_text adds a text node to the current layout container
-Layout_text :: proc(
+// layout_text adds a text node to the current layout container
+layout_text :: proc(
 	ctx: ^Context,
 	content: string,
 	style: Style,
@@ -362,8 +344,8 @@ Layout_text :: proc(
 	add_text(&ctx.layout_ctx, content, style, config)
 }
 
-// Layout_box adds a bordered box node to the current layout container
-Layout_box :: proc(
+// layout_box adds a bordered box node to the current layout container
+layout_box :: proc(
 	ctx: ^Context,
 	style: Style,
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
@@ -372,22 +354,12 @@ Layout_box :: proc(
 	add_box_container(&ctx.layout_ctx, style, config, box_style)
 }
 
-// Layout_rect adds a filled rectangular node to the current layout container
-Layout_rect :: proc(
+// layout_rect adds a filled rectangular node to the current layout container
+layout_rect :: proc(
 	ctx: ^Context,
 	char: rune,
 	style: Style,
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ) {
 	add_rect_container(&ctx.layout_ctx, char, style, config)
-}
-
-// Layout_end_box ends the current layout box
-Layout_end_box :: proc(ctx: ^Context) {
-	end_box_container(&ctx.layout_ctx)
-}
-
-// Layout_end_rect ends the current layout rect
-Layout_end_rect :: proc(ctx: ^Context) {
-	end_rect_container(&ctx.layout_ctx)
 }

@@ -10,15 +10,15 @@ test_text_wrap_fixed_width :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
 
 	// "Hello World" (11 chars). Width 5.
 	// Should wrap: "Hello" (5), "World" (5). 2 Lines.
 	add_text(
 		&l_ctx,
 		"Hello World",
-		style_normal(),
-		{sizing = {Sizing_fixed(5), Sizing_fit()}, wrap_text = true},
+		default_style(),
+		{sizing = {sizing_fixed(5), sizing_fit()}, wrap_text = true},
 	)
 
 	end_container(&l_ctx)
@@ -38,7 +38,7 @@ test_text_wrap_grow_width :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	// Container fills width (10)
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
 
 	// "Hello World" (11 chars). Parent width 10.
 	// "Hello World" -> "Hello" (5) + " " + "World" (5) = 11 > 10.
@@ -59,8 +59,8 @@ test_text_wrap_grow_width :: proc(t: ^testing.T) {
 	add_text(
 		&l_ctx,
 		"Hello World",
-		style_normal(),
-		{sizing = {Sizing_grow(), Sizing_fit()}, wrap_text = true},
+		default_style(),
+		{sizing = {sizing_grow(), sizing_fit()}, wrap_text = true},
 	)
 
 	end_container(&l_ctx)

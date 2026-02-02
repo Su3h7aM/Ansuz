@@ -21,9 +21,9 @@ test_layout_basic :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	// Simple vertical layout with two growing items
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Item 1", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Item 2", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Item 1", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Item 2", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -43,11 +43,11 @@ test_layout_weighted_grow :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 100, 20}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {sizing_grow(), sizing_grow()}})
 	// 1:3 ratio. Total weight = 4.
 	// Width 100. Item 1 gets 25, Item 2 gets 75.
-	add_text(&l_ctx, "Small", style_normal(), {sizing = {Sizing_grow(1), Sizing_grow()}})
-	add_text(&l_ctx, "Big", style_normal(), {sizing = {Sizing_grow(3), Sizing_grow()}})
+	add_text(&l_ctx, "Small", default_style(), {sizing = {sizing_grow(1), sizing_grow()}})
+	add_text(&l_ctx, "Big", default_style(), {sizing = {sizing_grow(3), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -69,17 +69,17 @@ test_layout_padding_gap :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			padding = {10, 10, 10, 10},
 			gap = 5,
 		},
 	)
 
 	// Item 1
-	add_text(&l_ctx, "Item 1", style_normal(), {sizing = {Sizing_grow(), Sizing_fixed(10)}})
+	add_text(&l_ctx, "Item 1", default_style(), {sizing = {sizing_grow(), sizing_fixed(10)}})
 	// Gap of 5 here
 	// Item 2
-	add_text(&l_ctx, "Item 2", style_normal(), {sizing = {Sizing_grow(), Sizing_fixed(10)}})
+	add_text(&l_ctx, "Item 2", default_style(), {sizing = {sizing_grow(), sizing_fixed(10)}})
 
 	end_container(&l_ctx)
 
@@ -112,12 +112,12 @@ test_layout_alignment :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			alignment = {horizontal = .Center, vertical = .Center},
 		},
 	)
 	// Fixed size item in a growing container should be centered
-	add_text(&l_ctx, "Centered", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	add_text(&l_ctx, "Centered", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -132,31 +132,31 @@ test_layout_alignment :: proc(t: ^testing.T) {
 
 @(test)
 test_sizing_constructors :: proc(t: ^testing.T) {
-	fixed := Sizing_fixed(100)
+	fixed := sizing_fixed(100)
 	testing.expect(t, fixed.type == .Fixed)
 	testing.expect_value(t, fixed.value, 100.0)
 
-	percent := Sizing_percent(0.5)
+	percent := sizing_percent(0.5)
 	testing.expect(t, percent.type == .Percent)
 	testing.expect_value(t, percent.value, 0.5)
 
-	fit := Sizing_fit()
+	fit := sizing_fit()
 	testing.expect(t, fit.type == .FitContent)
 
-	grow := Sizing_grow()
+	grow := sizing_grow()
 	testing.expect(t, grow.type == .Grow)
 	testing.expect_value(t, grow.value, 1.0) // Default weight check
 }
 
 @(test)
-test_Padding_all :: proc(t: ^testing.T) {
-	padding := Padding_all(5)
+test_padding_all :: proc(t: ^testing.T) {
+	padding := padding_all(5)
 	testing.expect_value(t, padding.left, 5)
 	testing.expect_value(t, padding.right, 5)
 	testing.expect_value(t, padding.top, 5)
 	testing.expect_value(t, padding.bottom, 5)
 
-	padding2 := Padding_all(0)
+	padding2 := padding_all(0)
 	testing.expect_value(t, padding2.left, 0)
 	testing.expect_value(t, padding2.right, 0)
 }
@@ -169,9 +169,9 @@ test_layout_horizontal_direction :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "A", style_normal(), {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
-	add_text(&l_ctx, "B", style_normal(), {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
+	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "A", default_style(), {sizing = {sizing_fixed(5), sizing_fixed(1)}})
+	add_text(&l_ctx, "B", default_style(), {sizing = {sizing_fixed(5), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -190,9 +190,9 @@ test_layout_mixed_sizing :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Fixed", style_normal(), {sizing = {Sizing_fixed(20), Sizing_fixed(1)}})
-	add_text(&l_ctx, "Grow", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Fixed", default_style(), {sizing = {sizing_fixed(20), sizing_fixed(1)}})
+	add_text(&l_ctx, "Grow", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -210,9 +210,9 @@ test_layout_percent_sizing :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 100, 20}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Half", style_normal(), {sizing = {Sizing_percent(0.5), Sizing_grow()}})
-	add_text(&l_ctx, "Half", style_normal(), {sizing = {Sizing_percent(0.5), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .LeftToRight, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Half", default_style(), {sizing = {sizing_percent(0.5), sizing_grow()}})
+	add_text(&l_ctx, "Half", default_style(), {sizing = {sizing_percent(0.5), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -230,22 +230,22 @@ test_layout_nested_containers :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Top", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Top", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 
 	begin_container(
 		&l_ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			padding = {left = 2, right = 2},
 		},
 	)
-	add_text(&l_ctx, "A", style_normal(), {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
-	add_text(&l_ctx, "B", style_normal(), {sizing = {Sizing_fixed(5), Sizing_fixed(1)}})
+	add_text(&l_ctx, "A", default_style(), {sizing = {sizing_fixed(5), sizing_fixed(1)}})
+	add_text(&l_ctx, "B", default_style(), {sizing = {sizing_fixed(5), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
-	add_text(&l_ctx, "Bottom", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	add_text(&l_ctx, "Bottom", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -262,8 +262,8 @@ test_layout_single_child :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Only Child", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Only Child", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -281,7 +281,7 @@ test_layout_empty_container :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -301,11 +301,11 @@ test_layout_alignment_left :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			alignment = {horizontal = .Left, vertical = .Top},
 		},
 	)
-	add_text(&l_ctx, "Small", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	add_text(&l_ctx, "Small", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -326,11 +326,11 @@ test_layout_alignment_right :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			alignment = {horizontal = .Right, vertical = .Top},
 		},
 	)
-	add_text(&l_ctx, "Small", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	add_text(&l_ctx, "Small", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -350,11 +350,11 @@ test_layout_alignment_bottom :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {Sizing_grow(), Sizing_grow()},
+			sizing = {sizing_grow(), sizing_grow()},
 			alignment = {horizontal = .Left, vertical = .Bottom},
 		},
 	)
-	add_text(&l_ctx, "Small", style_normal(), {sizing = {Sizing_fixed(10), Sizing_fixed(1)}})
+	add_text(&l_ctx, "Small", default_style(), {sizing = {sizing_fixed(10), sizing_fixed(1)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -394,12 +394,12 @@ test_layout_multiple_containers :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Container 1", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Container 1", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Container 2", style_normal(), {sizing = {Sizing_grow(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Container 2", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	testing.expect(t, len(l_ctx.nodes) == 4, "Should have 4 nodes")
@@ -413,8 +413,8 @@ test_layout_fit_content_width :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Hello", style_normal(), {sizing = {Sizing_fit(), Sizing_grow()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Hello", default_style(), {sizing = {sizing_fit(), sizing_grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -430,8 +430,8 @@ test_layout_fit_content_height :: proc(t: ^testing.T) {
 	root_rect := Rect{0, 0, 80, 24}
 	reset_layout_context(&l_ctx, root_rect)
 
-	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {Sizing_grow(), Sizing_grow()}})
-	add_text(&l_ctx, "Line1", style_normal(), {sizing = {Sizing_grow(), Sizing_fit()}})
+	begin_container(&l_ctx, {direction = .TopToBottom, sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Line1", default_style(), {sizing = {sizing_grow(), sizing_fit()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -460,13 +460,13 @@ test_layout_scrolling :: proc(t: ^testing.T) {
 		&l_ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {Sizing_fixed(50), Sizing_fixed(50)},
+			sizing = {sizing_fixed(50), sizing_fixed(50)},
 			scroll_offset = {0, 10},
 			overflow = .Scroll,
 		},
 	)
 
-	add_text(&l_ctx, "Item 1", style_normal(), {sizing = {Sizing_fixed(50), Sizing_fixed(20)}})
+	add_text(&l_ctx, "Item 1", default_style(), {sizing = {sizing_fixed(50), sizing_fixed(20)}})
 
 	end_container(&l_ctx)
 

@@ -19,19 +19,19 @@ Sizing :: struct {
 }
 
 // Convenience constructors for Sizing
-Sizing_fixed :: proc(value: int) -> Sizing {
+sizing_fixed :: proc(value: int) -> Sizing {
 	return Sizing{.Fixed, f32(value)}
 }
 
-Sizing_percent :: proc(value: f32) -> Sizing {
+sizing_percent :: proc(value: f32) -> Sizing {
 	return Sizing{.Percent, value}
 }
 
-Sizing_fit :: proc() -> Sizing {
+sizing_fit :: proc() -> Sizing {
 	return Sizing{.FitContent, 0}
 }
 
-Sizing_grow :: proc(weight: f32 = 1.0) -> Sizing {
+sizing_grow :: proc(weight: f32 = 1.0) -> Sizing {
 	return Sizing{.Grow, weight}
 }
 
@@ -64,7 +64,7 @@ Padding :: struct {
 	bottom: int,
 }
 
-Padding_all :: proc(value: int) -> Padding {
+padding_all :: proc(value: int) -> Padding {
 	return Padding{value, value, value, value}
 }
 

@@ -71,7 +71,7 @@ main :: proc() {
 }
 
 update_stats :: proc(ctx: ^ansuz.Context) {
-	frame_time := ansuz.get_last_frame_time(ctx)
+	frame_time := ctx.last_frame_time
 
 	g_stats.frame_count += 1
 	g_stats.total_time += frame_time
@@ -100,16 +100,16 @@ update_stats :: proc(ctx: ^ansuz.Context) {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	width, height := ansuz.get_size(ctx)
+	width, height := ctx.width, ctx.height
 
 	ansuz.begin_layout(ctx)
 
 	// Container principal
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
 		},
@@ -127,140 +127,140 @@ render :: proc(ctx: ^ansuz.Context) {
 	// Controles
 	render_controls(ctx)
 
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_end_container(ctx)
 
 	ansuz.end_layout(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.BrightBlue),
-		{sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)}, alignment = {.Center, .Center}},
+		ansuz.style(.BrightBlue, .Default, {}),
+		{sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)}, alignment = {.Center, .Center}},
 		.Double,
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		"ANSUZ PERFORMANCE BENCHMARK",
-		ansuz.style(ansuz.Ansi.BrightYellow, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.BrightYellow, .Default, {.Bold}),
 	)
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 }
 
 render_main_stats :: proc(ctx: ^ansuz.Context) {
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(8)},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(8)},
 			gap = 1,
 			padding = {0, 0, 1, 0},
 		},
 	)
 
 	// FPS Box
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.Green),
+		ansuz.style(.Green, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(ctx, "FPS", ansuz.style(ansuz.Ansi.BrightGreen, ansuz.Ansi.Default, {.Bold}))
+	ansuz.layout_text(ctx, "FPS", ansuz.style(.BrightGreen, .Default, {.Bold}))
 
 	fps := calculate_fps()
 	fps_str := fmt.tprintf("%.1f", fps)
-	ansuz.Layout_text(ctx, fps_str, ansuz.style(get_fps_color(fps), ansuz.Ansi.Default, {.Bold}))
+	ansuz.layout_text(ctx, fps_str, ansuz.style(get_fps_color(fps), .Default, {.Bold}))
 
-	ansuz.Layout_text(ctx, "", ansuz.style_normal())
-	ansuz.Layout_text(
+	ansuz.layout_text(ctx, "", ansuz.default_style())
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("Frames: %d", g_stats.frame_count),
-		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+		ansuz.style(.BrightBlack, .Default, {.Dim}),
 	)
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 
 	// Frame Time Box
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.Cyan),
+		ansuz.style(.Cyan, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		"Frame Time",
-		ansuz.style(ansuz.Ansi.BrightCyan, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.BrightCyan, .Default, {.Bold}),
 	)
 
 	avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("%.2f ms", avg_ms),
-		ansuz.style(ansuz.Ansi.White, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.White, .Default, {.Bold}),
 	)
 
 	min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
 	max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("Min: %.2f ms", min_ms),
-		ansuz.style_fg(ansuz.Ansi.BrightBlack),
+		ansuz.style(.BrightBlack, .Default, {}),
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("Max: %.2f ms", max_ms),
-		ansuz.style_fg(ansuz.Ansi.BrightBlack),
+		ansuz.style(.BrightBlack, .Default, {}),
 	)
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 
 	// Stress Level Box
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.Magenta),
+		ansuz.style(.Magenta, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		"Stress Level",
-		ansuz.style(ansuz.Ansi.BrightMagenta, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.BrightMagenta, .Default, {.Bold}),
 	)
 
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("%d / 10", g_stats.stress_level),
-		ansuz.style(get_stress_color(g_stats.stress_level), ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(get_stress_color(g_stats.stress_level), .Default, {.Bold}),
 	)
 
-	ansuz.Layout_text(ctx, "", ansuz.style_normal())
-	ansuz.Layout_text(
+	ansuz.layout_text(ctx, "", ansuz.default_style())
+	ansuz.layout_text(
 		ctx,
 		fmt.tprintf("Elements: %d", g_stats.elements_count),
-		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+		ansuz.style(.BrightBlack, .Default, {.Dim}),
 	)
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_end_container(ctx)
 }
 
 render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.Yellow),
+		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			overflow = .Hidden,
@@ -274,18 +274,18 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		g_stats.stress_level,
 		g_stats.stress_level * 20,
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		title,
-		ansuz.style(ansuz.Ansi.BrightYellow, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.BrightYellow, .Default, {.Bold}),
 	)
 
 	// Container principal para stress test
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			overflow = .Hidden,
 			gap = 0,
 		},
@@ -298,11 +298,11 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 
 	for row in 0 ..< rows {
 		// Cada linha é um container horizontal
-		ansuz.Layout_begin_container(
+		ansuz.layout_begin_container(
 			ctx,
 			{
 				direction = .LeftToRight,
-				sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
+				sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
 				overflow = .Hidden,
 			},
 		)
@@ -312,35 +312,35 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		for col in 0 ..< cols {
 			pattern := generate_stress_pattern(row, col, g_stats.frame_count)
 			color := get_rainbow_color(row + col)
-			ansuz.Layout_text(ctx, pattern, ansuz.style_fg(color))
+			ansuz.layout_text(ctx, pattern, ansuz.style(color, .Default, {}))
 			elements += 1
 		}
 
-		ansuz.Layout_end_container(ctx)
+		ansuz.layout_end_container(ctx)
 	}
 
 	g_stats.elements_count = elements
 
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_end_container(ctx)
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 }
 
 render_controls :: proc(ctx: ^ansuz.Context) {
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
 			alignment = {.Center, .Center},
 		},
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		" [Up/Down] Stress | [Q/ESC] Sair",
-		ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+		ansuz.style(.BrightBlack, .Default, {.Dim}),
 	)
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_end_container(ctx)
 }
 
 // Funções auxiliares

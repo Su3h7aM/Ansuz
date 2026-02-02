@@ -43,95 +43,95 @@ main :: proc() {
 			}
 
 			// Update state
-			var_state.width, var_state.height = ansuz.get_size(ctx)
+			var_state.width, var_state.height = ctx.width, ctx.height
 
 			// Layout
 			ansuz.begin_layout(ctx)
 
 			// Root container
-			ansuz.Layout_begin_container(
+			ansuz.layout_begin_container(
 				ctx,
 				{
 					direction = .TopToBottom,
-					sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+					sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 					padding = {2, 2, 1, 1},
 					gap = 1,
 				},
 			)
 
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"Ansuz Text Wrapping Demo (Press 'q' to quit)",
-				{fg = .Cyan, bg = .Default, flags = {.Bold}},
+				ansuz.style(.Cyan, .Default, {.Bold}),
 			)
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"Resize the terminal to see dynamic wrapping",
-				{fg = .White, bg = .Default},
+				ansuz.style(.White, .Default, {}),
 			)
 
 			// Flexible Box with Wrapped Text
-			ansuz.Layout_box(
+			ansuz.layout_box(
 				ctx,
-				{fg = .Green, bg = .Default},
+				ansuz.style(.Green, .Default, {}),
 				{
 					direction = .TopToBottom,
-					sizing    = {ansuz.Sizing_grow(), ansuz.Sizing_grow()}, // Grow width, Grow height
+					sizing    = {ansuz.sizing_grow(), ansuz.sizing_grow()}, // Grow width, Grow height
 					padding   = {1, 1, 1, 1},
 				},
 			)
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
-				{fg = .White, bg = .Default},
+				ansuz.style(.White, .Default, {}),
 				{
-					sizing    = {ansuz.Sizing_grow(), ansuz.Sizing_fit()}, // Width fits parent (Grow), Height fits content
+					sizing    = {ansuz.sizing_grow(), ansuz.sizing_fit()}, // Width fits parent (Grow), Height fits content
 					wrap_text = true,
 				},
 			)
 
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"--- Separator ---",
-				{fg = .Black, bg = .Default, flags = {.Bold}},
+				ansuz.style(.Black, .Default, {.Bold}),
 			)
 
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"Another paragraph with different styling. Wrapping allows for rich text layouts that adapt to any screen size, which is critical for modern TUI applications.",
-				{fg = .Yellow, bg = .Default, flags = {.Italic}},
-				{sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fit()}, wrap_text = true},
+				ansuz.style(.Yellow, .Default, {.Italic}),
+				{sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()}, wrap_text = true},
 			)
-			ansuz.Layout_end_box(ctx)
+			ansuz.layout_end_container(ctx)
 
 			// Fixed Width Column Test
-			ansuz.Layout_box(
+			ansuz.layout_box(
 				ctx,
-				{fg = .Blue, bg = .Default},
+				ansuz.style(.Blue, .Default, {}),
 				{
 					direction = .TopToBottom,
-					sizing = {ansuz.Sizing_fixed(40), ansuz.Sizing_fit()},
+					sizing = {ansuz.sizing_fixed(40), ansuz.sizing_fit()},
 					padding = {1, 1, 0, 0},
 					gap = 0,
 				},
 			)
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"Fixed Width (40) Column with Wrapping",
-				{fg = .Blue, bg = .Default, flags = {.Bold}},
+				ansuz.style(.Blue, .Default, {.Bold}),
 			)
-			ansuz.Layout_text(
+			ansuz.layout_text(
 				ctx,
 				"This text is constrained to a fixed width of 40 characters. It should wrap within this column regardless of window size.",
-				{fg = .White, bg = .Default},
+				ansuz.style(.White, .Default, {}),
 				{
-					sizing    = {ansuz.Sizing_fixed(36), ansuz.Sizing_fit()}, // 36 + padding
+					sizing    = {ansuz.sizing_fixed(36), ansuz.sizing_fit()}, // 36 + padding
 					wrap_text = true,
 				},
 			)
-			ansuz.Layout_end_box(ctx)
+			ansuz.layout_end_container(ctx)
 
-			ansuz.Layout_end_container(ctx)
+			ansuz.layout_end_container(ctx)
 			ansuz.end_layout(ctx)
 
 			return true

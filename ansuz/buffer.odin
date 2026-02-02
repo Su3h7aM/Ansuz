@@ -124,15 +124,7 @@ get_cell :: proc(buffer: ^FrameBuffer, x, y: int) -> ^Cell {
 	return &buffer.cells[index]
 }
 
-// get_cell_safe returns a copy of the cell at the specified position
-// Returns a default cell if the position is out of bounds
-get_cell_safe :: proc(buffer: ^FrameBuffer, x, y: int) -> Cell {
-	cell := get_cell(buffer, x, y)
-	if cell == nil {
-		return Cell{rune = ' ', fg = Ansi.Default, bg = Ansi.Default}
-	}
-	return cell^
-}
+
 
 // set_cell sets the character and style for a cell at the specified position
 set_cell :: proc(
@@ -159,10 +151,7 @@ set_cell :: proc(
 	return .None
 }
 
-// set_cell_simple sets just the character at a position (using default styling)
-set_cell_simple :: proc(buffer: ^FrameBuffer, x, y: int, r: rune) -> BufferError {
-	return set_cell(buffer, x, y, r, Ansi.Default, Ansi.Default, {})
-}
+
 
 // write_string writes a string to the buffer starting at the specified position
 // Returns the number of characters written (may be less than string length if out of bounds)

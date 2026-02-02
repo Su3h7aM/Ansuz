@@ -40,22 +40,24 @@ fi
 
 mkdir -p bin
 
+FLAGS="-o:minimal -linker:mold -microarch:native"
+
 echo "Building hello_world..."
-odin build examples/hello_world.odin -file -out:bin/hello_world -debug
+odin build examples/hello_world.odin -file -out:bin/hello_world $FLAGS
 
 echo "Building sysmon..."
-odin build examples/sysmon.odin -file -out:bin/sysmon -debug
+odin build examples/sysmon.odin -file -out:bin/sysmon $FLAGS
 
 echo "Building benchmark..."
-odin build examples/benchmark.odin -file -out:bin/benchmark -debug
+odin build examples/benchmark.odin -file -out:bin/benchmark $FLAGS
 
 echo "Building explorer..."
-odin build examples/explorer.odin -file -out:bin/explorer -debug
+odin build examples/explorer.odin -file -out:bin/explorer $FLAGS
 
 echo "Building color_demo..."
-odin build examples/color_demo.odin -file -out:bin/color_demo -debug
+odin build examples/color_demo.odin -file -out:bin/color_demo $FLAGS
 
 echo "Building wrap_demo..."
-odin build examples/wrap_demo.odin -file -out:bin/wrap_demo -debug
+odin build examples/wrap_demo.odin -file -out:bin/wrap_demo $FLAGS
 
 echo "Build complete!"

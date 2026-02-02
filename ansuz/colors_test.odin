@@ -88,32 +88,32 @@ test_style_flag_to_ansi :: proc(t: ^testing.T) {
 @(test)
 test_reset_style :: proc(t: ^testing.T) {
 	seq := reset_style()
-	testing.expect_value(t, seq, "[0m")
+	testing.expect_value(t, seq, "\x1b[0m")
 }
 
 @(test)
 test_default_style :: proc(t: ^testing.T) {
-	style := default_style()
-	testing.expect(t, style.fg == Ansi.Default, "Default fg should be Default")
-	testing.expect(t, style.bg == Ansi.Default, "Default bg should be Default")
-	testing.expect(t, style.flags == {}, "Default flags should be empty")
+	s := default_style()
+	testing.expect(t, s.fg == Ansi.Default, "Default fg should be Default")
+	testing.expect(t, s.bg == Ansi.Default, "Default bg should be Default")
+	testing.expect(t, s.flags == {}, "Default flags should be empty")
 }
 
 @(test)
 test_to_ansi_default :: proc(t: ^testing.T) {
-	style := default_style()
-	seq := to_ansi(style)
-	testing.expect_value(t, seq, "[0m")
+	s := default_style()
+	seq := to_ansi(s)
+	testing.expect_value(t, seq, "\x1b[0m")
 }
 
 @(test)
 test_to_ansi_fg_only :: proc(t: ^testing.T) {
-	style := Style {
+	s := Style {
 		fg    = Ansi.Red,
 		bg    = Ansi.Default,
 		flags = {},
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "31"), "Should contain red fg code")
 	testing.expect(
 		t,
@@ -124,47 +124,47 @@ test_to_ansi_fg_only :: proc(t: ^testing.T) {
 
 @(test)
 test_to_ansi_bg_only :: proc(t: ^testing.T) {
-	style := Style {
+	s := Style {
 		fg    = Ansi.Default,
 		bg    = Ansi.Blue,
 		flags = {},
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "44"), "Should contain blue bg code")
 }
 
 @(test)
 test_to_ansi_colors :: proc(t: ^testing.T) {
-	style := Style {
+	s := Style {
 		fg    = Ansi.Red,
 		bg    = Ansi.Blue,
 		flags = {},
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "31"), "Should contain red fg")
 	testing.expect(t, strings.contains(seq, "44"), "Should contain blue bg")
 }
 
 @(test)
 test_to_ansi_single_style :: proc(t: ^testing.T) {
-	style := Style {
+	s := Style {
 		fg    = Ansi.Default,
 		bg    = Ansi.Default,
 		flags = {.Bold},
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "1"), "Should contain bold code")
 }
 
 @(test)
 test_to_ansi_multiple_styles :: proc(t: ^testing.T) {
 	flags: StyleFlags = {.Bold, .Underline, .Dim}
-	style := Style {
+	s := Style {
 		fg    = Ansi.Default,
 		bg    = Ansi.Default,
 		flags = flags,
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "1"), "Should contain bold")
 	testing.expect(t, strings.contains(seq, "2"), "Should contain dim")
 	testing.expect(t, strings.contains(seq, "4"), "Should contain underline")
@@ -174,8 +174,8 @@ test_to_ansi_multiple_styles :: proc(t: ^testing.T) {
 test_color256_sequence :: proc(t: ^testing.T) {
 	// Test 256 color sequence generation
 	c := color256(208) // Orange
-	style := style_fg(c)
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	s := style(c, Ansi.Default, {})  // Use style() instead of removed style_fg()
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 
 	// Expect \x1b[38;5;208m
 	testing.expect(t, strings.contains(seq, "38;5;208"), "Should contain 256 color sequence")
@@ -185,8 +185,8 @@ test_color256_sequence :: proc(t: ^testing.T) {
 test_rgb_sequence :: proc(t: ^testing.T) {
 	// Test RGB color sequence generation
 	c := rgb(255, 128, 0)
-	style := style_fg(c)
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	s := style(c, Ansi.Default, {})  // Use style() instead of removed style_fg()
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 
 	// Expect \x1b[38;2;255;128;0m
 	testing.expect(t, strings.contains(seq, "38;2;255;128;0"), "Should contain RGB sequence")
@@ -240,12 +240,12 @@ test_grayscale_mapping :: proc(t: ^testing.T) {
 @(test)
 test_to_ansi_complete :: proc(t: ^testing.T) {
 	flags: StyleFlags = {.Bold, .Underline}
-	style := Style {
+	s := Style {
 		fg    = Ansi.Red,
 		bg    = Ansi.Blue,
 		flags = flags,
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 	testing.expect(t, strings.contains(seq, "1"), "Should contain bold")
 	testing.expect(t, strings.contains(seq, "4"), "Should contain underline")
 	testing.expect(t, strings.contains(seq, "31"), "Should contain red fg")
@@ -255,7 +255,7 @@ test_to_ansi_complete :: proc(t: ^testing.T) {
 @(test)
 test_generate_style_sequence_default :: proc(t: ^testing.T) {
 	seq := generate_style_sequence(.Default, .Default, {})
-	testing.expect_value(t, seq, "[0m")
+	testing.expect_value(t, seq, "\x1b[0m")
 }
 
 @(test)
@@ -395,12 +395,12 @@ test_bright_color_codes :: proc(t: ^testing.T) {
 
 @(test)
 test_ansi_sequence_format :: proc(t: ^testing.T) {
-	style := Style {
+	s := Style {
 		fg    = Ansi.Red,
 		bg    = Ansi.Blue,
 		flags = {.Bold},
 	}
-	seq := generate_style_sequence(style.fg, style.bg, style.flags)
+	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 
 	testing.expect(t, strings.has_prefix(seq, "\x1b["), "Should start with escape sequence")
 	testing.expect(t, strings.has_suffix(seq, "m"), "Should end with 'm'")
@@ -410,7 +410,7 @@ test_ansi_sequence_format :: proc(t: ^testing.T) {
 test_empty_style_flags :: proc(t: ^testing.T) {
 	flags: StyleFlags = {}
 	seq := generate_style_sequence(.Default, .Default, flags)
-	testing.expect_value(t, seq, "[0m")
+	testing.expect_value(t, seq, "\x1b[0m")
 }
 
 @(test)
@@ -438,27 +438,24 @@ test_all_style_flags_combinations :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_predefined_styles :: proc(t: ^testing.T) {
-	testing.expect(t, style_normal().fg == Ansi.Default, "style_normal fg should be default")
-	testing.expect(t, style_normal().bg == Ansi.Default, "style_normal bg should be default")
-	testing.expect(t, style_normal().flags == {}, "style_normal flags should be empty")
-
-	testing.expect(t, style_bold().fg == Ansi.Default, "style_bold fg should be default")
-	testing.expect(t, style_bold().flags == {.Bold}, "style_bold should have bold")
-
-	testing.expect(t, style_dim().flags == {.Dim}, "style_dim should have dim")
-	testing.expect(
-		t,
-		style_underline().flags == {.Underline},
-		"style_underline should have underline",
-	)
-
-	testing.expect(t, style_error().fg == Ansi.Red, "style_error should be red")
-	testing.expect(t, style_error().flags == {.Bold}, "style_error should be bold")
-
-	testing.expect(t, style_success().fg == Ansi.Green, "style_success should be green")
-
-	testing.expect(t, style_warning().fg == Ansi.Yellow, "style_warning should be yellow")
-
-	testing.expect(t, style_info().fg == Ansi.Cyan, "style_info should be cyan")
+test_style_api_consistency :: proc(t: ^testing.T) {
+	// Test that style() and default_style() work consistently
+	default_s := default_style()
+	manual_default := style(.Default, .Default, {})
+	
+	testing.expect(t, default_s == manual_default, "default_style() should equal style(.Default, .Default, {})")
+	
+	// Test common style patterns
+	error_style := style(.Red, .Default, {.Bold})
+	testing.expect(t, error_style.fg == Ansi.Red)
+	testing.expect(t, .Bold in error_style.flags)
+	
+	success_style := style(.Green, .Default, {})
+	testing.expect(t, success_style.fg == Ansi.Green)
+	
+	info_style := style(.Cyan, .Default, {})
+	testing.expect(t, info_style.fg == Ansi.Cyan)
+	
+	warning_style := style(.Yellow, .Default, {})
+	testing.expect(t, warning_style.fg == Ansi.Yellow)
 }

@@ -48,34 +48,34 @@ Calculates the final absolute (X, Y) coordinates.
 
 ```odin
 // Create a container
-ansuz.Layout_begin_container(ctx, {
+ansuz.layout_begin_container(ctx, {
     direction = .TopToBottom,
-    sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
-    padding = ansuz.Padding_all(1),
+    sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+    padding = ansuz.padding_all(1),
     gap = 1,
 })
 
     // Add child items
-    ansuz.Layout_text(ctx, "Header", ansuz.STYLE_BOLD)
+    ansuz.layout_text(ctx, "Header", ansuz.style(.Default, .Default, {.Bold}))
     
     // Flexible content area
-    ansuz.Layout_begin_container(ctx, {
+    ansuz.layout_begin_container(ctx, {
         direction = .LeftToRight,
-        sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+        sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
     })
         // Left sidebar (takes 1 share)
-        ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
-            sizing = {ansuz.Sizing_grow(1), ansuz.Sizing_grow()},
+        ansuz.layout_box(ctx, ansuz.default_style(), {
+            sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
         })
-        ansuz.Layout_end_box(ctx)
+        ansuz.layout_end_container(ctx)
         
         // Main content (takes 3 shares)
-        ansuz.Layout_box(ctx, ansuz.STYLE_NORMAL, {
-            sizing = {ansuz.Sizing_grow(3), ansuz.Sizing_grow()},
+        ansuz.layout_box(ctx, ansuz.default_style(), {
+            sizing = {ansuz.sizing_grow(3), ansuz.sizing_grow()},
         })
-        ansuz.Layout_end_box(ctx)
+        ansuz.layout_end_container(ctx)
         
-    ansuz.Layout_end_container(ctx)
+    ansuz.layout_end_container(ctx)
 
-ansuz.Layout_end_container(ctx)
+ansuz.layout_end_container(ctx)
 ```

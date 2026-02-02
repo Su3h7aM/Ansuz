@@ -120,25 +120,15 @@ default_style :: proc() -> Style {
 }
 
 // =============================================================================
-// Predefined Styles (helper functions since unions can't be compile-time constants)
+// Style API
 // =============================================================================
 
-style_normal :: proc() -> Style {return Style{Ansi.Default, Ansi.Default, {}}}
-style_bold :: proc() -> Style {return Style{Ansi.Default, Ansi.Default, {.Bold}}}
-style_dim :: proc() -> Style {return Style{Ansi.Default, Ansi.Default, {.Dim}}}
-style_underline :: proc() -> Style {return Style{Ansi.Default, Ansi.Default, {.Underline}}}
-style_error :: proc() -> Style {return Style{Ansi.Red, Ansi.Default, {.Bold}}}
-style_success :: proc() -> Style {return Style{Ansi.Green, Ansi.Default, {}}}
-style_warning :: proc() -> Style {return Style{Ansi.Yellow, Ansi.Default, {}}}
-style_info :: proc() -> Style {return Style{Ansi.Cyan, Ansi.Default, {}}}
-
-// Convenience: create a style with just foreground color
-style_fg :: proc(color: TerminalColor) -> Style {return Style{color, Ansi.Default, {}}}
-
-// Convenience: create a style with foreground and background
-style_colors :: proc(fg, bg: TerminalColor) -> Style {return Style{fg, bg, {}}}
-
-// Convenience: create a style with foreground, background and flags
+// style creates a complete style with foreground, background and flags
+// Examples:
+//   style(.Default, .Default, {})          // Normal text
+//   style(.Default, .Default, {.Bold})     // Bold text  
+//   style(.Red, .Default, {.Bold})         // Error style
+//   style(.Green, .Default, {})            // Success style
 style :: proc(fg, bg: TerminalColor, flags: StyleFlags) -> Style {return Style{fg, bg, flags}}
 
 // =============================================================================

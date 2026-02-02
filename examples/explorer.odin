@@ -186,16 +186,16 @@ go_up :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	_, height := ansuz.get_size(ctx)
+	height := ctx.height
 
 	ansuz.begin_layout(ctx)
 
 	// Container principal
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
 		},
@@ -205,26 +205,26 @@ render :: proc(ctx: ^ansuz.Context) {
 	render_file_list(ctx, height)
 	render_status_bar(ctx)
 
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_end_container(ctx)
 
 	ansuz.end_layout(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.BrightBlue),
+		ansuz.style(.BrightBlue, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(3)},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.Layout_text(
+	ansuz.layout_text(
 		ctx,
 		"File Explorer",
-		ansuz.style(ansuz.Ansi.BrightCyan, ansuz.Ansi.Default, {.Bold}),
+		ansuz.style(.BrightCyan, .Default, {.Bold}),
 	)
 
 	// Caminho atual (truncado se muito longo)
@@ -232,16 +232,16 @@ render_header :: proc(ctx: ^ansuz.Context) {
 	if len(path_display) > 60 {
 		path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
 	}
-	ansuz.Layout_text(ctx, path_display, ansuz.style_fg(ansuz.Ansi.White))
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_text(ctx, path_display, ansuz.style(.White, .Default, {}))
+	ansuz.layout_end_container(ctx)
 }
 
 render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
-	ansuz.Layout_box(
+	ansuz.layout_box(
 		ctx,
-		ansuz.style_fg(ansuz.Ansi.Yellow),
+		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_grow()},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			overflow = .Hidden,
@@ -250,22 +250,22 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 	)
 
 	if g_state.error_msg != "" {
-		ansuz.Layout_text(
+		ansuz.layout_text(
 			ctx,
 			g_state.error_msg,
-			ansuz.style(ansuz.Ansi.BrightRed, ansuz.Ansi.Default, {.Bold}),
+			ansuz.style(.BrightRed, .Default, {.Bold}),
 		)
-		ansuz.Layout_end_box(ctx)
+		ansuz.layout_end_container(ctx)
 		return
 	}
 
 	if len(g_state.entries) == 0 {
-		ansuz.Layout_text(
+		ansuz.layout_text(
 			ctx,
 			"(diretorio vazio)",
-			ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}),
+			ansuz.style(.BrightBlack, .Default, {.Dim}),
 		)
-		ansuz.Layout_end_box(ctx)
+		ansuz.layout_end_container(ctx)
 		return
 	}
 
@@ -321,18 +321,18 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 			style = {.Bold}
 		}
 
-		ansuz.Layout_text(ctx, line, ansuz.style(color, ansuz.Ansi.Default, style))
+		ansuz.layout_text(ctx, line, ansuz.style(color, .Default, style))
 	}
 
-	ansuz.Layout_end_box(ctx)
+	ansuz.layout_end_container(ctx)
 }
 
 render_status_bar :: proc(ctx: ^ansuz.Context) {
-	ansuz.Layout_begin_container(
+	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.Sizing_grow(), ansuz.Sizing_fixed(1)},
+			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
 			alignment = {.Center, .Center},
 		},
 	)
@@ -359,8 +359,8 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 		info = " [Q/ESC] Sair"
 	}
 
-	ansuz.Layout_text(ctx, info, ansuz.style(ansuz.Ansi.BrightBlack, ansuz.Ansi.Default, {.Dim}))
-	ansuz.Layout_end_container(ctx)
+	ansuz.layout_text(ctx, info, ansuz.style(.BrightBlack, .Default, {.Dim}))
+	ansuz.layout_end_container(ctx)
 }
 
 format_size :: proc(bytes: i64) -> string {
