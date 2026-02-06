@@ -1,6 +1,7 @@
 package ansuz
 
 import "core:fmt"
+import "core:hash"
 import "core:mem"
 import "core:strings"
 import "core:time"
@@ -34,6 +35,11 @@ Context :: struct {
 
 	// Allocator for internal allocations
 	allocator:        mem.Allocator,
+
+	// Focus state
+	focus_id:         u64,
+	last_focus_id:    u64,
+	focusable_items:  [dynamic]u64,
 }
 
 // ContextError represents errors during context operations
@@ -99,6 +105,9 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 	}
 	ctx.render_buffer = render_buf
 
+	// Initialize focus tracking
+	ctx.focusable_items = make([dynamic]u64, allocator)
+
 	// Initial terminal setup
 	disable_auto_wrap()
 	hide_cursor()
@@ -131,6 +140,7 @@ shutdown :: proc(ctx: ^Context) {
 	reset_terminal()
 
 	// Free context
+	delete(ctx.focusable_items)
 	free(ctx, ctx.allocator)
 }
 
@@ -151,6 +161,9 @@ begin_frame :: proc(ctx: ^Context) {
 
 	// Clear buffer for new frame
 	clear_buffer(&ctx.buffer)
+
+	// Reset focusable items for this frame
+	clear(&ctx.focusable_items)
 }
 
 // end_frame finishes the current frame and outputs to terminal
@@ -355,4 +368,28 @@ layout_rect :: proc(
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ) {
 	add_rect_container(&ctx.layout_ctx, char, style, config)
+}
+
+// --- Focus API ---
+
+// id generates a stable ID from a string label (using FNV-1a hash)
+id :: proc(ctx: ^Context, label: string) -> u64 {
+	return hash.fnv64a(transmute([]u8)label)
+}
+
+// set_focus explicitly sets the focused element
+set_focus :: proc(ctx: ^Context, id: u64) {
+	ctx.last_focus_id = ctx.focus_id
+	ctx.focus_id = id
+}
+
+// is_focused checks if the given ID currently has focus
+is_focused :: proc(ctx: ^Context, id: u64) -> bool {
+	return ctx.focus_id == id
+}
+
+// register_focusable registers an item as focusable for the current frame.
+// This is used to build the tab navigation order.
+register_focusable :: proc(ctx: ^Context, id: u64) {
+	append(&ctx.focusable_items, id)
 }
