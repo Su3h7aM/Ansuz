@@ -41,6 +41,7 @@ Context :: struct {
 	last_focus_id:        u64,
 	focusable_items:      [dynamic]u64,
 	prev_focusable_items: [dynamic]u64,
+	input_keys:           [dynamic]KeyEvent,
 }
 
 // ContextError represents errors during context operations
@@ -109,6 +110,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 	// Initialize focus tracking
 	ctx.focusable_items = make([dynamic]u64, allocator)
 	ctx.prev_focusable_items = make([dynamic]u64, allocator)
+	ctx.input_keys = make([dynamic]KeyEvent, allocator)
 
 	// Initial terminal setup
 	disable_auto_wrap()
@@ -144,6 +146,7 @@ shutdown :: proc(ctx: ^Context) {
 	// Free context
 	delete(ctx.focusable_items)
 	delete(ctx.prev_focusable_items)
+	delete(ctx.input_keys)
 	free(ctx, ctx.allocator)
 }
 
@@ -171,6 +174,9 @@ begin_frame :: proc(ctx: ^Context) {
 	ctx.prev_focusable_items = ctx.focusable_items
 	ctx.focusable_items = temp
 	clear(&ctx.focusable_items)
+
+	// Clear input keys for new frame
+	clear(&ctx.input_keys)
 }
 
 // end_frame finishes the current frame and outputs to terminal
@@ -290,6 +296,12 @@ poll_events :: proc(ctx: ^Context) -> []Event {
 		ev, parsed := parse_input(input_buffer[:bytes_read])
 		if parsed {
 			append(&events, ev)
+
+			// Store key events for widgets to check later
+			#partial switch e in ev {
+			case KeyEvent:
+				append(&ctx.input_keys, e)
+			}
 		}
 	}
 
