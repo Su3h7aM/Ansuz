@@ -311,41 +311,42 @@ wait_for_event :: proc(
 	// SYS_poll = 7 on amd64
 	SYS_poll :: uintptr(7)
 
-	// Use 100ms internal timeout for resize detection if infinite wait requested
-	poll_timeout := timeout_ms == -1 ? i32(100) : timeout_ms
+	for {
+		// Use 100ms internal timeout for resize detection if infinite wait requested
+		poll_timeout := timeout_ms == -1 ? i32(100) : timeout_ms
 
-	fds: [1]Poll_Fd
-	fds[0] = Poll_Fd {
-		fd      = i32(os.stdin),
-		events  = POLLIN,
-		revents = 0,
+		fds: [1]Poll_Fd
+		fds[0] = Poll_Fd {
+			fd      = i32(os.stdin),
+			events  = POLLIN,
+			revents = 0,
+		}
+
+		// poll(fds, nfds, timeout)
+		ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(poll_timeout))
+
+		// Check for terminal resize by querying current size
+		new_width, new_height, _ := get_terminal_size()
+		if new_width != last_width || new_height != last_height {
+			return .Resize, new_width, new_height
+		}
+
+		// Check poll result
+		if int(ret) < 0 {
+			return .Error, new_width, new_height
+		}
+
+		if int(ret) > 0 && (fds[0].revents & POLLIN) != 0 {
+			return .Input, new_width, new_height
+		}
+
+		// Timeout - if explicit timeout requested, return
+		if timeout_ms != -1 {
+			return .None, new_width, new_height
+		}
+
+		// If infinite wait requested (timeout_ms == -1), loop again
 	}
-
-	// poll(fds, nfds, timeout)
-	ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(poll_timeout))
-
-	// Check for terminal resize by querying current size
-	new_width, new_height, _ := get_terminal_size()
-	if new_width != last_width || new_height != last_height {
-		return .Resize, new_width, new_height
-	}
-
-	// Check poll result
-	if int(ret) < 0 {
-		return .Error, new_width, new_height
-	}
-
-	if int(ret) > 0 && (fds[0].revents & POLLIN) != 0 {
-		return .Input, new_width, new_height
-	}
-
-	// Timeout - if user requested infinite wait, loop internally
-	if timeout_ms == -1 {
-		// Recursive call to continue waiting
-		return wait_for_event(new_width, new_height, timeout_ms)
-	}
-
-	return .None, new_width, new_height
 }
 
 // wait_for_input blocks until stdin has data available or timeout expires
