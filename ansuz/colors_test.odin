@@ -4,71 +4,71 @@ import "core:strings"
 import "core:testing"
 
 @(test)
-test_color_to_ansi_fg_default :: proc(t: ^testing.T) {
-	code := color_to_ansi_fg(.Default)
+test_ansi_to_fg_code_default :: proc(t: ^testing.T) {
+	code := ansi_to_fg_code(.Default)
 	testing.expect_value(t, code, 39)
 }
 
 @(test)
-test_color_to_ansi_fg_standard :: proc(t: ^testing.T) {
-	testing.expect_value(t, color_to_ansi_fg(.Black), 30)
-	testing.expect_value(t, color_to_ansi_fg(.Red), 31)
-	testing.expect_value(t, color_to_ansi_fg(.Green), 32)
-	testing.expect_value(t, color_to_ansi_fg(.Yellow), 33)
-	testing.expect_value(t, color_to_ansi_fg(.Blue), 34)
-	testing.expect_value(t, color_to_ansi_fg(.Magenta), 35)
-	testing.expect_value(t, color_to_ansi_fg(.Cyan), 36)
-	testing.expect_value(t, color_to_ansi_fg(.White), 37)
+test_ansi_to_fg_code_standard :: proc(t: ^testing.T) {
+	testing.expect_value(t, ansi_to_fg_code(.Black), 30)
+	testing.expect_value(t, ansi_to_fg_code(.Red), 31)
+	testing.expect_value(t, ansi_to_fg_code(.Green), 32)
+	testing.expect_value(t, ansi_to_fg_code(.Yellow), 33)
+	testing.expect_value(t, ansi_to_fg_code(.Blue), 34)
+	testing.expect_value(t, ansi_to_fg_code(.Magenta), 35)
+	testing.expect_value(t, ansi_to_fg_code(.Cyan), 36)
+	testing.expect_value(t, ansi_to_fg_code(.White), 37)
 }
 
 @(test)
-test_color_to_ansi_fg_bright :: proc(t: ^testing.T) {
-	testing.expect_value(t, color_to_ansi_fg(.BrightBlack), 90)
-	testing.expect_value(t, color_to_ansi_fg(.BrightRed), 91)
-	testing.expect_value(t, color_to_ansi_fg(.BrightGreen), 92)
-	testing.expect_value(t, color_to_ansi_fg(.BrightYellow), 93)
-	testing.expect_value(t, color_to_ansi_fg(.BrightBlue), 94)
-	testing.expect_value(t, color_to_ansi_fg(.BrightMagenta), 95)
-	testing.expect_value(t, color_to_ansi_fg(.BrightCyan), 96)
-	testing.expect_value(t, color_to_ansi_fg(.BrightWhite), 97)
+test_ansi_to_fg_code_bright :: proc(t: ^testing.T) {
+	testing.expect_value(t, ansi_to_fg_code(.BrightBlack), 90)
+	testing.expect_value(t, ansi_to_fg_code(.BrightRed), 91)
+	testing.expect_value(t, ansi_to_fg_code(.BrightGreen), 92)
+	testing.expect_value(t, ansi_to_fg_code(.BrightYellow), 93)
+	testing.expect_value(t, ansi_to_fg_code(.BrightBlue), 94)
+	testing.expect_value(t, ansi_to_fg_code(.BrightMagenta), 95)
+	testing.expect_value(t, ansi_to_fg_code(.BrightCyan), 96)
+	testing.expect_value(t, ansi_to_fg_code(.BrightWhite), 97)
 }
 
 @(test)
-test_color_to_ansi_bg_default :: proc(t: ^testing.T) {
-	code := color_to_ansi_bg(.Default)
+test_ansi_to_bg_code_default :: proc(t: ^testing.T) {
+	code := ansi_to_bg_code(.Default)
 	testing.expect_value(t, code, 49)
 }
 
 @(test)
-test_color_to_ansi_bg_standard :: proc(t: ^testing.T) {
-	testing.expect_value(t, color_to_ansi_bg(.Black), 40)
-	testing.expect_value(t, color_to_ansi_bg(.Red), 41)
-	testing.expect_value(t, color_to_ansi_bg(.Green), 42)
-	testing.expect_value(t, color_to_ansi_bg(.Yellow), 43)
-	testing.expect_value(t, color_to_ansi_bg(.Blue), 44)
-	testing.expect_value(t, color_to_ansi_bg(.Magenta), 45)
-	testing.expect_value(t, color_to_ansi_bg(.Cyan), 46)
-	testing.expect_value(t, color_to_ansi_bg(.White), 47)
+test_ansi_to_bg_code_standard :: proc(t: ^testing.T) {
+	testing.expect_value(t, ansi_to_bg_code(.Black), 40)
+	testing.expect_value(t, ansi_to_bg_code(.Red), 41)
+	testing.expect_value(t, ansi_to_bg_code(.Green), 42)
+	testing.expect_value(t, ansi_to_bg_code(.Yellow), 43)
+	testing.expect_value(t, ansi_to_bg_code(.Blue), 44)
+	testing.expect_value(t, ansi_to_bg_code(.Magenta), 45)
+	testing.expect_value(t, ansi_to_bg_code(.Cyan), 46)
+	testing.expect_value(t, ansi_to_bg_code(.White), 47)
 }
 
 @(test)
-test_color_to_ansi_bg_bright :: proc(t: ^testing.T) {
-	testing.expect_value(t, color_to_ansi_bg(.BrightBlack), 100)
-	testing.expect_value(t, color_to_ansi_bg(.BrightRed), 101)
-	testing.expect_value(t, color_to_ansi_bg(.BrightGreen), 102)
-	testing.expect_value(t, color_to_ansi_bg(.BrightYellow), 103)
-	testing.expect_value(t, color_to_ansi_bg(.BrightBlue), 104)
-	testing.expect_value(t, color_to_ansi_bg(.BrightMagenta), 105)
-	testing.expect_value(t, color_to_ansi_bg(.BrightCyan), 106)
-	testing.expect_value(t, color_to_ansi_bg(.BrightWhite), 107)
+test_ansi_to_bg_code_bright :: proc(t: ^testing.T) {
+	testing.expect_value(t, ansi_to_bg_code(.BrightBlack), 100)
+	testing.expect_value(t, ansi_to_bg_code(.BrightRed), 101)
+	testing.expect_value(t, ansi_to_bg_code(.BrightGreen), 102)
+	testing.expect_value(t, ansi_to_bg_code(.BrightYellow), 103)
+	testing.expect_value(t, ansi_to_bg_code(.BrightBlue), 104)
+	testing.expect_value(t, ansi_to_bg_code(.BrightMagenta), 105)
+	testing.expect_value(t, ansi_to_bg_code(.BrightCyan), 106)
+	testing.expect_value(t, ansi_to_bg_code(.BrightWhite), 107)
 }
 
 @(test)
 test_color_offset_between_fg_bg :: proc(t: ^testing.T) {
 	for color in Color {
 		if color == .Default do continue
-		fg := color_to_ansi_fg(color)
-		bg := color_to_ansi_bg(color)
+		fg := ansi_to_fg_code(color)
+		bg := ansi_to_bg_code(color)
 		testing.expect_value(t, bg - fg, 10)
 	}
 }
@@ -174,7 +174,7 @@ test_to_ansi_multiple_styles :: proc(t: ^testing.T) {
 test_color256_sequence :: proc(t: ^testing.T) {
 	// Test 256 color sequence generation
 	c := color256(208) // Orange
-	s := style(c, Ansi.Default, {})  // Use style() instead of removed style_fg()
+	s := style(c, Ansi.Default, {}) // Use style() instead of removed style_fg()
 	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 
 	// Expect \x1b[38;5;208m
@@ -185,7 +185,7 @@ test_color256_sequence :: proc(t: ^testing.T) {
 test_rgb_sequence :: proc(t: ^testing.T) {
 	// Test RGB color sequence generation
 	c := rgb(255, 128, 0)
-	s := style(c, Ansi.Default, {})  // Use style() instead of removed style_fg()
+	s := style(c, Ansi.Default, {}) // Use style() instead of removed style_fg()
 	seq := generate_style_sequence(s.fg, s.bg, s.flags)
 
 	// Expect \x1b[38;2;255;128;0m
@@ -314,7 +314,7 @@ test_all_color_values_unique_fg :: proc(t: ^testing.T) {
 	defer delete(seen)
 
 	for color in Color {
-		code := color_to_ansi_fg(color)
+		code := ansi_to_fg_code(color)
 		for seen_code in seen {
 			testing.expect(t, code != seen_code, "Color codes should be unique")
 		}
@@ -442,20 +442,24 @@ test_style_api_consistency :: proc(t: ^testing.T) {
 	// Test that style() and default_style() work consistently
 	default_s := default_style()
 	manual_default := style(.Default, .Default, {})
-	
-	testing.expect(t, default_s == manual_default, "default_style() should equal style(.Default, .Default, {})")
-	
+
+	testing.expect(
+		t,
+		default_s == manual_default,
+		"default_style() should equal style(.Default, .Default, {})",
+	)
+
 	// Test common style patterns
 	error_style := style(.Red, .Default, {.Bold})
 	testing.expect(t, error_style.fg == Ansi.Red)
 	testing.expect(t, .Bold in error_style.flags)
-	
+
 	success_style := style(.Green, .Default, {})
 	testing.expect(t, success_style.fg == Ansi.Green)
-	
+
 	info_style := style(.Cyan, .Default, {})
 	testing.expect(t, info_style.fg == Ansi.Cyan)
-	
+
 	warning_style := style(.Yellow, .Default, {})
 	testing.expect(t, warning_style.fg == Ansi.Yellow)
 }

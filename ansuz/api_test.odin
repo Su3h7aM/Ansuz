@@ -142,12 +142,12 @@ test_layout_config_default :: proc(t: ^testing.T) {
 	)
 	testing.expect(
 		t,
-		DEFAULT_LAYOUT_CONFIG.sizing[0].type == .FitContent,
+		DEFAULT_LAYOUT_CONFIG.sizing[.X].type == .FitContent,
 		"Default width sizing should be FitContent",
 	)
 	testing.expect(
 		t,
-		DEFAULT_LAYOUT_CONFIG.sizing[1].type == .FitContent,
+		DEFAULT_LAYOUT_CONFIG.sizing[.Y].type == .FitContent,
 		"Default height sizing should be FitContent",
 	)
 	testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.padding.left, 0)

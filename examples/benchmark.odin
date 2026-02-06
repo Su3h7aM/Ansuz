@@ -109,7 +109,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
 		},
@@ -136,7 +136,7 @@ render_header :: proc(ctx: ^ansuz.Context) {
 	ansuz.layout_box(
 		ctx,
 		ansuz.style(.BrightBlue, .Default, {}),
-		{sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)}, alignment = {.Center, .Center}},
+		{sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)}, alignment = {.Center, .Center}},
 		.Double,
 	)
 	ansuz.layout_text(
@@ -152,7 +152,7 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(8)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(8)},
 			gap = 1,
 			padding = {0, 0, 1, 0},
 		},
@@ -163,7 +163,7 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Green, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
@@ -188,24 +188,16 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Cyan, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.layout_text(
-		ctx,
-		"Frame Time",
-		ansuz.style(.BrightCyan, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "Frame Time", ansuz.style(.BrightCyan, .Default, {.Bold}))
 
 	avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
-	ansuz.layout_text(
-		ctx,
-		fmt.tprintf("%.2f ms", avg_ms),
-		ansuz.style(.White, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, fmt.tprintf("%.2f ms", avg_ms), ansuz.style(.White, .Default, {.Bold}))
 
 	min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
 	max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
@@ -226,17 +218,13 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Magenta, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.layout_text(
-		ctx,
-		"Stress Level",
-		ansuz.style(.BrightMagenta, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "Stress Level", ansuz.style(.BrightMagenta, .Default, {.Bold}))
 
 	ansuz.layout_text(
 		ctx,
@@ -260,7 +248,7 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		ctx,
 		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			overflow = .Hidden,
@@ -274,18 +262,14 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		g_stats.stress_level,
 		g_stats.stress_level * 20,
 	)
-	ansuz.layout_text(
-		ctx,
-		title,
-		ansuz.style(.BrightYellow, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, title, ansuz.style(.BrightYellow, .Default, {.Bold}))
 
 	// Container principal para stress test
 	ansuz.layout_begin_container(
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			overflow = .Hidden,
 			gap = 0,
 		},
@@ -302,7 +286,7 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 			ctx,
 			{
 				direction = .LeftToRight,
-				sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
 				overflow = .Hidden,
 			},
 		)
@@ -331,7 +315,7 @@ render_controls :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
 			alignment = {.Center, .Center},
 		},
 	)

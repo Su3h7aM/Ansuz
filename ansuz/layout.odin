@@ -37,25 +37,7 @@ grow :: proc(weight: f32 = 1.0) -> Sizing {
 }
 
 // Deprecated legacy constructors
-@(deprecated = "Use 'fixed' instead")
-sizing_fixed :: proc(value: int) -> Sizing {
-	return fixed(value)
-}
 
-@(deprecated = "Use 'percent' instead")
-sizing_percent :: proc(value: f32) -> Sizing {
-	return percent(value)
-}
-
-@(deprecated = "Use 'fit' instead")
-sizing_fit :: proc() -> Sizing {
-	return fit()
-}
-
-@(deprecated = "Use 'grow' instead")
-sizing_grow :: proc(weight: f32 = 1.0) -> Sizing {
-	return grow(weight)
-}
 
 LayoutDirection :: enum {
 	LeftToRight,
@@ -131,14 +113,14 @@ LayoutConfig :: struct {
 }
 
 DEFAULT_LAYOUT_CONFIG :: LayoutConfig {
-	direction     = .TopToBottom,
-	sizing        = {Sizing{.FitContent, 0}, Sizing{.FitContent, 0}},
-	padding       = {0, 0, 0, 0},
-	gap           = 0,
-	alignment     = {.Left, .Top},
-	overflow      = .Hidden,
+	direction = .TopToBottom,
+	sizing = {.X = Sizing{.FitContent, 0}, .Y = Sizing{.FitContent, 0}},
+	padding = {0, 0, 0, 0},
+	gap = 0,
+	alignment = {.Left, .Top},
+	overflow = .Hidden,
 	scroll_offset = {0, 0},
-	wrap_text     = false,
+	wrap_text = false,
 }
 
 Rect :: struct {

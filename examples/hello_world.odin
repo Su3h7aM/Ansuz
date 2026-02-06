@@ -46,7 +46,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing    = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			alignment = {.Center, .Center}, // Centraliza o conteúdo
 		},
 	)
@@ -56,7 +56,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.BrightCyan, .Default, {}),
 		{
-			sizing = {ansuz.sizing_fixed(40), ansuz.sizing_fixed(9)},
+			sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
 			padding = ansuz.padding_all(1),
 			alignment = {.Center, .Center},
 			direction = .TopToBottom,
@@ -65,21 +65,13 @@ render :: proc(ctx: ^ansuz.Context) {
 		.Rounded,
 	)
 	// Título com estilo
-	ansuz.layout_text(
-		ctx,
-		"Hello, Ansuz!",
-		ansuz.style(.BrightYellow, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "Hello, Ansuz!", ansuz.style(.BrightYellow, .Default, {.Bold}))
 
 	// Subtítulo
 	ansuz.layout_text(ctx, "Uma biblioteca TUI para Odin", ansuz.style(.White, .Default, {}))
 
 	// Instruções
-	ansuz.layout_text(
-		ctx,
-		"[Q/ESC] sair",
-		ansuz.style(.BrightBlack, .Default, {.Dim}),
-	)
+	ansuz.layout_text(ctx, "[Q/ESC] sair", ansuz.style(.BrightBlack, .Default, {.Dim}))
 
 	ansuz.layout_end_container(ctx)
 

@@ -40,7 +40,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {2, 2, 1, 1},
 			gap = 1,
 			alignment = {.Center, .Top},
@@ -52,7 +52,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.BrightCyan, .Default, {.Bold}),
 		{
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
 			alignment = {.Center, .Center},
 			direction = .TopToBottom,
 		},
@@ -74,11 +74,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	render_256_section(ctx)
 
 	// Rodapé
-	ansuz.layout_text(
-		ctx,
-		"[Q/ESC] Quit",
-		ansuz.style(.BrightBlack, .Default, {.Dim}),
-	)
+	ansuz.layout_text(ctx, "[Q/ESC] Quit", ansuz.style(.BrightBlack, .Default, {.Dim}))
 
 	ansuz.layout_end_container(ctx)
 	ansuz.end_layout(ctx)
@@ -93,7 +89,7 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(4)}, gap = 1},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)}, gap = 1},
 	)
 
 	// Normal params
@@ -107,7 +103,7 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 		ansuz.layout_box(
 			ctx,
 			style,
-			{sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()}, alignment = {.Center, .Center}},
+			{sizing = {.X = ansuz.grow(), .Y = ansuz.grow()}, alignment = {.Center, .Center}},
 			.Rounded,
 		)
 		ansuz.layout_text(ctx, names[i], style)
@@ -118,7 +114,7 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 	// Bright params
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(4)}, gap = 1},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)}, gap = 1},
 	)
 	bright_colors := [?]ansuz.Ansi {
 		.BrightBlack,
@@ -136,7 +132,7 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 		ansuz.layout_box(
 			ctx,
 			style,
-			{sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()}, alignment = {.Center, .Center}},
+			{sizing = {.X = ansuz.grow(), .Y = ansuz.grow()}, alignment = {.Center, .Center}},
 			.Rounded,
 		)
 		ansuz.layout_text(ctx, names[i], style) // Reutiliza nomes
@@ -154,28 +150,16 @@ render_styles_section :: proc(ctx: ^ansuz.Context) {
 
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)}, gap = 2},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)}, gap = 2},
 	)
 
 	ansuz.layout_text(ctx, "Normal", ansuz.default_style())
 	ansuz.layout_text(ctx, "Bold", ansuz.style(.Default, .Default, {.Bold}))
 	ansuz.layout_text(ctx, "Dim", ansuz.style(.Default, .Default, {.Dim}))
-	ansuz.layout_text(
-		ctx,
-		"Italic",
-		ansuz.style(.Default, .Default, {.Italic}),
-	)
-	ansuz.layout_text(
-		ctx,
-		"Underline",
-		ansuz.style(.Default, .Default, {.Underline}),
-	)
+	ansuz.layout_text(ctx, "Italic", ansuz.style(.Default, .Default, {.Italic}))
+	ansuz.layout_text(ctx, "Underline", ansuz.style(.Default, .Default, {.Underline}))
 	ansuz.layout_text(ctx, "Blink", ansuz.style(.Default, .Default, {.Blink}))
-	ansuz.layout_text(
-		ctx,
-		"Reverse",
-		ansuz.style(.Default, .Default, {.Reverse}),
-	)
+	ansuz.layout_text(ctx, "Reverse", ansuz.style(.Default, .Default, {.Reverse}))
 
 	ansuz.layout_end_container(ctx)
 }
@@ -189,13 +173,13 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .TopToBottom, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(6)}, gap = 0},
+		{direction = .TopToBottom, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(6)}, gap = 0},
 	)
 
 	// Gradiente 1: Vermelho -> Amarelo -> Verde
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)}},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
 	steps := 60
 	for i in 0 ..< steps {
@@ -210,7 +194,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 	// Gradiente 2: Azul -> Cyan -> Magenta
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)}},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
 	for i in 0 ..< steps {
 		t := f32(i) / f32(steps)
@@ -230,7 +214,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 	// Complex gradient text
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)}},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
 	text := "The Ansuz TUI Library supports 16 million colors with RGB!"
 	for i in 0 ..< len(text) {
@@ -259,7 +243,7 @@ render_256_section :: proc(ctx: ^ansuz.Context) {
 	// Color Cube Slice
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(2)}, gap = 0},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(2)}, gap = 0},
 	)
 	for i in 0 ..< 36 {
 		// Primeiras 36 cores do cubo (indices 16-51)
@@ -270,7 +254,7 @@ render_256_section :: proc(ctx: ^ansuz.Context) {
 	// Grayscale ramp
 	ansuz.layout_begin_container(
 		ctx,
-		{direction = .LeftToRight, sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(2)}, gap = 0},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(2)}, gap = 0},
 	)
 	for i in 0 ..< 24 {
 		// Grayscale indices 232-255

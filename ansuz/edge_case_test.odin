@@ -244,8 +244,8 @@ test_color_enum_values :: proc(t: ^testing.T) {
 	}
 
 	for color in colors {
-		fg_code := color_to_ansi_fg(color)
-		bg_code := color_to_ansi_bg(color)
+		fg_code := ansi_to_fg_code(color)
+		bg_code := ansi_to_bg_code(color)
 
 		testing.expect(t, fg_code >= 30, "Foreground code should be valid")
 		testing.expect(t, fg_code <= 107, "Foreground code should be valid")
@@ -403,7 +403,7 @@ test_layout_one_child :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(&l_ctx, "Single", default_style(), {sizing = {sizing_grow(), sizing_grow()}})
+	add_text(&l_ctx, "Single", default_style(), {sizing = {.X = grow(), .Y = grow()}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -420,7 +420,7 @@ test_layout_zero_sizing :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(&l_ctx, "", default_style(), {sizing = {sizing_fixed(0), sizing_fixed(0)}})
+	add_text(&l_ctx, "", default_style(), {sizing = {.X = fixed(0), .Y = fixed(0)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)
@@ -438,12 +438,7 @@ test_layout_very_large_sizing :: proc(t: ^testing.T) {
 	reset_layout_context(&l_ctx, root_rect)
 
 	begin_container(&l_ctx, DEFAULT_LAYOUT_CONFIG)
-	add_text(
-		&l_ctx,
-		"Large",
-		default_style(),
-		{sizing = {sizing_fixed(10000), sizing_fixed(10000)}},
-	)
+	add_text(&l_ctx, "Large", default_style(), {sizing = {.X = fixed(10000), .Y = fixed(10000)}})
 	end_container(&l_ctx)
 
 	_run_layout_passes(&l_ctx)

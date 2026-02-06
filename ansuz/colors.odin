@@ -336,19 +336,7 @@ to_ansi :: proc(style: Style) -> string {
 
 // Color is an alias for Ansi (backward compatibility)
 // Color is an alias for Ansi (backward compatibility)
-@(deprecated = "Use Ansi instead")
+// Color is an alias for Ansi (backward compatibility)
 Color :: Ansi
 
 // color_to_ansi_fg is deprecated, use ansi_to_fg_code instead
-// color_to_ansi_fg is deprecated, use ansi_to_fg_code instead
-@(deprecated = "Use ansi_to_fg_code instead")
-color_to_ansi_fg :: proc(color: Color) -> int {
-	return ansi_to_fg_code(color)
-}
-
-// color_to_ansi_bg is deprecated, use ansi_to_bg_code instead
-// color_to_ansi_bg is deprecated, use ansi_to_bg_code instead
-@(deprecated = "Use ansi_to_bg_code instead")
-color_to_ansi_bg :: proc(color: Color) -> int {
-	return ansi_to_bg_code(color)
-}

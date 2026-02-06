@@ -53,7 +53,7 @@ main :: proc() {
 				ctx,
 				{
 					direction = .TopToBottom,
-					sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 					padding = {2, 2, 1, 1},
 					gap = 1,
 				},
@@ -76,8 +76,8 @@ main :: proc() {
 				ansuz.style(.Green, .Default, {}),
 				{
 					direction = .TopToBottom,
-					sizing    = {ansuz.sizing_grow(), ansuz.sizing_grow()}, // Grow width, Grow height
-					padding   = {1, 1, 1, 1},
+					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()}, // Grow width, Grow height
+					padding = {1, 1, 1, 1},
 				},
 			)
 			ansuz.layout_text(
@@ -85,22 +85,18 @@ main :: proc() {
 				"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
 				ansuz.style(.White, .Default, {}),
 				{
-					sizing    = {ansuz.sizing_grow(), ansuz.sizing_fit()}, // Width fits parent (Grow), Height fits content
+					sizing = {.X = ansuz.grow(), .Y = ansuz.fit()}, // Width fits parent (Grow), Height fits content
 					wrap_text = true,
 				},
 			)
 
-			ansuz.layout_text(
-				ctx,
-				"--- Separator ---",
-				ansuz.style(.Black, .Default, {.Bold}),
-			)
+			ansuz.layout_text(ctx, "--- Separator ---", ansuz.style(.Black, .Default, {.Bold}))
 
 			ansuz.layout_text(
 				ctx,
 				"Another paragraph with different styling. Wrapping allows for rich text layouts that adapt to any screen size, which is critical for modern TUI applications.",
 				ansuz.style(.Yellow, .Default, {.Italic}),
-				{sizing = {ansuz.sizing_grow(), ansuz.sizing_fit()}, wrap_text = true},
+				{sizing = {.X = ansuz.grow(), .Y = ansuz.fit()}, wrap_text = true},
 			)
 			ansuz.layout_end_container(ctx)
 
@@ -110,7 +106,7 @@ main :: proc() {
 				ansuz.style(.Blue, .Default, {}),
 				{
 					direction = .TopToBottom,
-					sizing = {ansuz.sizing_fixed(40), ansuz.sizing_fit()},
+					sizing = {.X = ansuz.fixed(40), .Y = ansuz.fit()},
 					padding = {1, 1, 0, 0},
 					gap = 0,
 				},
@@ -125,7 +121,7 @@ main :: proc() {
 				"This text is constrained to a fixed width of 40 characters. It should wrap within this column regardless of window size.",
 				ansuz.style(.White, .Default, {}),
 				{
-					sizing    = {ansuz.sizing_fixed(36), ansuz.sizing_fit()}, // 36 + padding
+					sizing = {.X = ansuz.fixed(36), .Y = ansuz.fit()}, // 36 + padding
 					wrap_text = true,
 				},
 			)

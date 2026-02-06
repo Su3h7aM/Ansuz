@@ -195,7 +195,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
 		},
@@ -215,17 +215,13 @@ render_header :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.BrightBlue, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(3)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 		},
 		.Rounded,
 	)
-	ansuz.layout_text(
-		ctx,
-		"File Explorer",
-		ansuz.style(.BrightCyan, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "File Explorer", ansuz.style(.BrightCyan, .Default, {.Bold}))
 
 	// Caminho atual (truncado se muito longo)
 	path_display := g_state.current_path
@@ -241,7 +237,7 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 		ctx,
 		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			overflow = .Hidden,
@@ -250,21 +246,13 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 	)
 
 	if g_state.error_msg != "" {
-		ansuz.layout_text(
-			ctx,
-			g_state.error_msg,
-			ansuz.style(.BrightRed, .Default, {.Bold}),
-		)
+		ansuz.layout_text(ctx, g_state.error_msg, ansuz.style(.BrightRed, .Default, {.Bold}))
 		ansuz.layout_end_container(ctx)
 		return
 	}
 
 	if len(g_state.entries) == 0 {
-		ansuz.layout_text(
-			ctx,
-			"(diretorio vazio)",
-			ansuz.style(.BrightBlack, .Default, {.Dim}),
-		)
+		ansuz.layout_text(ctx, "(diretorio vazio)", ansuz.style(.BrightBlack, .Default, {.Dim}))
 		ansuz.layout_end_container(ctx)
 		return
 	}
@@ -332,7 +320,7 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
 			alignment = {.Center, .Center},
 		},
 	)

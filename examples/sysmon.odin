@@ -126,7 +126,7 @@ render :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 1,
 		},
@@ -135,11 +135,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	// Linha superior: CPU + Memory (lado a lado)
 	ansuz.layout_begin_container(
 		ctx,
-		{
-			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(10)},
-			gap = 1,
-		},
+		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(10)}, gap = 1},
 	)
 	render_cpu_panel(ctx)
 	render_memory_panel(ctx)
@@ -161,7 +157,7 @@ render_cpu_panel :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Cyan, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			gap = 0,
@@ -169,11 +165,7 @@ render_cpu_panel :: proc(ctx: ^ansuz.Context) {
 		.Rounded,
 	)
 	// Título
-	ansuz.layout_text(
-		ctx,
-		"󰻠 CPU",
-		ansuz.style(.BrightCyan, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "󰻠 CPU", ansuz.style(.BrightCyan, .Default, {.Bold}))
 
 	// Barra total
 	render_progress_bar(ctx, "Total", g_data.cpu_total, .BrightGreen)
@@ -193,7 +185,7 @@ render_memory_panel :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Magenta, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(1), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			gap = 0,
@@ -201,11 +193,7 @@ render_memory_panel :: proc(ctx: ^ansuz.Context) {
 		.Rounded,
 	)
 	// Título
-	ansuz.layout_text(
-		ctx,
-		"󰍛 Memory",
-		ansuz.style(.BrightMagenta, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "󰍛 Memory", ansuz.style(.BrightMagenta, .Default, {.Bold}))
 
 	// Barra de uso
 	pct := (g_data.memory_used / g_data.memory_total) * 100.0
@@ -236,7 +224,7 @@ render_processes_panel :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_grow()},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			direction = .TopToBottom,
 			gap = 0,
@@ -244,11 +232,7 @@ render_processes_panel :: proc(ctx: ^ansuz.Context) {
 		.Sharp,
 	)
 	// Título
-	ansuz.layout_text(
-		ctx,
-		"󰓹 Processes",
-		ansuz.style(.BrightYellow, .Default, {.Bold}),
-	)
+	ansuz.layout_text(ctx, "󰓹 Processes", ansuz.style(.BrightYellow, .Default, {.Bold}))
 
 	// Cabeçalho
 	ansuz.layout_text(
@@ -290,7 +274,7 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 		ctx,
 		{
 			direction = .LeftToRight,
-			sizing = {ansuz.sizing_grow(), ansuz.sizing_fixed(1)},
+			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
 			alignment = {.Center, .Center},
 		},
 	)
