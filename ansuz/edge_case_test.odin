@@ -304,38 +304,6 @@ test_generate_style_sequence_edge_cases :: proc(t: ^testing.T) {
 
 // === Event Edge Cases ===
 
-@(test)
-test_event_buffer_overflow :: proc(t: ^testing.T) {
-	buffer := init_event_buffer(3, context.allocator)
-	defer destroy_event_buffer(&buffer)
-
-	// Fill buffer to capacity
-	event: Event = KeyEvent {
-		key = .Enter,
-	}
-	testing.expect(t, push_event(&buffer, event), "Push 1 should succeed")
-	testing.expect(t, push_event(&buffer, event), "Push 2 should succeed")
-	testing.expect(t, push_event(&buffer, event), "Push 3 should succeed")
-
-	// Try to push beyond capacity
-	success := push_event(&buffer, event)
-	testing.expect(t, !success, "Push to full buffer should fail")
-
-	testing.expect(t, len(buffer.events) == 3, "Buffer should remain at capacity")
-}
-
-@(test)
-test_event_buffer_pop_from_empty :: proc(t: ^testing.T) {
-	buffer := init_event_buffer(10, context.allocator)
-	defer destroy_event_buffer(&buffer)
-
-	event, available := pop_event(&buffer)
-	testing.expect(t, !available, "Pop from empty buffer should not be available")
-
-	// event should be nil/zero
-	key_event, ok := event.(KeyEvent)
-	testing.expect(t, !ok, "Event should not be KeyEvent")
-}
 
 @(test)
 test_parse_empty_input :: proc(t: ^testing.T) {

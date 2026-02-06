@@ -14,8 +14,6 @@ Context :: struct {
 	// Single buffer (immediate mode - redraws every frame)
 	buffer:           FrameBuffer,
 
-	// Event handling
-	event_buffer:     EventBuffer,
 
 	// Terminal dimensions
 	width:            int,
@@ -89,8 +87,6 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 	}
 	ctx.buffer = buf
 
-	// Initialize event buffer
-	ctx.event_buffer = init_event_buffer(128, allocator)
 
 	// Initialize layout context
 	ctx.layout_ctx = init_layout_context(allocator)
@@ -124,8 +120,6 @@ shutdown :: proc(ctx: ^Context) {
 	// Clean up buffer
 	destroy_buffer(&ctx.buffer)
 
-	// Clean up event buffer
-	destroy_event_buffer(&ctx.event_buffer)
 
 	// Clean up layout context
 	destroy_layout_context(&ctx.layout_ctx)
@@ -242,7 +236,6 @@ run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
 		}
 	}
 }
-
 
 
 // poll_events reads and parses input events from the terminal

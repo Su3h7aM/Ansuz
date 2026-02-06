@@ -26,11 +26,8 @@ test_context_memory_layout :: proc(t: ^testing.T) {
 
 	term_size := size_of(TerminalState)
 	buffer_size := size_of(FrameBuffer)
-	event_buf_size := size_of(EventBuffer)
-
 	testing.expect(t, term_size > 0, "TerminalState should have size")
 	testing.expect(t, buffer_size > 0, "FrameBuffer should have size")
-	testing.expect(t, event_buf_size > 0, "EventBuffer should have size")
 }
 
 @(test)
