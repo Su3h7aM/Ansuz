@@ -40,6 +40,11 @@ LayoutDirection :: enum {
 	TopToBottom,
 }
 
+Axis :: enum {
+	X,
+	Y,
+}
+
 HorizontalAlignment :: enum {
 	Left,
 	Center,
@@ -94,7 +99,7 @@ _clamp_rect :: proc(rect: ^Rect, bounds_x, bounds_y, bounds_w, bounds_h: int, ov
 
 LayoutConfig :: struct {
 	direction:     LayoutDirection,
-	sizing:        [2]Sizing,
+	sizing:        [Axis]Sizing,
 	padding:       Padding,
 	gap:           int,
 	alignment:     Alignment,
@@ -235,11 +240,11 @@ add_text :: proc(
 	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
 ) {
 	cfg := config
-	if cfg.sizing[0].type == .FitContent {
-		cfg.sizing[0].value = f32(len(content))
+	if cfg.sizing[.X].type == .FitContent {
+		cfg.sizing[.X].value = f32(len(content))
 	}
-	if cfg.sizing[1].type == .FitContent {
-		cfg.sizing[1].value = 1
+	if cfg.sizing[.Y].type == .FitContent {
+		cfg.sizing[.Y].value = 1
 	}
 
 	node_idx := _add_node(l_ctx, cfg, false)
@@ -328,16 +333,13 @@ end_rect_container :: proc(l_ctx: ^LayoutContext) {
 
 // --- Layout Engine (Clay-based) ---
 
-// Constants for axis indexing to enable generic logic
-AXIS_X :: 0
-AXIS_Y :: 1
 
-_get_main_axis :: proc(dir: LayoutDirection) -> int {
-	return dir == .LeftToRight ? AXIS_X : AXIS_Y
+_get_main_axis :: proc(dir: LayoutDirection) -> Axis {
+	return dir == .LeftToRight ? .X : .Y
 }
 
-_get_cross_axis :: proc(dir: LayoutDirection) -> int {
-	return dir == .LeftToRight ? AXIS_Y : AXIS_X
+_get_cross_axis :: proc(dir: LayoutDirection) -> Axis {
+	return dir == .LeftToRight ? .Y : .X
 }
 
 rect_intersection :: proc(r1, r2: Rect) -> Rect {
@@ -476,23 +478,23 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 
 	// Now calculate size for THIS node
 	// We treat X and Y independently initially
-	for axis in 0 ..= 1 {
+	for axis in Axis {
 		size_config := node.config.sizing[axis]
 
 		switch size_config.type {
 		case .Fixed:
 			val := int(size_config.value)
-			if axis == AXIS_X do node.min_w = val
+			if axis == .X do node.min_w = val
 			else do node.min_h = val
 
 		case .Percent:
 			// Cannot determine in this pass, set to 0 for now
-			if axis == AXIS_X do node.min_w = 0
+			if axis == .X do node.min_w = 0
 			else do node.min_h = 0
 
 		case .Grow:
 			// Cannot determine in this pass
-			if axis == AXIS_X do node.min_w = 0
+			if axis == .X do node.min_w = 0
 			else do node.min_h = 0
 
 		case .FitContent:
@@ -503,10 +505,10 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 				val := int(size_config.value)
 
 				// Special handling for wrapped text with fixed width
-				if node.config.wrap_text && axis == AXIS_Y {
+				if node.config.wrap_text && axis == .Y {
 					// If Width is Fixed, we can calculate height now
-					if node.config.sizing[AXIS_X].type == .Fixed {
-						w := int(node.config.sizing[AXIS_X].value)
+					if node.config.sizing[.X].type == .Fixed {
+						w := int(node.config.sizing[.X].value)
 						_, h := measure_text_wrapped(node.render_cmd.text, w)
 						val = h
 					}
@@ -515,7 +517,7 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 					// Usually add_text sets it to 1.
 				}
 
-				if axis == AXIS_X do node.min_w = val
+				if axis == .X do node.min_w = val
 				else do node.min_h = val
 			} else {
 				// Container logic
@@ -528,7 +530,7 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 					child_count := 0
 					for c_idx != -1 {
 						child := l_ctx.nodes[c_idx]
-						total += (axis == AXIS_X ? child.min_w : child.min_h)
+						total += (axis == .X ? child.min_w : child.min_h)
 						c_idx = child.next_sibling
 						child_count += 1
 					}
@@ -536,9 +538,9 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 						total += (child_count - 1) * node.config.gap
 					}
 					padding :=
-						axis == AXIS_X ? (node.config.padding.left + node.config.padding.right) : (node.config.padding.top + node.config.padding.bottom)
+						axis == .X ? (node.config.padding.left + node.config.padding.right) : (node.config.padding.top + node.config.padding.bottom)
 					val := total + padding
-					if axis == AXIS_X do node.min_w = val
+					if axis == .X do node.min_w = val
 					else do node.min_h = val
 				} else {
 					// If current axis is the CROSS axis, we take MAX of children
@@ -546,14 +548,14 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 					c_idx := node.first_child
 					for c_idx != -1 {
 						child := l_ctx.nodes[c_idx]
-						val := (axis == AXIS_X ? child.min_w : child.min_h)
+						val := (axis == .X ? child.min_w : child.min_h)
 						max_val = max(max_val, val)
 						c_idx = child.next_sibling
 					}
 					padding :=
-						axis == AXIS_X ? (node.config.padding.left + node.config.padding.right) : (node.config.padding.top + node.config.padding.bottom)
+						axis == .X ? (node.config.padding.left + node.config.padding.right) : (node.config.padding.top + node.config.padding.bottom)
 					val := max_val + padding
-					if axis == AXIS_X do node.min_w = val
+					if axis == .X do node.min_w = val
 					else do node.min_h = val
 				}
 			}
@@ -603,28 +605,28 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		} else if child.config.sizing[main_axis].type == .Percent {
 			// Resolve Percent now
 			val_f := child.config.sizing[main_axis].value
-			avail := main_axis == AXIS_X ? available_w : available_h
+			avail := main_axis == .X ? available_w : available_h
 			resolved := int(f32(avail) * val_f)
-			if main_axis == AXIS_X do child.min_w = resolved
+			if main_axis == .X do child.min_w = resolved
 			else do child.min_h = resolved
 			used_main += resolved
 		} else {
 			// Fixed or Fit (already calculated in Pass 1)
-			used_main += (main_axis == AXIS_X ? child.min_w : child.min_h)
+			used_main += (main_axis == .X ? child.min_w : child.min_h)
 		}
 
 		// CROSS AXIS logic - mostly just Percent needs resolving here, or Stretches
 		if child.config.sizing[cross_axis].type == .Percent {
 			val_f := child.config.sizing[cross_axis].value
-			avail := cross_axis == AXIS_X ? available_w : available_h
+			avail := cross_axis == .X ? available_w : available_h
 			resolved := int(f32(avail) * val_f)
-			if cross_axis == AXIS_X do child.min_w = resolved
+			if cross_axis == .X do child.min_w = resolved
 			else do child.min_h = resolved
 		}
 		// Grow on Cross is "Stretch" usually, implies filling the parent's cross size.
 		if child.config.sizing[cross_axis].type == .Grow {
-			avail := cross_axis == AXIS_X ? available_w : available_h
-			if cross_axis == AXIS_X do child.min_w = avail
+			avail := cross_axis == .X ? available_w : available_h
+			if cross_axis == .X do child.min_w = avail
 			else do child.min_h = avail
 		}
 
@@ -637,7 +639,7 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	}
 
 	// 2. Distribute remaining space to Growers
-	avail_main := (main_axis == AXIS_X ? available_w : available_h)
+	avail_main := (main_axis == .X ? available_w : available_h)
 	remaining_main := max(0, avail_main - used_main)
 
 	if grow_total_weight > 0 {
@@ -650,7 +652,7 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 				weight := child.config.sizing[main_axis].value
 				share := int(remaining_f * (weight / grow_total_weight))
 
-				if main_axis == AXIS_X do child.min_w = share
+				if main_axis == .X do child.min_w = share
 				else do child.min_h = share
 			}
 			c_idx = child.next_sibling
@@ -672,7 +674,7 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 			// Note: We only do this if height is NOT fixed.
 			// Ideally we check if sizing[Y] is FitContent.
 			// Just checking fit content for now.
-			if child.config.sizing[AXIS_Y].type == .FitContent {
+			if child.config.sizing[.Y].type == .FitContent {
 				_, h := measure_text_wrapped(child.render_cmd.text, child.min_w)
 				child.min_h = h
 				child.final_rect.h = h
@@ -712,7 +714,7 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	child_count := 0
 	for child_idx != -1 {
 		child := l_ctx.nodes[child_idx]
-		total_children_main += (main_axis == AXIS_X ? child.final_rect.w : child.final_rect.h)
+		total_children_main += (main_axis == .X ? child.final_rect.w : child.final_rect.h)
 		child_idx = child.next_sibling
 		child_count += 1
 	}
@@ -720,13 +722,13 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		total_children_main += (child_count - 1) * node.config.gap
 	}
 
-	free_main := max(0, (main_axis == AXIS_X ? content_w : content_h) - total_children_main)
+	free_main := max(0, (main_axis == .X ? content_w : content_h) - total_children_main)
 
 	main_offset := 0
 
 	// Map alignment to offset
 	align_main :=
-		main_axis == AXIS_X ? node.config.alignment.horizontal : cast(HorizontalAlignment)node.config.alignment.vertical
+		main_axis == .X ? node.config.alignment.horizontal : cast(HorizontalAlignment)node.config.alignment.vertical
 
 	// Enum casting trick assumes Horizontal/Vertical enums have compatible order (Left/Top=0, Center=1, Right/Bottom=2)
 	// Actually they are distinct types, so manual check is safer/cleaner
@@ -734,7 +736,7 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	is_center := false
 	is_end := false
 
-	if main_axis == AXIS_X {
+	if main_axis == .X {
 		// Horizontal Main
 		if node.config.alignment.horizontal == .Center do is_center = true
 		if node.config.alignment.horizontal == .Right do is_end = true
@@ -755,7 +757,7 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		child := &l_ctx.nodes[child_idx]
 
 		// Main Axis Position
-		if main_axis == AXIS_X {
+		if main_axis == .X {
 			child.final_rect.x = start_x + current_pos - node.config.scroll_offset.x
 			current_pos += child.final_rect.w + node.config.gap
 		} else {
@@ -768,14 +770,14 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		cross_offset := 0
 		free_cross := max(
 			0,
-			(cross_axis == AXIS_X ? content_w : content_h) -
-			(cross_axis == AXIS_X ? child.final_rect.w : child.final_rect.h),
+			(cross_axis == .X ? content_w : content_h) -
+			(cross_axis == .X ? child.final_rect.w : child.final_rect.h),
 		)
 
 		is_cross_center := false
 		is_cross_end := false
 
-		if cross_axis == AXIS_X {
+		if cross_axis == .X {
 			// Horizontal Cross (Vertical Layout)
 			if node.config.alignment.horizontal == .Center do is_cross_center = true
 			if node.config.alignment.horizontal == .Right do is_cross_end = true
@@ -788,7 +790,7 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		if is_cross_center do cross_offset = free_cross / 2
 		if is_cross_end do cross_offset = free_cross
 
-		if cross_axis == AXIS_X {
+		if cross_axis == .X {
 			child.final_rect.x = start_x + cross_offset - node.config.scroll_offset.x
 		} else {
 			child.final_rect.y = start_y + cross_offset - node.config.scroll_offset.y
