@@ -145,6 +145,9 @@ Rect :: struct {
 	x, y, w, h: int,
 }
 
+LayoutNodeId :: distinct int
+INVALID_NODE :: LayoutNodeId(-1)
+
 // RenderCommand represents a drawing operation based on layout
 RenderCommandType :: enum {
 	None,
@@ -164,13 +167,13 @@ RenderCommand :: struct {
 
 // LayoutNode represents an element in the layout tree
 LayoutNode :: struct {
-	id:           u32,
+	id:           LayoutNodeId,
 	config:       LayoutConfig,
 
 	// Structure
-	parent_index: int,
-	first_child:  int,
-	next_sibling: int,
+	parent_index: LayoutNodeId,
+	first_child:  LayoutNodeId,
+	next_sibling: LayoutNodeId,
 	is_container: bool,
 
 	// Computed Layout computed in phases
@@ -181,7 +184,7 @@ LayoutNode :: struct {
 
 LayoutContext :: struct {
 	nodes:     [dynamic]LayoutNode,
-	stack:     [dynamic]int, // Stack of parent indices
+	stack:     [dynamic]LayoutNodeId, // Stack of parent indices
 	allocator: mem.Allocator,
 	root_rect: Rect,
 }
@@ -189,7 +192,7 @@ LayoutContext :: struct {
 init_layout_context :: proc(allocator := context.allocator) -> LayoutContext {
 	l_ctx := LayoutContext {
 		nodes     = make([dynamic]LayoutNode, allocator),
-		stack     = make([dynamic]int, allocator),
+		stack     = make([dynamic]LayoutNodeId, allocator),
 		allocator = allocator,
 	}
 	return l_ctx
@@ -204,37 +207,43 @@ reset_layout_context :: proc(ctx: ^LayoutContext, root_rect: Rect) {
 	clear(&ctx.nodes)
 	clear(&ctx.stack)
 	ctx.root_rect = root_rect
-	append(&ctx.stack, -1) // Root parent marker
+	append(&ctx.stack, INVALID_NODE) // Root parent marker
 }
 
 // --- Node Management ---
 
 // Internal: adds a node to the tree
-_add_node :: proc(l_ctx: ^LayoutContext, config: LayoutConfig, is_container: bool) -> int {
-	parent_idx := len(l_ctx.stack) > 0 ? l_ctx.stack[len(l_ctx.stack) - 1] : -1
+_add_node :: proc(
+	l_ctx: ^LayoutContext,
+	config: LayoutConfig,
+	is_container: bool,
+) -> LayoutNodeId {
+	parent_idx := len(l_ctx.stack) > 0 ? l_ctx.stack[len(l_ctx.stack) - 1] : INVALID_NODE
 
 	node := LayoutNode {
-		id           = u32(len(l_ctx.nodes)),
+		id           = LayoutNodeId(len(l_ctx.nodes)),
 		config       = config,
 		parent_index = parent_idx,
-		first_child  = -1,
-		next_sibling = -1,
+		first_child  = INVALID_NODE,
+		next_sibling = INVALID_NODE,
 		is_container = is_container,
 	}
 
-	node_idx := len(l_ctx.nodes)
+	node_idx := LayoutNodeId(len(l_ctx.nodes))
 
-	if parent_idx != -1 && parent_idx < len(l_ctx.nodes) {
-		parent := &l_ctx.nodes[parent_idx]
-		if parent.first_child == -1 {
+	if parent_idx != INVALID_NODE && int(parent_idx) < len(l_ctx.nodes) {
+		parent := &l_ctx.nodes[int(parent_idx)]
+		if parent.first_child == INVALID_NODE {
 			parent.first_child = node_idx
 		} else {
 			curr := parent.first_child
-			for curr >= 0 && curr < len(l_ctx.nodes) && l_ctx.nodes[curr].next_sibling != -1 {
-				curr = l_ctx.nodes[curr].next_sibling
+			for int(curr) >= 0 &&
+			    int(curr) < len(l_ctx.nodes) &&
+			    l_ctx.nodes[int(curr)].next_sibling != INVALID_NODE {
+				curr = l_ctx.nodes[int(curr)].next_sibling
 			}
-			if curr >= 0 && curr < len(l_ctx.nodes) {
-				l_ctx.nodes[curr].next_sibling = node_idx
+			if int(curr) >= 0 && int(curr) < len(l_ctx.nodes) {
+				l_ctx.nodes[int(curr)].next_sibling = node_idx
 			}
 		}
 	}
@@ -243,7 +252,7 @@ _add_node :: proc(l_ctx: ^LayoutContext, config: LayoutConfig, is_container: boo
 	return node_idx
 }
 
-begin_container :: proc(l_ctx: ^LayoutContext, config: LayoutConfig) -> int {
+begin_container :: proc(l_ctx: ^LayoutContext, config: LayoutConfig) -> LayoutNodeId {
 	node_idx := _add_node(l_ctx, config, true)
 	append(&l_ctx.stack, node_idx)
 	return node_idx
@@ -385,15 +394,15 @@ finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 	if len(l_ctx.nodes) == 0 do return
 
 	// Pass 1: Measure `Fit`, Bottom-Up
-	_pass1_measure(l_ctx, 0)
+	_pass1_measure(l_ctx, LayoutNodeId(0))
 
 	// Pass 2: Resolve `Grow`, Top-Down
 	// Root takes the context root rect size
 	l_ctx.nodes[0].final_rect = l_ctx.root_rect
-	_pass2_resolve(l_ctx, 0)
+	_pass2_resolve(l_ctx, LayoutNodeId(0))
 
 	// Pass 3: Position, Top-Down
-	_pass3_position(l_ctx, 0)
+	_pass3_position(l_ctx, LayoutNodeId(0))
 
 	// Rendering (Recursive for Clipping)
 	initial_clip := Rect{0, 0, ansuz_ctx.width, ansuz_ctx.height}
@@ -401,17 +410,17 @@ finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
 	// Find absolute roots (usually just 0, but safe to check)
 	// Actually nodes[0] is strictly the root in our usage.
 	if len(l_ctx.nodes) > 0 {
-		_render_recursive(l_ctx, ansuz_ctx, 0, initial_clip)
+		_render_recursive(l_ctx, ansuz_ctx, LayoutNodeId(0), initial_clip)
 	}
 }
 
 _render_recursive :: proc(
 	l_ctx: ^LayoutContext,
 	ansuz_ctx: ^Context,
-	node_idx: int,
+	node_idx: LayoutNodeId,
 	parent_clip: Rect,
 ) {
-	node := &l_ctx.nodes[node_idx]
+	node := &l_ctx.nodes[int(node_idx)]
 
 	// Early exit: compute visible rect and skip if completely invisible
 	visible_rect := rect_intersection(node.final_rect, parent_clip)
@@ -482,20 +491,20 @@ _render_recursive :: proc(
 
 	// Recurse into children
 	child_idx := node.first_child
-	for child_idx != -1 {
+	for child_idx != INVALID_NODE {
 		_render_recursive(l_ctx, ansuz_ctx, child_idx, child_clip)
-		child_idx = l_ctx.nodes[child_idx].next_sibling
+		child_idx = l_ctx.nodes[int(child_idx)].next_sibling
 	}
 }
 
-_pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
-	node := &l_ctx.nodes[node_idx]
+_pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
+	node := &l_ctx.nodes[int(node_idx)]
 
 	// Recurse first (Bottom-Up)
 	child_idx := node.first_child
-	for child_idx != -1 {
+	for child_idx != INVALID_NODE {
 		_pass1_measure(l_ctx, child_idx)
-		child_idx = l_ctx.nodes[child_idx].next_sibling
+		child_idx = l_ctx.nodes[int(child_idx)].next_sibling
 	}
 
 	// Now calculate size for THIS node
@@ -550,8 +559,8 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 					total := 0
 					c_idx := node.first_child
 					child_count := 0
-					for c_idx != -1 {
-						child := l_ctx.nodes[c_idx]
+					for c_idx != INVALID_NODE {
+						child := l_ctx.nodes[int(c_idx)]
 						total += (axis == .X ? child.min_w : child.min_h)
 						c_idx = child.next_sibling
 						child_count += 1
@@ -568,8 +577,8 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 					// If current axis is the CROSS axis, we take MAX of children
 					max_val := 0
 					c_idx := node.first_child
-					for c_idx != -1 {
-						child := l_ctx.nodes[c_idx]
+					for c_idx != INVALID_NODE {
+						child := l_ctx.nodes[int(c_idx)]
 						val := (axis == .X ? child.min_w : child.min_h)
 						max_val = max(max_val, val)
 						c_idx = child.next_sibling
@@ -585,8 +594,8 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	}
 }
 
-_pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
-	node := &l_ctx.nodes[node_idx]
+_pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
+	node := &l_ctx.nodes[int(node_idx)]
 
 	// Node now has a final_rect (from parent or root).
 	// We need to resolve children's sizes based on this available space.
@@ -612,8 +621,8 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	child_count := 0
 
 	child_idx := node.first_child
-	for child_idx != -1 {
-		child := &l_ctx.nodes[child_idx]
+	for child_idx != INVALID_NODE {
+		child := &l_ctx.nodes[int(child_idx)]
 		child_count += 1
 
 		// Handle Cross Axis Grow/Stretch immediately here?
@@ -668,8 +677,8 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 		remaining_f := f32(remaining_main)
 
 		c_idx := node.first_child
-		for c_idx != -1 {
-			child := &l_ctx.nodes[c_idx]
+		for c_idx != INVALID_NODE {
+			child := &l_ctx.nodes[int(c_idx)]
 			if child.config.sizing[main_axis].type == .Grow {
 				weight := child.config.sizing[main_axis].value
 				share := int(remaining_f * (weight / grow_total_weight))
@@ -683,8 +692,8 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 
 	// 3. Commit determined sizes to final_rect and Recurse
 	child_idx = node.first_child
-	for child_idx != -1 {
-		child := &l_ctx.nodes[child_idx]
+	for child_idx != INVALID_NODE {
+		child := &l_ctx.nodes[int(child_idx)]
 		child.final_rect.w = child.min_w
 		child.final_rect.h = child.min_h
 
@@ -709,8 +718,8 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	}
 }
 
-_pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
-	node := &l_ctx.nodes[node_idx]
+_pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
+	node := &l_ctx.nodes[int(node_idx)]
 
 	if !node.is_container {
 		return
@@ -734,8 +743,8 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	total_children_main := 0
 	child_idx := node.first_child
 	child_count := 0
-	for child_idx != -1 {
-		child := l_ctx.nodes[child_idx]
+	for child_idx != INVALID_NODE {
+		child := l_ctx.nodes[int(child_idx)]
 		total_children_main += (main_axis == .X ? child.final_rect.w : child.final_rect.h)
 		child_idx = child.next_sibling
 		child_count += 1
@@ -775,8 +784,8 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: int) {
 	current_pos := main_offset
 
 	child_idx = node.first_child
-	for child_idx != -1 {
-		child := &l_ctx.nodes[child_idx]
+	for child_idx != INVALID_NODE {
+		child := &l_ctx.nodes[int(child_idx)]
 
 		// Main Axis Position
 		if main_axis == .X {
