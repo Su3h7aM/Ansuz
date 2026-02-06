@@ -19,20 +19,42 @@ Sizing :: struct {
 }
 
 // Convenience constructors for Sizing
-sizing_fixed :: proc(value: int) -> Sizing {
+
+fixed :: proc(value: int) -> Sizing {
 	return Sizing{.Fixed, f32(value)}
 }
 
-sizing_percent :: proc(value: f32) -> Sizing {
+percent :: proc(value: f32) -> Sizing {
 	return Sizing{.Percent, value}
 }
 
-sizing_fit :: proc() -> Sizing {
+fit :: proc() -> Sizing {
 	return Sizing{.FitContent, 0}
 }
 
-sizing_grow :: proc(weight: f32 = 1.0) -> Sizing {
+grow :: proc(weight: f32 = 1.0) -> Sizing {
 	return Sizing{.Grow, weight}
+}
+
+// Deprecated legacy constructors
+@(deprecated = "Use 'fixed' instead")
+sizing_fixed :: proc(value: int) -> Sizing {
+	return fixed(value)
+}
+
+@(deprecated = "Use 'percent' instead")
+sizing_percent :: proc(value: f32) -> Sizing {
+	return percent(value)
+}
+
+@(deprecated = "Use 'fit' instead")
+sizing_fit :: proc() -> Sizing {
+	return fit()
+}
+
+@(deprecated = "Use 'grow' instead")
+sizing_grow :: proc(weight: f32 = 1.0) -> Sizing {
+	return grow(weight)
 }
 
 LayoutDirection :: enum {
