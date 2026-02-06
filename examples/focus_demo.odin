@@ -40,6 +40,17 @@ main :: proc() {
 			// 2. Render UI
 			ansuz.begin_layout(ctx)
 
+			// Root container (full screen, vertical layout)
+			ansuz.layout_begin_container(
+				ctx,
+				{
+					direction = .TopToBottom,
+					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					gap = 1,
+				},
+			)
+
 			// Title
 			ansuz.layout_text(
 				ctx,
@@ -96,6 +107,7 @@ main :: proc() {
 			button(ctx, "Button 5")
 
 			ansuz.layout_end_container(ctx)
+			ansuz.layout_end_container(ctx) // End Root
 			ansuz.end_layout(ctx)
 
 			return true
