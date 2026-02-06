@@ -46,8 +46,10 @@ test_focusable_registration :: proc(t: ^testing.T) {
 	ctx := new(Context)
 	ctx.allocator = context.allocator
 	ctx.focusable_items = make([dynamic]u64, ctx.allocator)
+	ctx.prev_focusable_items = make([dynamic]u64, ctx.allocator)
 	defer {
 		delete(ctx.focusable_items)
+		delete(ctx.prev_focusable_items)
 		free(ctx)
 	}
 
@@ -61,27 +63,77 @@ test_focusable_registration :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_begin_frame_clears_focusable :: proc(t: ^testing.T) {
-	// Setup full context via init (mocking allocation)
-	// We can't call init() easily without TTY, so we manually setup minimal state
+test_begin_frame_swaps_focusable :: proc(t: ^testing.T) {
 	ctx := new(Context)
 	ctx.allocator = context.allocator
 	ctx.focusable_items = make([dynamic]u64, ctx.allocator)
-	// Mock buffer to avoid begin_frame crashing on clear_buffer
-	ctx.buffer.cells = make([]Cell, 100)
-
+	ctx.prev_focusable_items = make([dynamic]u64, ctx.allocator)
+	// Minimal mock
+	ctx.buffer.cells = make([]Cell, 10)
 	defer {
 		delete(ctx.buffer.cells)
 		delete(ctx.focusable_items)
+		delete(ctx.prev_focusable_items)
 		free(ctx)
 	}
 
 	register_focusable(ctx, 123)
-	testing.expect(t, len(ctx.focusable_items) == 1, "Should have item")
+	register_focusable(ctx, 456)
 
-	// Manually call clear logic seen in begin_frame (testing the logic, not the whole function due to TTY deps)
-	// Note: begin_frame calls get_terminal_size() which might fail without TTY. Only testing list clear here.
+	// Simulate "begin_frame" logic manually since full begin_frame needs TTY
+	// Logic: Swap current->prev, clear current
+	temp := ctx.prev_focusable_items
+	ctx.prev_focusable_items = ctx.focusable_items
+	ctx.focusable_items = temp
 	clear(&ctx.focusable_items)
 
-	testing.expect(t, len(ctx.focusable_items) == 0, "begin_frame logic should clear items")
+	testing.expect(
+		t,
+		len(ctx.prev_focusable_items) == 2,
+		"Prev items should contain last frame items",
+	)
+	testing.expect(t, ctx.prev_focusable_items[0] == 123, "Order preserved")
+	testing.expect(t, len(ctx.focusable_items) == 0, "Current items should be cleared")
+}
+
+@(test)
+test_tab_navigation :: proc(t: ^testing.T) {
+	ctx := new(Context)
+	ctx.allocator = context.allocator
+	ctx.prev_focusable_items = make([dynamic]u64, ctx.allocator)
+	defer {
+		delete(ctx.prev_focusable_items)
+		free(ctx)
+	}
+
+	// Setup prev items (simulation of previous frame)
+	append(&ctx.prev_focusable_items, 100)
+	append(&ctx.prev_focusable_items, 200)
+	append(&ctx.prev_focusable_items, 300)
+
+	// Case 1: No focus -> First item (Forward)
+	ctx.focus_id = 0
+	changed := handle_tab_navigation(ctx, false) // Forward
+	testing.expect(t, changed, "Should change focus")
+	testing.expect(t, ctx.focus_id == 100, "Should select first item")
+
+	// Case 2: 100 -> 200 (Forward)
+	changed = handle_tab_navigation(ctx, false)
+	testing.expect(t, ctx.focus_id == 200, "Should select next item")
+
+	// Case 3: 200 -> 300 (Forward)
+	handle_tab_navigation(ctx, false)
+	testing.expect(t, ctx.focus_id == 300, "Should select last item")
+
+	// Case 4: 300 -> 100 (Wrap Forward)
+	handle_tab_navigation(ctx, false)
+	testing.expect(t, ctx.focus_id == 100, "Should wrap to first item")
+
+	// Case 5: 100 -> 300 (Reverse)
+	handle_tab_navigation(ctx, true) // Reverse
+	testing.expect(t, ctx.focus_id == 300, "Should wrap back to last item")
+
+	// Case 6: 300 -> 200 (Reverse)
+	handle_tab_navigation(ctx, true)
+	testing.expect(t, ctx.focus_id == 200, "Should go to prev item")
 }

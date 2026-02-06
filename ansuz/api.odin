@@ -10,36 +10,37 @@ import "core:time"
 // This follows the immediate-mode pattern where the context is passed to widget functions
 Context :: struct {
 	// Terminal state
-	terminal:         TerminalState,
+	terminal:             TerminalState,
 
 	// Single buffer (immediate mode - redraws every frame)
-	buffer:           FrameBuffer,
+	buffer:               FrameBuffer,
 
 
 	// Terminal dimensions
-	width:            int,
-	height:           int,
+	width:                int,
+	height:               int,
 
 	// Frame timing
-	frame_count:      u64,
+	frame_count:          u64,
 
 	// Frame time measurement (for debug purposes)
-	frame_start_time: time.Time,
-	last_frame_time:  time.Duration,
+	frame_start_time:     time.Time,
+	last_frame_time:      time.Duration,
 
 	// Reusable string builder for rendering (avoids per-frame allocations)
-	render_buffer:    strings.Builder,
+	render_buffer:        strings.Builder,
 
 	// Layout system
-	layout_ctx:       LayoutContext,
+	layout_ctx:           LayoutContext,
 
 	// Allocator for internal allocations
-	allocator:        mem.Allocator,
+	allocator:            mem.Allocator,
 
 	// Focus state
-	focus_id:         u64,
-	last_focus_id:    u64,
-	focusable_items:  [dynamic]u64,
+	focus_id:             u64,
+	last_focus_id:        u64,
+	focusable_items:      [dynamic]u64,
+	prev_focusable_items: [dynamic]u64,
 }
 
 // ContextError represents errors during context operations
@@ -107,6 +108,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 
 	// Initialize focus tracking
 	ctx.focusable_items = make([dynamic]u64, allocator)
+	ctx.prev_focusable_items = make([dynamic]u64, allocator)
 
 	// Initial terminal setup
 	disable_auto_wrap()
@@ -141,6 +143,7 @@ shutdown :: proc(ctx: ^Context) {
 
 	// Free context
 	delete(ctx.focusable_items)
+	delete(ctx.prev_focusable_items)
 	free(ctx, ctx.allocator)
 }
 
@@ -162,7 +165,11 @@ begin_frame :: proc(ctx: ^Context) {
 	// Clear buffer for new frame
 	clear_buffer(&ctx.buffer)
 
-	// Reset focusable items for this frame
+	// Swap focus lists: current becomes prev, reused prev becomes new current (and cleared)
+	// This gives us the complete list of focusable items from the LAST frame to use for navigation
+	temp := ctx.prev_focusable_items
+	ctx.prev_focusable_items = ctx.focusable_items
+	ctx.focusable_items = temp
 	clear(&ctx.focusable_items)
 }
 
@@ -392,4 +399,48 @@ is_focused :: proc(ctx: ^Context, id: u64) -> bool {
 // This is used to build the tab navigation order.
 register_focusable :: proc(ctx: ^Context, id: u64) {
 	append(&ctx.focusable_items, id)
+}
+
+// handle_tab_navigation processes Tab/Shift+Tab to cycle focus
+// Returns true if focus was changed
+handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
+	if len(ctx.prev_focusable_items) == 0 {
+		return false
+	}
+
+	// Find current index
+	idx := -1
+	for id, i in ctx.prev_focusable_items {
+		if id == ctx.focus_id {
+			idx = i
+			break
+		}
+	}
+
+	next_idx := 0
+	if idx == -1 {
+		// Not currently focused, or focused item gone -> start at 0 (or end if reverse)
+		if reverse {
+			next_idx = len(ctx.prev_focusable_items) - 1
+		} else {
+			next_idx = 0
+		}
+	} else {
+		// Move to next/prev
+		if reverse {
+			next_idx = idx - 1
+			if next_idx < 0 {
+				next_idx = len(ctx.prev_focusable_items) - 1
+			}
+		} else {
+			next_idx = idx + 1
+			if next_idx >= len(ctx.prev_focusable_items) {
+				next_idx = 0
+			}
+		}
+	}
+
+	new_id := ctx.prev_focusable_items[next_idx]
+	set_focus(ctx, new_id)
+	return true
 }
