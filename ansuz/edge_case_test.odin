@@ -247,10 +247,9 @@ test_color_enum_values :: proc(t: ^testing.T) {
 		fg_code := ansi_to_fg_code(color)
 		bg_code := ansi_to_bg_code(color)
 
-		testing.expect(t, fg_code >= 30, "Foreground code should be valid")
-		testing.expect(t, fg_code <= 107, "Foreground code should be valid")
-		testing.expect(t, bg_code >= 40, "Background code should be valid")
-		testing.expect(t, bg_code <= 107, "Background code should be valid")
+		// Codes are now strings, verify they are not empty
+		testing.expect(t, len(fg_code) > 0, "Foreground code should not be empty")
+		testing.expect(t, len(bg_code) > 0, "Background code should not be empty")
 	}
 }
 

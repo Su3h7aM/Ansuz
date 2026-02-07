@@ -1,6 +1,7 @@
 package ansuz
 
 import "core:fmt"
+import ansi "core:terminal/ansi"
 
 // =============================================================================
 // Terminal Color System
@@ -135,109 +136,109 @@ style :: proc(fg, bg: TerminalColor, flags: StyleFlags) -> Style {return Style{f
 // ANSI Code Generation
 // =============================================================================
 
-// ansi_to_fg_code converts an Ansi color to its foreground ANSI code
-ansi_to_fg_code :: proc(color: Ansi) -> int {
+// ansi_to_fg_code converts an Ansi color to its foreground ANSI code string
+ansi_to_fg_code :: proc(color: Ansi) -> string {
 	switch color {
 	case .Default:
-		return 39
+		return ansi.FG_DEFAULT
 	case .Black:
-		return 30
+		return ansi.FG_BLACK
 	case .Red:
-		return 31
+		return ansi.FG_RED
 	case .Green:
-		return 32
+		return ansi.FG_GREEN
 	case .Yellow:
-		return 33
+		return ansi.FG_YELLOW
 	case .Blue:
-		return 34
+		return ansi.FG_BLUE
 	case .Magenta:
-		return 35
+		return ansi.FG_MAGENTA
 	case .Cyan:
-		return 36
+		return ansi.FG_CYAN
 	case .White:
-		return 37
+		return ansi.FG_WHITE
 	case .BrightBlack:
-		return 90
+		return ansi.FG_BRIGHT_BLACK
 	case .BrightRed:
-		return 91
+		return ansi.FG_BRIGHT_RED
 	case .BrightGreen:
-		return 92
+		return ansi.FG_BRIGHT_GREEN
 	case .BrightYellow:
-		return 93
+		return ansi.FG_BRIGHT_YELLOW
 	case .BrightBlue:
-		return 94
+		return ansi.FG_BRIGHT_BLUE
 	case .BrightMagenta:
-		return 95
+		return ansi.FG_BRIGHT_MAGENTA
 	case .BrightCyan:
-		return 96
+		return ansi.FG_BRIGHT_CYAN
 	case .BrightWhite:
-		return 97
+		return ansi.FG_BRIGHT_WHITE
 	}
-	return 39
+	return ansi.FG_DEFAULT
 }
 
-// ansi_to_bg_code converts an Ansi color to its background ANSI code
-ansi_to_bg_code :: proc(color: Ansi) -> int {
+// ansi_to_bg_code converts an Ansi color to its background ANSI code string
+ansi_to_bg_code :: proc(color: Ansi) -> string {
 	switch color {
 	case .Default:
-		return 49
+		return ansi.BG_DEFAULT
 	case .Black:
-		return 40
+		return ansi.BG_BLACK
 	case .Red:
-		return 41
+		return ansi.BG_RED
 	case .Green:
-		return 42
+		return ansi.BG_GREEN
 	case .Yellow:
-		return 43
+		return ansi.BG_YELLOW
 	case .Blue:
-		return 44
+		return ansi.BG_BLUE
 	case .Magenta:
-		return 45
+		return ansi.BG_MAGENTA
 	case .Cyan:
-		return 46
+		return ansi.BG_CYAN
 	case .White:
-		return 47
+		return ansi.BG_WHITE
 	case .BrightBlack:
-		return 100
+		return ansi.BG_BRIGHT_BLACK
 	case .BrightRed:
-		return 101
+		return ansi.BG_BRIGHT_RED
 	case .BrightGreen:
-		return 102
+		return ansi.BG_BRIGHT_GREEN
 	case .BrightYellow:
-		return 103
+		return ansi.BG_BRIGHT_YELLOW
 	case .BrightBlue:
-		return 104
+		return ansi.BG_BRIGHT_BLUE
 	case .BrightMagenta:
-		return 105
+		return ansi.BG_BRIGHT_MAGENTA
 	case .BrightCyan:
-		return 106
+		return ansi.BG_BRIGHT_CYAN
 	case .BrightWhite:
-		return 107
+		return ansi.BG_BRIGHT_WHITE
 	}
-	return 49
+	return ansi.BG_DEFAULT
 }
 
-// style_flag_to_ansi converts a StyleFlag to its ANSI code
-style_flag_to_ansi :: proc(flag: StyleFlag) -> int {
+// style_flag_to_ansi converts a StyleFlag to its ANSI code string
+style_flag_to_ansi :: proc(flag: StyleFlag) -> string {
 	switch flag {
 	case .Bold:
-		return 1
+		return ansi.BOLD
 	case .Dim:
-		return 2
+		return ansi.FAINT
 	case .Italic:
-		return 3
+		return ansi.ITALIC
 	case .Underline:
-		return 4
+		return ansi.UNDERLINE
 	case .Blink:
-		return 5
+		return ansi.BLINK_SLOW
 	case .Reverse:
-		return 7
+		return ansi.INVERT
 	case .Hidden:
-		return 8
+		return ansi.HIDE
 	case .Strikethrough:
-		return 9
+		return ansi.STRIKE
 	}
-	return 0
+	return ansi.RESET
 }
 
 // =============================================================================
@@ -256,10 +257,10 @@ _is_default_color :: proc(color: TerminalColor) -> bool {
 generate_style_sequence :: proc(fg, bg: TerminalColor, styles: StyleFlags) -> string {
 	// Check if everything is default
 	if _is_default_color(fg) && _is_default_color(bg) && card(styles) == 0 {
-		return "\x1b[0m"
+		return ansi.CSI + ansi.RESET + ansi.SGR
 	}
 
-	builder := fmt.tprintf("\x1b[")
+	builder := fmt.tprintf("%s", ansi.CSI)
 	first := true
 
 	// Add style flags
@@ -268,7 +269,7 @@ generate_style_sequence :: proc(fg, bg: TerminalColor, styles: StyleFlags) -> st
 			if !first {
 				builder = fmt.tprintf("%s;", builder)
 			}
-			builder = fmt.tprintf("%s%d", builder, style_flag_to_ansi(flag))
+			builder = fmt.tprintf("%s%s", builder, style_flag_to_ansi(flag))
 			first = false
 		}
 	}
@@ -291,18 +292,18 @@ generate_style_sequence :: proc(fg, bg: TerminalColor, styles: StyleFlags) -> st
 		first = false
 	}
 
-	return fmt.tprintf("%sm", builder)
+	return fmt.tprintf("%s%s", builder, ansi.SGR)
 }
 
 // _append_fg_color appends the foreground color sequence to builder
 _append_fg_color :: proc(builder: string, color: TerminalColor) -> string {
 	switch c in color {
 	case Ansi:
-		return fmt.tprintf("%s%d", builder, ansi_to_fg_code(c))
+		return fmt.tprintf("%s%s", builder, ansi_to_fg_code(c))
 	case Color256:
-		return fmt.tprintf("%s38;5;%d", builder, u8(c))
+		return fmt.tprintf("%s%s;%d", builder, ansi.FG_COLOR_8_BIT, u8(c))
 	case RGB:
-		return fmt.tprintf("%s38;2;%d;%d;%d", builder, c.r, c.g, c.b)
+		return fmt.tprintf("%s%s;%d;%d;%d", builder, ansi.FG_COLOR_24_BIT, c.r, c.g, c.b)
 	}
 	return builder
 }
@@ -311,18 +312,18 @@ _append_fg_color :: proc(builder: string, color: TerminalColor) -> string {
 _append_bg_color :: proc(builder: string, color: TerminalColor) -> string {
 	switch c in color {
 	case Ansi:
-		return fmt.tprintf("%s%d", builder, ansi_to_bg_code(c))
+		return fmt.tprintf("%s%s", builder, ansi_to_bg_code(c))
 	case Color256:
-		return fmt.tprintf("%s48;5;%d", builder, u8(c))
+		return fmt.tprintf("%s%s;%d", builder, ansi.BG_COLOR_8_BIT, u8(c))
 	case RGB:
-		return fmt.tprintf("%s48;2;%d;%d;%d", builder, c.r, c.g, c.b)
+		return fmt.tprintf("%s%s;%d;%d;%d", builder, ansi.BG_COLOR_24_BIT, c.r, c.g, c.b)
 	}
 	return builder
 }
 
 // reset_style returns the ANSI sequence to reset all styling
 reset_style :: proc() -> string {
-	return "\x1b[0m"
+	return ansi.CSI + ansi.RESET + ansi.SGR
 }
 
 // to_ansi converts a Style to its ANSI escape sequence

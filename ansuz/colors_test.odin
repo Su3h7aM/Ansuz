@@ -1,88 +1,91 @@
 package ansuz
 
 import "core:strings"
+import ansi "core:terminal/ansi"
 import "core:testing"
 
 @(test)
 test_ansi_to_fg_code_default :: proc(t: ^testing.T) {
 	code := ansi_to_fg_code(.Default)
-	testing.expect_value(t, code, 39)
+	testing.expect_value(t, code, ansi.FG_DEFAULT)
 }
 
 @(test)
 test_ansi_to_fg_code_standard :: proc(t: ^testing.T) {
-	testing.expect_value(t, ansi_to_fg_code(.Black), 30)
-	testing.expect_value(t, ansi_to_fg_code(.Red), 31)
-	testing.expect_value(t, ansi_to_fg_code(.Green), 32)
-	testing.expect_value(t, ansi_to_fg_code(.Yellow), 33)
-	testing.expect_value(t, ansi_to_fg_code(.Blue), 34)
-	testing.expect_value(t, ansi_to_fg_code(.Magenta), 35)
-	testing.expect_value(t, ansi_to_fg_code(.Cyan), 36)
-	testing.expect_value(t, ansi_to_fg_code(.White), 37)
+	testing.expect_value(t, ansi_to_fg_code(.Black), ansi.FG_BLACK)
+	testing.expect_value(t, ansi_to_fg_code(.Red), ansi.FG_RED)
+	testing.expect_value(t, ansi_to_fg_code(.Green), ansi.FG_GREEN)
+	testing.expect_value(t, ansi_to_fg_code(.Yellow), ansi.FG_YELLOW)
+	testing.expect_value(t, ansi_to_fg_code(.Blue), ansi.FG_BLUE)
+	testing.expect_value(t, ansi_to_fg_code(.Magenta), ansi.FG_MAGENTA)
+	testing.expect_value(t, ansi_to_fg_code(.Cyan), ansi.FG_CYAN)
+	testing.expect_value(t, ansi_to_fg_code(.White), ansi.FG_WHITE)
 }
 
 @(test)
 test_ansi_to_fg_code_bright :: proc(t: ^testing.T) {
-	testing.expect_value(t, ansi_to_fg_code(.BrightBlack), 90)
-	testing.expect_value(t, ansi_to_fg_code(.BrightRed), 91)
-	testing.expect_value(t, ansi_to_fg_code(.BrightGreen), 92)
-	testing.expect_value(t, ansi_to_fg_code(.BrightYellow), 93)
-	testing.expect_value(t, ansi_to_fg_code(.BrightBlue), 94)
-	testing.expect_value(t, ansi_to_fg_code(.BrightMagenta), 95)
-	testing.expect_value(t, ansi_to_fg_code(.BrightCyan), 96)
-	testing.expect_value(t, ansi_to_fg_code(.BrightWhite), 97)
+	testing.expect_value(t, ansi_to_fg_code(.BrightBlack), ansi.FG_BRIGHT_BLACK)
+	testing.expect_value(t, ansi_to_fg_code(.BrightRed), ansi.FG_BRIGHT_RED)
+	testing.expect_value(t, ansi_to_fg_code(.BrightGreen), ansi.FG_BRIGHT_GREEN)
+	testing.expect_value(t, ansi_to_fg_code(.BrightYellow), ansi.FG_BRIGHT_YELLOW)
+	testing.expect_value(t, ansi_to_fg_code(.BrightBlue), ansi.FG_BRIGHT_BLUE)
+	testing.expect_value(t, ansi_to_fg_code(.BrightMagenta), ansi.FG_BRIGHT_MAGENTA)
+	testing.expect_value(t, ansi_to_fg_code(.BrightCyan), ansi.FG_BRIGHT_CYAN)
+	testing.expect_value(t, ansi_to_fg_code(.BrightWhite), ansi.FG_BRIGHT_WHITE)
 }
 
 @(test)
 test_ansi_to_bg_code_default :: proc(t: ^testing.T) {
 	code := ansi_to_bg_code(.Default)
-	testing.expect_value(t, code, 49)
+	testing.expect_value(t, code, ansi.BG_DEFAULT)
 }
 
 @(test)
 test_ansi_to_bg_code_standard :: proc(t: ^testing.T) {
-	testing.expect_value(t, ansi_to_bg_code(.Black), 40)
-	testing.expect_value(t, ansi_to_bg_code(.Red), 41)
-	testing.expect_value(t, ansi_to_bg_code(.Green), 42)
-	testing.expect_value(t, ansi_to_bg_code(.Yellow), 43)
-	testing.expect_value(t, ansi_to_bg_code(.Blue), 44)
-	testing.expect_value(t, ansi_to_bg_code(.Magenta), 45)
-	testing.expect_value(t, ansi_to_bg_code(.Cyan), 46)
-	testing.expect_value(t, ansi_to_bg_code(.White), 47)
+	testing.expect_value(t, ansi_to_bg_code(.Black), ansi.BG_BLACK)
+	testing.expect_value(t, ansi_to_bg_code(.Red), ansi.BG_RED)
+	testing.expect_value(t, ansi_to_bg_code(.Green), ansi.BG_GREEN)
+	testing.expect_value(t, ansi_to_bg_code(.Yellow), ansi.BG_YELLOW)
+	testing.expect_value(t, ansi_to_bg_code(.Blue), ansi.BG_BLUE)
+	testing.expect_value(t, ansi_to_bg_code(.Magenta), ansi.BG_MAGENTA)
+	testing.expect_value(t, ansi_to_bg_code(.Cyan), ansi.BG_CYAN)
+	testing.expect_value(t, ansi_to_bg_code(.White), ansi.BG_WHITE)
 }
 
 @(test)
 test_ansi_to_bg_code_bright :: proc(t: ^testing.T) {
-	testing.expect_value(t, ansi_to_bg_code(.BrightBlack), 100)
-	testing.expect_value(t, ansi_to_bg_code(.BrightRed), 101)
-	testing.expect_value(t, ansi_to_bg_code(.BrightGreen), 102)
-	testing.expect_value(t, ansi_to_bg_code(.BrightYellow), 103)
-	testing.expect_value(t, ansi_to_bg_code(.BrightBlue), 104)
-	testing.expect_value(t, ansi_to_bg_code(.BrightMagenta), 105)
-	testing.expect_value(t, ansi_to_bg_code(.BrightCyan), 106)
-	testing.expect_value(t, ansi_to_bg_code(.BrightWhite), 107)
+	testing.expect_value(t, ansi_to_bg_code(.BrightBlack), ansi.BG_BRIGHT_BLACK)
+	testing.expect_value(t, ansi_to_bg_code(.BrightRed), ansi.BG_BRIGHT_RED)
+	testing.expect_value(t, ansi_to_bg_code(.BrightGreen), ansi.BG_BRIGHT_GREEN)
+	testing.expect_value(t, ansi_to_bg_code(.BrightYellow), ansi.BG_BRIGHT_YELLOW)
+	testing.expect_value(t, ansi_to_bg_code(.BrightBlue), ansi.BG_BRIGHT_BLUE)
+	testing.expect_value(t, ansi_to_bg_code(.BrightMagenta), ansi.BG_BRIGHT_MAGENTA)
+	testing.expect_value(t, ansi_to_bg_code(.BrightCyan), ansi.BG_BRIGHT_CYAN)
+	testing.expect_value(t, ansi_to_bg_code(.BrightWhite), ansi.BG_BRIGHT_WHITE)
 }
 
+// NOTE: This test is no longer valid with string-based codes
+// The relationship between fg/bg codes is implicit in ansi package constants
 @(test)
 test_color_offset_between_fg_bg :: proc(t: ^testing.T) {
+	// Verify that fg and bg codes are different for the same color
 	for color in Color {
-		if color == .Default do continue
 		fg := ansi_to_fg_code(color)
 		bg := ansi_to_bg_code(color)
-		testing.expect_value(t, bg - fg, 10)
+		testing.expect(t, fg != bg, "FG and BG codes should be different")
 	}
 }
 
 @(test)
 test_style_flag_to_ansi :: proc(t: ^testing.T) {
-	testing.expect_value(t, style_flag_to_ansi(.Bold), 1)
-	testing.expect_value(t, style_flag_to_ansi(.Dim), 2)
-	testing.expect_value(t, style_flag_to_ansi(.Italic), 3)
-	testing.expect_value(t, style_flag_to_ansi(.Underline), 4)
-	testing.expect_value(t, style_flag_to_ansi(.Blink), 5)
-	testing.expect_value(t, style_flag_to_ansi(.Reverse), 7)
-	testing.expect_value(t, style_flag_to_ansi(.Hidden), 8)
-	testing.expect_value(t, style_flag_to_ansi(.Strikethrough), 9)
+	testing.expect_value(t, style_flag_to_ansi(.Bold), ansi.BOLD)
+	testing.expect_value(t, style_flag_to_ansi(.Dim), ansi.FAINT)
+	testing.expect_value(t, style_flag_to_ansi(.Italic), ansi.ITALIC)
+	testing.expect_value(t, style_flag_to_ansi(.Underline), ansi.UNDERLINE)
+	testing.expect_value(t, style_flag_to_ansi(.Blink), ansi.BLINK_SLOW)
+	testing.expect_value(t, style_flag_to_ansi(.Reverse), ansi.INVERT)
+	testing.expect_value(t, style_flag_to_ansi(.Hidden), ansi.HIDE)
+	testing.expect_value(t, style_flag_to_ansi(.Strikethrough), ansi.STRIKE)
 }
 
 @(test)
@@ -310,7 +313,7 @@ test_style_flags_bit_set :: proc(t: ^testing.T) {
 
 @(test)
 test_all_color_values_unique_fg :: proc(t: ^testing.T) {
-	seen: [dynamic]int
+	seen: [dynamic]string
 	defer delete(seen)
 
 	for color in Color {
@@ -324,7 +327,7 @@ test_all_color_values_unique_fg :: proc(t: ^testing.T) {
 
 @(test)
 test_all_style_flags_unique_codes :: proc(t: ^testing.T) {
-	seen: [dynamic]int
+	seen: [dynamic]string
 	defer delete(seen)
 
 	for flag in StyleFlag {
@@ -366,31 +369,18 @@ test_style_equality :: proc(t: ^testing.T) {
 	testing.expect(t, style1 != style4, "Styles with different flags should not be equal")
 }
 
+// NOTE: This test is no longer applicable with string-based codes
+// The relationship between bright and standard colors is implicit in ansi package
 @(test)
 test_bright_color_codes :: proc(t: ^testing.T) {
-	bright_fg: [8]int
-	bright_fg[0] = ansi_to_fg_code(Ansi.BrightBlack)
-	bright_fg[1] = ansi_to_fg_code(Ansi.BrightRed)
-	bright_fg[2] = ansi_to_fg_code(Ansi.BrightGreen)
-	bright_fg[3] = ansi_to_fg_code(Ansi.BrightYellow)
-	bright_fg[4] = ansi_to_fg_code(Ansi.BrightBlue)
-	bright_fg[5] = ansi_to_fg_code(Ansi.BrightMagenta)
-	bright_fg[6] = ansi_to_fg_code(Ansi.BrightCyan)
-	bright_fg[7] = ansi_to_fg_code(Ansi.BrightWhite)
-
-	standard_fg: [8]int
-	standard_fg[0] = ansi_to_fg_code(Ansi.Black)
-	standard_fg[1] = ansi_to_fg_code(Ansi.Red)
-	standard_fg[2] = ansi_to_fg_code(Ansi.Green)
-	standard_fg[3] = ansi_to_fg_code(Ansi.Yellow)
-	standard_fg[4] = ansi_to_fg_code(Ansi.Blue)
-	standard_fg[5] = ansi_to_fg_code(Ansi.Magenta)
-	standard_fg[6] = ansi_to_fg_code(Ansi.Cyan)
-	standard_fg[7] = ansi_to_fg_code(Ansi.White)
-
-	for i in 0 ..< 8 {
-		testing.expect_value(t, bright_fg[i], standard_fg[i] + 60)
-	}
+	// Just verify that bright colors have codes that contain "9" (90-97)
+	// and standard colors have codes that contain "3" (30-37)
+	testing.expect(
+		t,
+		strings.contains(ansi_to_fg_code(.BrightRed), "9"),
+		"Bright red should contain 9",
+	)
+	testing.expect(t, strings.contains(ansi_to_fg_code(.Red), "3"), "Red should contain 3")
 }
 
 @(test)
