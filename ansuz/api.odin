@@ -157,6 +157,10 @@ begin_frame :: proc(ctx: ^Context) {
 	// Record frame start time for FPS/frame time calculation
 	ctx.frame_start_time = time.now()
 
+	// Clear per-frame temporary allocations (strings from fmt.tprintf, etc.)
+	// This uses Odin's built-in scratch arena allocator
+	free_all(context.temp_allocator)
+
 	// Check for terminal size changes (every frame)
 	// Since we now use ioctl() which is non-blocking, this is safe and efficient
 	current_width, current_height, size_err := get_terminal_size()
@@ -178,6 +182,7 @@ begin_frame :: proc(ctx: ^Context) {
 	// Clear input keys for new frame
 	clear(&ctx.input_keys)
 }
+
 
 // end_frame finishes the current frame and outputs to terminal
 // In immediate mode, we render the entire buffer every frame
