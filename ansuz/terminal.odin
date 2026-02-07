@@ -1,33 +1,20 @@
 package ansuz
 
-import "base:intrinsics"
+import "core:c"
 import "core:fmt"
 import "core:os"
 import "core:sys/linux"
 import "core:sys/posix"
+import "core:terminal"
+import ansi "core:terminal/ansi"
 
-// winsize struct for TIOCGWINSZ ioctl
+// winsize struct for TIOCGWINSZ ioctl (not available in core:sys/posix)
 winsize :: struct {
 	ws_row:    u16, // rows, in characters
 	ws_col:    u16, // columns, in characters
 	ws_xpixel: u16, // horizontal size, pixels (unused)
 	ws_ypixel: u16, // vertical size, pixels (unused)
 }
-
-// Poll_Fd struct for poll() syscall
-Poll_Fd :: struct {
-	fd:      i32, // file descriptor
-	events:  i16, // events to monitor
-	revents: i16, // events that occurred (output)
-}
-
-// Poll event flags
-POLLIN :: i16(0x0001) // There is data to read
-POLLPRI :: i16(0x0002) // There is urgent data to read
-POLLOUT :: i16(0x0004) // Writing is possible
-POLLERR :: i16(0x0008) // Error condition
-POLLHUP :: i16(0x0010) // Hang up
-POLLNVAL :: i16(0x0020) // Invalid request: fd not open
 
 // TerminalState maintains state of terminal configuration
 // It stores original termios settings for restoration on exit
@@ -55,11 +42,11 @@ init_terminal :: proc() -> TerminalError {
 		return .None
 	}
 
-	stdin_fd := posix.FD(os.stdin)
-
-	if !posix.isatty(stdin_fd) {
+	if !terminal.is_terminal(os.stdin) {
 		return .FailedToGetAttributes
 	}
+
+	stdin_fd := posix.FD(os.stdin)
 
 	result := posix.tcgetattr(stdin_fd, &_terminal_state.original_termios)
 	if result != .OK {
@@ -165,47 +152,47 @@ flush_output :: proc() {
 
 // clear_screen clears entire terminal screen
 clear_screen :: proc() -> TerminalError {
-	return write_ansi("\x1b[2J")
+	return write_ansi(ansi.CSI + "2" + ansi.ED)
 }
 
 // clear_line clears current line
 clear_line :: proc() -> TerminalError {
-	return write_ansi("\x1b[2K")
+	return write_ansi(ansi.CSI + "2" + ansi.EL)
 }
 
 // move_cursor moves cursor to specified position (1-indexed)
 // Terminal coordinates are 1-based, not 0-based
 move_cursor :: proc(row, col: int) -> TerminalError {
-	sequence := fmt.tprintf("\x1b[%d;%dH", row, col)
+	sequence := fmt.tprintf("%s%d;%d%s", ansi.CSI, row, col, ansi.CUP)
 	return write_ansi(sequence)
 }
 
 // move_cursor_home moves cursor to top-left corner (1,1)
 move_cursor_home :: proc() -> TerminalError {
-	return write_ansi("\x1b[H")
+	return write_ansi(ansi.CSI + ansi.CUP)
 }
 
 // save_cursor saves current cursor position
 // Can be restored later with restore_cursor()
 save_cursor :: proc() -> TerminalError {
-	return write_ansi("\x1b[s")
+	return write_ansi(ansi.CSI + ansi.SCP)
 }
 
 // restore_cursor restores previously saved cursor position
 restore_cursor :: proc() -> TerminalError {
-	return write_ansi("\x1b[u")
+	return write_ansi(ansi.CSI + ansi.RCP)
 }
 
 // hide_cursor makes cursor invisible
 // Useful during rendering to prevent flicker
 hide_cursor :: proc() -> TerminalError {
-	return write_ansi("\x1b[?25l")
+	return write_ansi(ansi.CSI + ansi.DECTCEM_HIDE)
 }
 
 // show_cursor makes cursor visible again
 // Should be called before program exit
 show_cursor :: proc() -> TerminalError {
-	return write_ansi("\x1b[?25h")
+	return write_ansi(ansi.CSI + ansi.DECTCEM_SHOW)
 }
 
 // enter_alternate_buffer switches to alternate screen buffer
@@ -223,13 +210,13 @@ leave_alternate_buffer :: proc() -> TerminalError {
 // disable_auto_wrap disables automatic line wrapping (DECAWM)
 // Prevents screen scrolling when writing to the last column
 disable_auto_wrap :: proc() -> TerminalError {
-	return write_ansi("\x1b[?7l")
+	return write_ansi(ansi.CSI + ansi.DECAWM_OFF)
 }
 
 // enable_auto_wrap enables automatic line wrapping (DECAWM)
 // Restores default terminal behavior
 enable_auto_wrap :: proc() -> TerminalError {
-	return write_ansi("\x1b[?7h")
+	return write_ansi(ansi.CSI + ansi.DECAWM_ON)
 }
 
 // begin_sync_update begins a synchronized output update (Mode 2026)
@@ -308,22 +295,19 @@ wait_for_event :: proc(
 	int,
 	int,
 ) {
-	// SYS_poll = 7 on amd64
-	SYS_poll :: uintptr(7)
-
 	for {
 		// Use 100ms internal timeout for resize detection if infinite wait requested
-		poll_timeout := timeout_ms == -1 ? i32(100) : timeout_ms
+		poll_timeout := timeout_ms == -1 ? c.int(100) : c.int(timeout_ms)
 
-		fds: [1]Poll_Fd
-		fds[0] = Poll_Fd {
-			fd      = i32(os.stdin),
-			events  = POLLIN,
-			revents = 0,
+		fds: [1]posix.pollfd
+		fds[0] = posix.pollfd {
+			fd      = posix.FD(os.stdin),
+			events  = {.IN},
+			revents = {},
 		}
 
-		// poll(fds, nfds, timeout)
-		ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(poll_timeout))
+		// Use official posix.poll()
+		ret := posix.poll(&fds[0], 1, poll_timeout)
 
 		// Check for terminal resize by querying current size
 		new_width, new_height, _ := get_terminal_size()
@@ -332,11 +316,11 @@ wait_for_event :: proc(
 		}
 
 		// Check poll result
-		if int(ret) < 0 {
+		if ret < 0 {
 			return .Error, new_width, new_height
 		}
 
-		if int(ret) > 0 && (fds[0].revents & POLLIN) != 0 {
+		if ret > 0 && .IN in fds[0].revents {
 			return .Input, new_width, new_height
 		}
 
@@ -354,23 +338,20 @@ wait_for_event :: proc(
 // Returns: true if data is available, false if timeout or error
 // DEPRECATED: Use wait_for_event() for event-driven rendering
 wait_for_input :: proc(timeout_ms: i32 = -1) -> bool {
-	// SYS_poll = 7 on amd64
-	SYS_poll :: uintptr(7)
-
-	fds: [1]Poll_Fd
-	fds[0] = Poll_Fd {
-		fd      = i32(os.stdin),
-		events  = POLLIN,
-		revents = 0,
+	fds: [1]posix.pollfd
+	fds[0] = posix.pollfd {
+		fd      = posix.FD(os.stdin),
+		events  = {.IN},
+		revents = {},
 	}
 
-	// poll(fds, nfds, timeout)
-	ret := intrinsics.syscall(SYS_poll, uintptr(&fds[0]), uintptr(1), uintptr(timeout_ms))
+	// Use official posix.poll()
+	ret := posix.poll(&fds[0], 1, c.int(timeout_ms))
 
 	// ret > 0: number of fds with events
 	// ret = 0: timeout
 	// ret < 0: error
-	return int(ret) > 0 && (fds[0].revents & POLLIN) != 0
+	return ret > 0 && .IN in fds[0].revents
 }
 
 // reset_terminal performs full terminal cleanup
