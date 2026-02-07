@@ -2,7 +2,6 @@ package examples
 
 import ansuz "../ansuz"
 import "core:fmt"
-import "core:strings"
 
 main :: proc() {
 	// Initialize context
@@ -14,10 +13,7 @@ main :: proc() {
 	defer ansuz.shutdown(ctx)
 
 	// Set initial focus
-	ansuz.set_focus(ctx, ansuz.id(ctx, "Button 1"))
-
-	// State for checkbox
-	checkbox_state := false
+	ansuz.set_focus(ctx, u64(ansuz.element_id("Button 1")))
 
 	// Main loop
 	ansuz.run(
@@ -40,17 +36,6 @@ main :: proc() {
 				}
 			}
 
-			// Capture checkbox state from outer scope (simple closure capture simulation for this demo)
-			// In a real app, you'd pass a state struct or similar.
-			// Since Odin procs can't capture easily without context, we'll assume global or passed state.
-			// Ideally, we'd pass `user_data` to run(). For now, using a static variable simulation or careful struct usage.
-			// But wait, `run` takes a proc.
-			// We can't capture local `checkbox_state` in a raw proc unless `run` supports user_data.
-			// `ansuz.run` signature is `proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool)`.
-			// So we cannot capture `checkbox_state` if it's local to `main`.
-			//
-			// Workaround: Make `checkbox_state` global for this example file.
-
 			render_ui(ctx)
 			return true
 		},
@@ -61,11 +46,11 @@ main :: proc() {
 checkbox_state := false
 
 render_ui :: proc(ctx: ^ansuz.Context) {
-	// 2. Render UI
 	ansuz.begin_layout(ctx)
 
-	// Root container (full screen, vertical layout)
-	ansuz.layout_begin_container(
+	// Root container using Clay-style open_element with defer pattern
+	// The @(deferred_out) attribute automatically calls close_element when scope exits
+	_ = ansuz.open_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -75,48 +60,62 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 		},
 	)
 
-	// Title
-	ansuz.layout_text(
+	// Title using label()
+	ansuz.label(
 		ctx,
-		"Native Widgets Demo",
-		ansuz.style(.BrightWhite, .Default, {.Bold, .Underline}),
+		"Native Widgets Demo (Clay-style API)",
+		{
+			style = ansuz.style(.BrightWhite, .Default, {.Bold, .Underline}),
+			sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
+		},
 	)
 
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"Press TAB to cycle focus. Enter/Space to activate.",
-		ansuz.style(.White, .Default, {}),
+		{
+			style = ansuz.style(.White, .Default, {}),
+			sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
+		},
 	)
 
-	// Container for buttons
-	ansuz.layout_begin_container(
+	// Nested container for buttons
+	_ = ansuz.open_element(
 		ctx,
 		{
 			direction = .TopToBottom,
-			sizing = {.X = ansuz.fixed(40), .Y = ansuz.fit()},
+			sizing = {.X = ansuz.fixed(50), .Y = ansuz.fit()},
 			padding = {2, 2, 1, 1},
 			gap = 1,
 		},
 	)
 
-	if ansuz.button(ctx, "Button 1") {
+	// Use the new widget_button API
+	if ansuz.widget_button(ctx, "Button 1") {
 		// Clicked!
 	}
 
-	if ansuz.button(ctx, "Button 2") {
+	if ansuz.widget_button(ctx, "Button 2") {
 		// Clicked!
 	}
 
-	ansuz.checkbox(ctx, "Toggle Me", &checkbox_state)
+	ansuz.widget_checkbox(ctx, "Toggle Me", &checkbox_state)
 
 	if checkbox_state {
-		ansuz.layout_text(ctx, "  (Toggle is ON)", ansuz.style(.Green, .Default, {}))
+		ansuz.label(
+			ctx,
+			"  (Toggle is ON)",
+			{
+				style = ansuz.style(.Green, .Default, {}),
+				sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
+			},
+		)
 	}
 
-	ansuz.button(ctx, "Another Button")
-	ansuz.button(ctx, "Exit")
+	ansuz.widget_button(ctx, "Another Button")
+	ansuz.widget_button(ctx, "Exit")
 
-	ansuz.layout_end_container(ctx)
-	ansuz.layout_end_container(ctx) // End Root
+	// Note: close_element is called automatically via defer for both open_element calls
+
 	ansuz.end_layout(ctx)
 }
