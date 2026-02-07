@@ -45,99 +45,81 @@ main :: proc() {
 			// Update state
 			var_state.width, var_state.height = ctx.width, ctx.height
 
-			// Layout
-			ansuz.begin_layout(ctx)
-
-			// Root container
-			ansuz.begin_element(
-				ctx,
-				{
+			// Layout - API 100% scoped
+			ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+				// Root container
+				ansuz.container(ctx, {
 					direction = .TopToBottom,
 					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 					padding = {2, 2, 1, 1},
 					gap = 1,
-				},
-			)
+				}, proc(ctx: ^ansuz.Context) {
+					ansuz.label(
+						ctx,
+						"Ansuz Text Wrapping Demo (Press 'q' to quit)",
+						{style = ansuz.style(.Cyan, .Default, {.Bold})},
+					)
+					ansuz.label(
+						ctx,
+						"Resize the terminal to see dynamic wrapping",
+						{style = ansuz.style(.White, .Default, {})},
+					)
 
-			ansuz.label(
-				ctx,
-				"Ansuz Text Wrapping Demo (Press 'q' to quit)",
-				{style = ansuz.style(.Cyan, .Default, {.Bold})},
-			)
-			ansuz.label(
-				ctx,
-				"Resize the terminal to see dynamic wrapping",
-				{style = ansuz.style(.White, .Default, {})},
-			)
-
-			// Flexible Box with Wrapped Text
-			ansuz.begin_element(
-				ctx,
-				{
-					box_style = .Rounded, // Using Rounded instead of just box for better look
-					style = ansuz.style(.Green, .Default, {}),
-					layout = {
+					// Flexible Box with Wrapped Text
+					ansuz.box(ctx, {
+						style = ansuz.style(.Green, .Default, {}),
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 						padding = {1, 1, 1, 1},
-					},
-				},
-			)
-			ansuz.label(
-				ctx,
-				"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
-				{
-					style = ansuz.style(.White, .Default, {}),
-					layout = {sizing = {.X = ansuz.grow(), .Y = ansuz.fit()}, wrap_text = true},
-				},
-			)
+					}, .Rounded, proc(ctx: ^ansuz.Context) {
+						ansuz.label(
+							ctx,
+							"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
+							{
+								style = ansuz.style(.White, .Default, {}),
+								sizing = {.X = ansuz.grow(), .Y = ansuz.fit()},
+								wrap_text = true,
+							},
+						)
 
-			ansuz.label(ctx, "--- Separator ---", {style = ansuz.style(.Black, .Default, {.Bold})})
+						ansuz.label(ctx, "--- Separator ---", {style = ansuz.style(.Black, .Default, {.Bold})})
 
-			ansuz.label(
-				ctx,
-				"Another paragraph with different styling. Wrapping allows for rich text layouts that adapt to any screen size, which is critical for modern TUI applications.",
-				{
-					style = ansuz.style(.Yellow, .Default, {.Italic}),
-					layout = {sizing = {.X = ansuz.grow(), .Y = ansuz.fit()}, wrap_text = true},
-				},
-			)
-			ansuz.end_element(ctx) // End Flexible Box
+						ansuz.label(
+							ctx,
+							"Another paragraph with different styling. Wrapping allows for rich text layouts that adapt to any screen size, which is critical for modern TUI applications.",
+							{
+								style = ansuz.style(.Yellow, .Default, {.Italic}),
+								sizing = {.X = ansuz.grow(), .Y = ansuz.fit()},
+								wrap_text = true,
+							},
+						)
+					})
 
-			// Fixed Width Column Test
-			ansuz.begin_element(
-				ctx,
-				{
-					box_style = .Rounded,
-					style = ansuz.style(.Blue, .Default, {}),
-					layout = {
+					// Fixed Width Column Test
+					ansuz.box(ctx, {
+						style = ansuz.style(.Blue, .Default, {}),
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.fixed(40), .Y = ansuz.fit()},
 						padding = {1, 1, 0, 0},
 						gap = 0,
-					},
-				},
-			)
-			ansuz.label(
-				ctx,
-				"Fixed Width (40) Column with Wrapping",
-				{style = ansuz.style(.Blue, .Default, {.Bold})},
-			)
-			ansuz.label(
-				ctx,
-				"This text is constrained to a fixed width of 40 characters. It should wrap within this column regardless of window size.",
-				{
-					style = ansuz.style(.White, .Default, {}),
-					layout = {
-						sizing = {.X = ansuz.fixed(36), .Y = ansuz.fit()}, // 36 + padding
-						wrap_text = true,
-					},
-				},
-			)
-			ansuz.end_element(ctx) // End Fixed Width Column
-
-			ansuz.end_element(ctx) // End Root
-			ansuz.end_layout(ctx)
+					}, .Rounded, proc(ctx: ^ansuz.Context) {
+						ansuz.label(
+							ctx,
+							"Fixed Width (40) Column with Wrapping",
+							{style = ansuz.style(.Blue, .Default, {.Bold})},
+						)
+						ansuz.label(
+							ctx,
+							"This text is constrained to a fixed width of 40 characters. It should wrap within this column regardless of window size.",
+							{
+								style = ansuz.style(.White, .Default, {}),
+								sizing = {.X = ansuz.fixed(36), .Y = ansuz.fit()}, // 36 + padding
+								wrap_text = true,
+							},
+						)
+					})
+				})
+			})
 
 			return true
 		},

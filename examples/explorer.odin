@@ -7,6 +7,7 @@
 // - Diferentes estilos para arquivos vs diretórios
 // - Status bar dinâmica com info do item selecionado
 // - Layout responsivo
+// - API 100% scoped com callbacks
 
 package explorer
 
@@ -188,175 +189,149 @@ go_up :: proc() {
 render :: proc(ctx: ^ansuz.Context) {
 	height := ctx.height
 
-	ansuz.begin_layout(ctx)
-
-	// Container principal
-	ansuz.begin_element(
-		ctx,
-		{
+	// API 100% scoped - sem begin/end explícitos
+	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+		// Container principal
+		ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
-		},
-	)
-
-	render_header(ctx)
-	render_file_list(ctx, height)
-	render_status_bar(ctx)
-
-	ansuz.end_element(ctx) // Fim Container Principal
-
-	ansuz.end_layout(ctx)
+		}, proc(ctx: ^ansuz.Context) {
+			render_header(ctx)
+			render_file_list(ctx, height)
+			render_status_bar(ctx)
+		})
+	})
 }
 
 render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.begin_element(
-		ctx,
-		{
-			box_style = .Rounded,
-			style = ansuz.style(.BrightBlue, .Default, {}),
-			layout = {
-				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-				padding = {1, 1, 1, 1},
-				direction = .TopToBottom,
-			},
-		},
-	)
-	ansuz.label(ctx, "File Explorer", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
+	ansuz.box(ctx, {
+		style = ansuz.style(.BrightBlue, .Default, {}),
+		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+		padding = {1, 1, 1, 1},
+		direction = .TopToBottom,
+	}, .Rounded, proc(ctx: ^ansuz.Context) {
+		ansuz.label(ctx, "File Explorer", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
-	// Caminho atual (truncado se muito longo)
-	path_display := g_state.current_path
-	if len(path_display) > 60 {
-		path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
-	}
-	ansuz.label(ctx, path_display, {style = ansuz.style(.White, .Default, {})})
-	ansuz.end_element(ctx)
+		// Caminho atual (truncado se muito longo)
+		path_display := g_state.current_path
+		if len(path_display) > 60 {
+			path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
+		}
+		ansuz.label(ctx, path_display, {style = ansuz.style(.White, .Default, {})})
+	})
 }
 
 render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
-	ansuz.begin_element(
-		ctx,
-		{
-			box_style = .Sharp,
-			style = ansuz.style(.Yellow, .Default, {}),
-			layout = {
-				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-				padding = {1, 1, 1, 1},
-				direction = .TopToBottom,
-				overflow = .Hidden,
-			},
-		},
-	)
-
-	if g_state.error_msg != "" {
-		ansuz.label(ctx, g_state.error_msg, {style = ansuz.style(.BrightRed, .Default, {.Bold})})
-		ansuz.end_element(ctx)
-		return
-	}
-
-	if len(g_state.entries) == 0 {
-		ansuz.label(
-			ctx,
-			"(diretorio vazio)",
-			{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-		)
-		ansuz.end_element(ctx)
-		return
-	}
-
-	// Calcula janela visível (considerando header + status = ~6 linhas)
-	visible_lines := screen_height - 8
-	if visible_lines < 3 do visible_lines = 3
-
-	// Ajusta scroll para manter seleção visível
-	if g_state.selected < g_state.scroll_offset {
-		g_state.scroll_offset = g_state.selected
-	}
-	if g_state.selected >= g_state.scroll_offset + visible_lines {
-		g_state.scroll_offset = g_state.selected - visible_lines + 1
-	}
-
-	// Renderiza entradas visíveis
-	for i := g_state.scroll_offset;
-	    i < min(len(g_state.entries), g_state.scroll_offset + visible_lines);
-	    i += 1 {
-		entry := g_state.entries[i]
-		is_selected := i == g_state.selected
-
-		// Ícone e cor baseado no tipo
-		icon: string
-		color: ansuz.TerminalColor
-		if entry.is_dir {
-			icon = "[D]"
-			color = .BrightBlue
-		} else {
-			icon = "   "
-			color = .White
+	ansuz.box(ctx, {
+		style = ansuz.style(.Yellow, .Default, {}),
+		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+		padding = {1, 1, 1, 1},
+		direction = .TopToBottom,
+		overflow = .Hidden,
+	}, .Sharp, proc(ctx: ^ansuz.Context) {
+		if g_state.error_msg != "" {
+			ansuz.label(ctx, g_state.error_msg, {style = ansuz.style(.BrightRed, .Default, {.Bold})})
+			return
 		}
 
-		// Indicador de seleção
-		selector := "  "
-		if is_selected {
-			selector = "> "
-			color = .BrightYellow
+		if len(g_state.entries) == 0 {
+			ansuz.label(
+				ctx,
+				"(diretorio vazio)",
+				{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+			)
+			return
 		}
 
-		// Tamanho formatado
-		size_str: string
-		if entry.is_dir {
-			size_str = "     "
-		} else {
-			size_str = format_size(entry.size)
+		// Calcula janela visível (considerando header + status = ~6 linhas)
+		visible_lines := screen_height - 8
+		if visible_lines < 3 do visible_lines = 3
+
+		// Ajusta scroll para manter seleção visível
+		if g_state.selected < g_state.scroll_offset {
+			g_state.scroll_offset = g_state.selected
+		}
+		if g_state.selected >= g_state.scroll_offset + visible_lines {
+			g_state.scroll_offset = g_state.selected - visible_lines + 1
 		}
 
-		line := fmt.tprintf("%s%s %-40s %s", selector, icon, entry.name, size_str)
+		// Renderiza entradas visíveis
+		for i := g_state.scroll_offset;
+		    i < min(len(g_state.entries), g_state.scroll_offset + visible_lines);
+		    i += 1 {
+			entry := g_state.entries[i]
+			is_selected := i == g_state.selected
 
-		style: ansuz.StyleFlags = {}
-		if is_selected {
-			style = {.Bold}
+			// Ícone e cor baseado no tipo
+			icon: string
+			color: ansuz.TerminalColor
+			if entry.is_dir {
+				icon = "[D]"
+				color = .BrightBlue
+			} else {
+				icon = "   "
+				color = .White
+			}
+
+			// Indicador de seleção
+			selector := "  "
+			if is_selected {
+				selector = "> "
+				color = .BrightYellow
+			}
+
+			// Tamanho formatado
+			size_str: string
+			if entry.is_dir {
+				size_str = "     "
+			} else {
+				size_str = format_size(entry.size)
+			}
+
+			line := fmt.tprintf("%s%s %-40s %s", selector, icon, entry.name, size_str)
+
+			style: ansuz.StyleFlags = {}
+			if is_selected {
+				style = {.Bold}
+			}
+
+			ansuz.label(ctx, line, {style = ansuz.style(color, .Default, style)})
 		}
-
-		ansuz.label(ctx, line, {style = ansuz.style(color, .Default, style)})
-	}
-
-	ansuz.end_element(ctx)
+	})
 }
 
 render_status_bar :: proc(ctx: ^ansuz.Context) {
-	ansuz.begin_element(
-		ctx,
-		{
-			direction = .LeftToRight,
-			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
-			alignment = {.Center, .Center},
-		},
-	)
-
-	// Info do item selecionado
-	info: string
-	if len(g_state.entries) > 0 && g_state.selected < len(g_state.entries) {
-		entry := g_state.entries[g_state.selected]
-		if entry.is_dir {
-			info = fmt.tprintf(
-				" %d/%d | [Enter] Abrir | [Backspace] Voltar | [Q/ESC] Sair",
-				g_state.selected + 1,
-				len(g_state.entries),
-			)
+	ansuz.container(ctx, {
+		direction = .LeftToRight,
+		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
+		alignment = {.Center, .Center},
+	}, proc(ctx: ^ansuz.Context) {
+		// Info do item selecionado
+		info: string
+		if len(g_state.entries) > 0 && g_state.selected < len(g_state.entries) {
+			entry := g_state.entries[g_state.selected]
+			if entry.is_dir {
+				info = fmt.tprintf(
+					" %d/%d | [Enter] Abrir | [Backspace] Voltar | [Q/ESC] Sair",
+					g_state.selected + 1,
+					len(g_state.entries),
+				)
+			} else {
+				info = fmt.tprintf(
+					" %d/%d | %s | [Backspace] Voltar | [Q/ESC] Sair",
+					g_state.selected + 1,
+					len(g_state.entries),
+					format_size(entry.size),
+				)
+			}
 		} else {
-			info = fmt.tprintf(
-				" %d/%d | %s | [Backspace] Voltar | [Q/ESC] Sair",
-				g_state.selected + 1,
-				len(g_state.entries),
-				format_size(entry.size),
-			)
+			info = " [Q/ESC] Sair"
 		}
-	} else {
-		info = " [Q/ESC] Sair"
-	}
 
-	ansuz.label(ctx, info, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
-	ansuz.end_element(ctx)
+		ansuz.label(ctx, info, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+	})
 }
 
 format_size :: proc(bytes: i64) -> string {

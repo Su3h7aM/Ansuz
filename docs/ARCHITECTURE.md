@@ -114,11 +114,15 @@ The project follows a flat structure for the core library to keep imports simple
 ansuz/
 ├── ansuz/             # Core library source
 │   ├── api.odin       # Public API & Context
+│   ├── scoped.odin    # Scoped callback API (primary interface)
+│   ├── element.odin    # Element and widget definitions
 │   ├── buffer.odin    # Frame buffer algorithms
 │   ├── colors.odin    # Color system
 │   ├── event.odin     # Event handling
 │   ├── layout.odin    # Layout engine implementation
-│   └── terminal.odin  # Lower-level terminal I/O (termios)
+│   ├── terminal.odin  # Lower-level terminal I/O (termios)
+│   ├── theme.odin     # Theme definitions
+│   └── widgets.odin   # High-level widget implementations
 ├── examples/          # Example programs
 ├── docs/              # Documentation
 └── .mise/tasks/       # Build/Test scripts
@@ -126,11 +130,15 @@ ansuz/
 
 ### 4.2 Core Modules
 
-- **api.odin**: The high-level entry point. Manages the `Context` and frame lifecycle (`begin_frame`, `end_frame`).
-- **buffer.odin**: Manages the double-buffered rendering grid. Handles resizing and diffing.
-- **layout.odin**: Implements the layout solver (Measure -> Resolve -> Position).
-- **terminal.odin**: Handles platform-specific system calls (`tcgetattr`, `tcsetattr`) and raw ANSI output.
+- **api.odin**: The high-level entry point. Manages the `Context` and frame lifecycle (`begin_frame`, `end_frame`), event loop (`run`), and focus management.
+- **scoped.odin**: The primary API for UI declaration. Provides 100% scoped callback interface with `layout()`, `container()`, `box()`, `vstack()`, `hstack()`.
+- **element.odin**: Element definitions and leaf nodes (`label()`, `element()`), plus interactive widgets (`widget_button`, `widget_checkbox`).
+- **buffer.odin**: Manages the rendering grid. Handles resizing and ANSI output generation.
+- **layout.odin**: Implements the 3-pass layout solver (Measure -> Resolve -> Position) with Clay-inspired algorithms.
+- **terminal.odin**: Handles platform-specific system calls (`tcgetattr`, `tcsetattr`) and raw ANSI output using native Odin functions from `core:sys/posix`.
 - **event.odin**: Parses raw bytes from stdin into structured `Event` enums (Keys, Resizes).
+- **theme.odin**: Theme definitions and style helpers for widgets.
+- **widgets.odin**: High-level interactive widgets with built-in focus and state management.
 
 ### 4.3 Data Structures
 

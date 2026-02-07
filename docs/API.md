@@ -1,20 +1,176 @@
 # API Reference
 
+Ansuz provides a **100% scoped callback API** for immediate-mode TUI development in Odin.
+
+## Scoped Layout API (Primary API)
+
+The scoped API uses callbacks to define UI structure without explicit begin/end calls.
+
 ```odin
-// Context management
-init() -> (^Context, Error)
-shutdown(^Context)
-
-// Frame lifecycle
-begin_frame(^Context)
-end_frame(^Context)
-
-// Drawing
-write_text(^Context, x, y, text, Style)
-fill_rect(^Context, x, y, width, height, rune, Style)
-draw_box(^Context, x, y, width, height, Style)
-
-// Input
-poll_events(^Context) -> []Event
-get_size(^Context) -> (width, height: int)
+// Import the scoped API
+import "ansuz/scoped"
 ```
+
+### Layout Management
+
+```odin
+// Start a complete layout definition (replaces begin_layout/end_layout)
+layout :: proc(ctx: ^Context, body: proc(^Context))
+
+// Generic container (replaces begin_element/end_element)
+container :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))
+
+// Bordered box container
+box :: proc(ctx: ^Context, config: LayoutConfig, box_style: BoxStyle, body: proc(^Context))
+
+// Convenience shortcuts
+vstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))  // Vertical (TopToBottom)
+hstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))  // Horizontal (LeftToRight)
+
+// Filled rectangle container
+rect :: proc(ctx: ^Context, config: LayoutConfig, char: rune, body: proc(^Context))
+```
+
+### Leaf Elements
+
+```odin
+// Text element (leaf node)
+label :: proc(ctx: ^Context, txt: string, el: Element = {})
+
+// Generic element (leaf node)
+element :: proc(ctx: ^Context, el: Element = {})
+```
+
+### Interactive Widgets
+
+```odin
+// Button - returns true if clicked
+widget_button :: proc(ctx: ^Context, lbl: string) -> bool
+
+// Checkbox - returns true if toggled
+widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool
+```
+
+## Layout Configuration
+
+```odin
+LayoutConfig :: struct {
+    direction: LayoutDirection,      // .LeftToRight or .TopToBottom
+    sizing: [Axis]Sizing,            // Size constraints for X and Y
+    padding: Padding,                // Internal spacing
+    gap: int,                        // Space between children
+    alignment: Alignment,            // Positioning
+    overflow: Overflow,              // .Hidden, .Visible, .Scroll
+    scroll_offset: [2]int,           // x, y scroll position
+    wrap_text: bool,                 // Enable text wrapping
+}
+
+// Sizing helpers
+fixed :: proc(value: int) -> Sizing       // Exact size
+grow :: proc(weight: f32 = 1.0) -> Sizing  // Fill remaining space
+fit :: proc() -> Sizing                    // Shrink to content
+percent :: proc(value: f32) -> Sizing     // Percentage of parent (0.0-1.0)
+
+// Padding helpers
+padding_all :: proc(value: int) -> Padding
+```
+
+## Context Management
+
+```odin
+// Initialize the library
+init :: proc(allocator := context.allocator) -> (^Context, ContextError)
+
+// Cleanup resources
+shutdown :: proc(ctx: ^Context)
+
+// Frame lifecycle (for manual rendering loops)
+begin_frame :: proc(ctx: ^Context)
+end_frame :: proc(ctx: ^Context)
+
+// Event-driven main loop (recommended)
+run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool)
+```
+
+## Input & Events
+
+```odin
+// Poll for input events
+poll_events :: proc(ctx: ^Context) -> []Event
+
+// Check for quit key (q or Escape)
+is_quit_key :: proc(event: Event) -> bool
+```
+
+## Focus Management
+
+```odin
+// Generate stable ID from string
+id :: proc(ctx: ^Context, label: string) -> u64
+
+// Set/get focus
+set_focus :: proc(ctx: ^Context, id: u64)
+is_focused :: proc(ctx: ^Context, id: u64) -> bool
+
+// Handle Tab navigation
+handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool
+```
+
+## Styling
+
+```odin
+// Create a style
+style :: proc(fg: TerminalColor, bg: TerminalColor, flags: StyleFlags) -> Style
+
+// Color helpers
+rgb :: proc(r, g, b: u8) -> TerminalColor      // TrueColor
+color256 :: proc(index: u8) -> TerminalColor   // 256-color palette
+
+// Style flags
+StyleFlags :: bit_set[StyleFlag]
+StyleFlag :: enum { Bold, Dim, Italic, Underline, Blink, Reverse }
+```
+
+## Complete Example
+
+```odin
+import ansuz "../ansuz"
+
+main :: proc() {
+    ctx, err := ansuz.init()
+    if err != .None do return
+    defer ansuz.shutdown(ctx)
+
+    ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+        for event in ansuz.poll_events(ctx) {
+            if ansuz.is_quit_key(event) do return false
+        }
+
+        ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+            ansuz.container(ctx, {
+                direction = .TopToBottom,
+                sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+                padding = ansuz.padding_all(1),
+            }, proc(ctx: ^ansuz.Context) {
+                ansuz.box(ctx, {
+                    style = ansuz.style(.BrightCyan, .Default, {}),
+                    sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(10)},
+                }, .Rounded, proc(ctx: ^ansuz.Context) {
+                    ansuz.label(ctx, "Hello, Ansuz!", {})
+                    ansuz.label(ctx, "Scoped API is clean!", {})
+                })
+            })
+        })
+
+        return true
+    })
+}
+```
+
+## Important Notes
+
+1. **Callback Limitation**: Odin callbacks do NOT capture variables from the enclosing scope. Use global variables or explicit parameters to share state with callbacks.
+
+2. **Event-Driven Loop**: Use `ansuz.run()` for most applications. Only use manual `begin_frame`/`end_frame` loops if you need continuous rendering (e.g., animations).
+
+3. **Focus System**: Use `widget_button` and `widget_checkbox` for automatic focus management. Tab navigation is handled automatically with `handle_tab_navigation`.
