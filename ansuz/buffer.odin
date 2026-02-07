@@ -3,6 +3,7 @@ package ansuz
 import "core:fmt"
 import "core:mem"
 import "core:strings"
+import "core:unicode/utf8"
 
 // Cell represents a single character cell in the terminal
 // Each cell has a character, colors, and style attributes
@@ -125,7 +126,6 @@ get_cell :: proc(buffer: ^FrameBuffer, x, y: int) -> ^Cell {
 }
 
 
-
 // set_cell sets the character and style for a cell at the specified position
 set_cell :: proc(
 	buffer: ^FrameBuffer,
@@ -151,7 +151,13 @@ set_cell :: proc(
 	return .None
 }
 
-
+// grapheme_width returns the display width of a string in terminal cells
+// This correctly handles CJK characters (2 cells), emoji, and combining characters
+@(require_results)
+grapheme_width :: proc(str: string) -> int {
+	_, _, width := utf8.grapheme_count(str)
+	return width
+}
 
 // write_string writes a string to the buffer starting at the specified position
 // Returns the number of characters written (may be less than string length if out of bounds)
@@ -223,7 +229,7 @@ measure_text_wrapped :: proc(text: string, max_width: int) -> (width, height: in
 	defer delete(words)
 
 	for word, i in words {
-		word_len := len(word)
+		word_len := grapheme_width(word)
 
 		// If this is not the first word on the line, we need a space
 		space_needed := current_line_w > 0 ? 1 : 0
@@ -274,7 +280,7 @@ write_string_wrapped :: proc(
 	chars_written := 0
 
 	for word, i in words {
-		word_len := len(word)
+		word_len := grapheme_width(word)
 
 		// If this is not the first word on the line, we check space
 		space_needed := current_x > x ? 1 : 0
