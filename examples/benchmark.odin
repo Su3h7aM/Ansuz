@@ -105,7 +105,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	ansuz.begin_layout(ctx)
 
 	// Container principal
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -127,28 +127,32 @@ render :: proc(ctx: ^ansuz.Context) {
 	// Controles
 	render_controls(ctx)
 
-	ansuz.layout_end_container(ctx)
-
+	ansuz.end_element(ctx)
 	ansuz.end_layout(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.BrightBlue, .Default, {}),
-		{sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)}, alignment = {.Center, .Center}},
-		.Double,
+		{
+			box_style = .Double,
+			style = ansuz.style(.BrightBlue, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+				alignment = {.Center, .Center},
+			},
+		},
 	)
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"ANSUZ PERFORMANCE BENCHMARK",
-		ansuz.style(.BrightYellow, .Default, {.Bold}),
+		{style = ansuz.style(.BrightYellow, .Default, {.Bold})},
 	)
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_main_stats :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .LeftToRight,
@@ -159,101 +163,113 @@ render_main_stats :: proc(ctx: ^ansuz.Context) {
 	)
 
 	// FPS Box
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.Green, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
+			box_style = .Rounded,
+			style = ansuz.style(.Green, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+			},
 		},
-		.Rounded,
 	)
-	ansuz.layout_text(ctx, "FPS", ansuz.style(.BrightGreen, .Default, {.Bold}))
+	ansuz.label(ctx, "FPS", {style = ansuz.style(.BrightGreen, .Default, {.Bold})})
 
 	fps := calculate_fps()
 	fps_str := fmt.tprintf("%.1f", fps)
-	ansuz.layout_text(ctx, fps_str, ansuz.style(get_fps_color(fps), .Default, {.Bold}))
+	ansuz.label(ctx, fps_str, {style = ansuz.style(get_fps_color(fps), .Default, {.Bold})})
 
-	ansuz.layout_text(ctx, "", ansuz.default_style())
-	ansuz.layout_text(
+	ansuz.label(ctx, "", {style = ansuz.default_style()})
+	ansuz.label(
 		ctx,
 		fmt.tprintf("Frames: %d", g_stats.frame_count),
-		ansuz.style(.BrightBlack, .Default, {.Dim}),
+		{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
 	)
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Frame Time Box
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.Cyan, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
+			box_style = .Rounded,
+			style = ansuz.style(.Cyan, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+			},
 		},
-		.Rounded,
 	)
-	ansuz.layout_text(ctx, "Frame Time", ansuz.style(.BrightCyan, .Default, {.Bold}))
+	ansuz.label(ctx, "Frame Time", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
 	avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
-	ansuz.layout_text(ctx, fmt.tprintf("%.2f ms", avg_ms), ansuz.style(.White, .Default, {.Bold}))
+	ansuz.label(
+		ctx,
+		fmt.tprintf("%.2f ms", avg_ms),
+		{style = ansuz.style(.White, .Default, {.Bold})},
+	)
 
 	min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
 	max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		fmt.tprintf("Min: %.2f ms", min_ms),
-		ansuz.style(.BrightBlack, .Default, {}),
+		{style = ansuz.style(.BrightBlack, .Default, {})},
 	)
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		fmt.tprintf("Max: %.2f ms", max_ms),
-		ansuz.style(.BrightBlack, .Default, {}),
+		{style = ansuz.style(.BrightBlack, .Default, {})},
 	)
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Stress Level Box
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.Magenta, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
+			box_style = .Rounded,
+			style = ansuz.style(.Magenta, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+			},
 		},
-		.Rounded,
 	)
-	ansuz.layout_text(ctx, "Stress Level", ansuz.style(.BrightMagenta, .Default, {.Bold}))
+	ansuz.label(ctx, "Stress Level", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
 
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		fmt.tprintf("%d / 10", g_stats.stress_level),
-		ansuz.style(get_stress_color(g_stats.stress_level), .Default, {.Bold}),
+		{style = ansuz.style(get_stress_color(g_stats.stress_level), .Default, {.Bold})},
 	)
 
-	ansuz.layout_text(ctx, "", ansuz.default_style())
-	ansuz.layout_text(
+	ansuz.label(ctx, "", {style = ansuz.default_style()})
+	ansuz.label(
 		ctx,
 		fmt.tprintf("Elements: %d", g_stats.elements_count),
-		ansuz.style(.BrightBlack, .Default, {.Dim}),
+		{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
 	)
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
-			overflow = .Hidden,
+			box_style = .Sharp,
+			style = ansuz.style(.Yellow, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+				overflow = .Hidden,
+			},
 		},
-		.Sharp,
 	)
 
 	// Título com info do stress level
@@ -262,10 +278,10 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		g_stats.stress_level,
 		g_stats.stress_level * 20,
 	)
-	ansuz.layout_text(ctx, title, ansuz.style(.BrightYellow, .Default, {.Bold}))
+	ansuz.label(ctx, title, {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
 
 	// Container principal para stress test
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -282,7 +298,7 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 
 	for row in 0 ..< rows {
 		// Cada linha é um container horizontal
-		ansuz.layout_begin_container(
+		ansuz.begin_element(
 			ctx,
 			{
 				direction = .LeftToRight,
@@ -296,22 +312,22 @@ render_stress_test :: proc(ctx: ^ansuz.Context, width, height: int) {
 		for col in 0 ..< cols {
 			pattern := generate_stress_pattern(row, col, g_stats.frame_count)
 			color := get_rainbow_color(row + col)
-			ansuz.layout_text(ctx, pattern, ansuz.style(color, .Default, {}))
+			ansuz.label(ctx, pattern, {style = ansuz.style(color, .Default, {})})
 			elements += 1
 		}
 
-		ansuz.layout_end_container(ctx)
+		ansuz.end_element(ctx)
 	}
 
 	g_stats.elements_count = elements
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_controls :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .LeftToRight,
@@ -319,12 +335,12 @@ render_controls :: proc(ctx: ^ansuz.Context) {
 			alignment = {.Center, .Center},
 		},
 	)
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		" [Up/Down] Stress | [Q/ESC] Sair",
-		ansuz.style(.BrightBlack, .Default, {.Dim}),
+		{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
 	)
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 // Funções auxiliares

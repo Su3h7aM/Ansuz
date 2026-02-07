@@ -36,7 +36,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	ansuz.begin_layout(ctx)
 
 	// Container Principal
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -48,18 +48,20 @@ render :: proc(ctx: ^ansuz.Context) {
 	)
 
 	// Título
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.BrightCyan, .Default, {.Bold}),
 		{
-			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-			alignment = {.Center, .Center},
-			direction = .TopToBottom,
+			box_style = .Double,
+			style = ansuz.style(.BrightCyan, .Default, {.Bold}),
+			layout = {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+				alignment = {.Center, .Center},
+				direction = .TopToBottom,
+			},
 		},
-		.Double,
 	)
-	ansuz.layout_text(ctx, "ANSUZ COLOR SYSTEM DEMO", ansuz.default_style())
-	ansuz.layout_end_container(ctx)
+	ansuz.label(ctx, "ANSUZ COLOR SYSTEM DEMO", {style = ansuz.default_style()})
+	ansuz.end_element(ctx)
 
 	// Seção 1: Cores ANSI (16 cores)
 	render_ansi_section(ctx)
@@ -74,20 +76,20 @@ render :: proc(ctx: ^ansuz.Context) {
 	render_256_section(ctx)
 
 	// Rodapé
-	ansuz.layout_text(ctx, "[Q/ESC] Quit", ansuz.style(.BrightBlack, .Default, {.Dim}))
+	ansuz.label(ctx, "[Q/ESC] Quit", {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 	ansuz.end_layout(ctx)
 }
 
 render_ansi_section :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"1. Standard ANSI Colors (16-color palette)",
-		ansuz.style(.White, .Default, {.Bold, .Underline}),
+		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)}, gap = 1},
 	)
@@ -100,19 +102,24 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 		style := ansuz.style(color, .Default, {})
 		if color == .Black do style.bg = .White // Hack para ler preto no fundo preto
 
-		ansuz.layout_box(
+		ansuz.begin_element(
 			ctx,
-			style,
-			{sizing = {.X = ansuz.grow(), .Y = ansuz.grow()}, alignment = {.Center, .Center}},
-			.Rounded,
+			{
+				box_style = .Rounded,
+				style = style,
+				layout = {
+					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+					alignment = {.Center, .Center},
+				},
+			},
 		)
-		ansuz.layout_text(ctx, names[i], style)
-		ansuz.layout_end_container(ctx)
+		ansuz.label(ctx, names[i], {style = style})
+		ansuz.end_element(ctx)
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Bright params
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)}, gap = 1},
 	)
@@ -129,55 +136,60 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 
 	for color, i in bright_colors {
 		style := ansuz.style(color, .Default, {})
-		ansuz.layout_box(
+		ansuz.begin_element(
 			ctx,
-			style,
-			{sizing = {.X = ansuz.grow(), .Y = ansuz.grow()}, alignment = {.Center, .Center}},
-			.Rounded,
+			{
+				box_style = .Rounded,
+				style = style,
+				layout = {
+					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+					alignment = {.Center, .Center},
+				},
+			},
 		)
-		ansuz.layout_text(ctx, names[i], style) // Reutiliza nomes
-		ansuz.layout_end_container(ctx)
+		ansuz.label(ctx, names[i], {style = style}) // Reutiliza nomes
+		ansuz.end_element(ctx)
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_styles_section :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"2. Styles & Modifiers",
-		ansuz.style(.White, .Default, {.Bold, .Underline}),
+		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)}, gap = 2},
 	)
 
-	ansuz.layout_text(ctx, "Normal", ansuz.default_style())
-	ansuz.layout_text(ctx, "Bold", ansuz.style(.Default, .Default, {.Bold}))
-	ansuz.layout_text(ctx, "Dim", ansuz.style(.Default, .Default, {.Dim}))
-	ansuz.layout_text(ctx, "Italic", ansuz.style(.Default, .Default, {.Italic}))
-	ansuz.layout_text(ctx, "Underline", ansuz.style(.Default, .Default, {.Underline}))
-	ansuz.layout_text(ctx, "Blink", ansuz.style(.Default, .Default, {.Blink}))
-	ansuz.layout_text(ctx, "Reverse", ansuz.style(.Default, .Default, {.Reverse}))
+	ansuz.label(ctx, "Normal", {style = ansuz.default_style()})
+	ansuz.label(ctx, "Bold", {style = ansuz.style(.Default, .Default, {.Bold})})
+	ansuz.label(ctx, "Dim", {style = ansuz.style(.Default, .Default, {.Dim})})
+	ansuz.label(ctx, "Italic", {style = ansuz.style(.Default, .Default, {.Italic})})
+	ansuz.label(ctx, "Underline", {style = ansuz.style(.Default, .Default, {.Underline})})
+	ansuz.label(ctx, "Blink", {style = ansuz.style(.Default, .Default, {.Blink})})
+	ansuz.label(ctx, "Reverse", {style = ansuz.style(.Default, .Default, {.Reverse})})
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_rgb_section :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"3. TrueColor (RGB) Gradients",
-		ansuz.style(.White, .Default, {.Bold, .Underline}),
+		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .TopToBottom, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(6)}, gap = 0},
 	)
 
 	// Gradiente 1: Vermelho -> Amarelo -> Verde
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
@@ -187,12 +199,12 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 		r := u8(255 * (1.0 - t))
 		g := u8(255 * t)
 		b := u8(0)
-		ansuz.layout_text(ctx, "█", ansuz.style(ansuz.rgb(r, g, b), .Default, {}))
+		ansuz.label(ctx, "█", {style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})})
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Gradiente 2: Azul -> Cyan -> Magenta
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
@@ -201,18 +213,17 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 		r := u8(255 * t) // 0 -> 255
 		g := u8(255 * t) // 0 -> 255
 		b := u8(255) // Fixo 255
-		// Azul(0,0,255) -> Branco(255,255,255) ?? Não, vamos fazer algo mais bonito
 		// Azul(0,0,255) -> Magenta(255,0,255)
 
 		r2 := u8(255 * t)
 		g2 := u8(0)
 		b2 := u8(255)
-		ansuz.layout_text(ctx, "█", ansuz.style(ansuz.rgb(r2, g2, b2), .Default, {}))
+		ansuz.label(ctx, "█", {style = ansuz.style(ansuz.rgb(r2, g2, b2), .Default, {})})
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Complex gradient text
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)}},
 	)
@@ -226,39 +237,43 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 
 		str_buf: [1]u8
 		str_buf[0] = text[i]
-		ansuz.layout_text(ctx, string(str_buf[:]), ansuz.style(ansuz.rgb(r, g, b), .Default, {}))
+		ansuz.label(
+			ctx,
+			string(str_buf[:]),
+			{style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})},
+		)
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_256_section :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_text(
+	ansuz.label(
 		ctx,
 		"4. 256-Color Palette (Color Cube & Grayscale)",
-		ansuz.style(.White, .Default, {.Bold, .Underline}),
+		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
 	// Color Cube Slice
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(2)}, gap = 0},
 	)
 	for i in 0 ..< 36 {
 		// Primeiras 36 cores do cubo (indices 16-51)
-		ansuz.layout_text(ctx, "■ ", ansuz.style(ansuz.color256(u8(16 + i)), .Default, {}))
+		ansuz.label(ctx, "■ ", {style = ansuz.style(ansuz.color256(u8(16 + i)), .Default, {})})
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 
 	// Grayscale ramp
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{direction = .LeftToRight, sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(2)}, gap = 0},
 	)
 	for i in 0 ..< 24 {
 		// Grayscale indices 232-255
-		ansuz.layout_text(ctx, "█ ", ansuz.style(ansuz.color256(u8(232 + i)), .Default, {}))
+		ansuz.label(ctx, "█ ", {style = ansuz.style(ansuz.color256(u8(232 + i)), .Default, {})})
 	}
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }

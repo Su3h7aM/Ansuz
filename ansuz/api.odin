@@ -36,6 +36,9 @@ Context :: struct {
 	// Allocator for internal allocations
 	allocator:            mem.Allocator,
 
+	// Theming
+	theme:                ^Theme,
+
 	// Focus state
 	focus_id:             u64,
 	last_focus_id:        u64,
@@ -43,6 +46,7 @@ Context :: struct {
 	prev_focusable_items: [dynamic]u64,
 	input_keys:           [dynamic]KeyEvent,
 }
+
 
 // ContextError represents errors during context operations
 ContextError :: enum {
@@ -99,6 +103,10 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 	// Initialize layout context
 	ctx.layout_ctx = init_layout_context(allocator)
 
+	// Initialize theme with defaults
+	ctx.theme = new(Theme, allocator)
+	ctx.theme^ = default_theme_full()
+
 	// Initialize reusable render buffer with pre-allocated capacity
 	// For 80x24 terminal with ANSI codes: ~1920 chars + styles, use 16KB for safety
 	render_buf, render_buf_err := strings.builder_make_len_cap(0, 16384, allocator)
@@ -111,6 +119,7 @@ init :: proc(allocator := context.allocator) -> (ctx: ^Context, err: ContextErro
 	ctx.focusable_items = make([dynamic]u64, allocator)
 	ctx.prev_focusable_items = make([dynamic]u64, allocator)
 	ctx.input_keys = make([dynamic]KeyEvent, allocator)
+
 
 	// Initial terminal setup
 	disable_auto_wrap()

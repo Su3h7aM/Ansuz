@@ -48,9 +48,8 @@ checkbox_state := false
 render_ui :: proc(ctx: ^ansuz.Context) {
 	ansuz.begin_layout(ctx)
 
-	// Root container using Clay-style open_element with defer pattern
-	// The @(deferred_out) attribute automatically calls close_element when scope exits
-	_ = ansuz.open_element(
+	// Root container
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -63,7 +62,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 	// Title using label()
 	ansuz.label(
 		ctx,
-		"Native Widgets Demo (Clay-style API)",
+		"Native Widgets Demo (Explicit API)",
 		{
 			style = ansuz.style(.BrightWhite, .Default, {.Bold, .Underline}),
 			sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
@@ -80,7 +79,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 	)
 
 	// Nested container for buttons
-	_ = ansuz.open_element(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -115,7 +114,9 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 	ansuz.widget_button(ctx, "Another Button")
 	ansuz.widget_button(ctx, "Exit")
 
-	// Note: close_element is called automatically via defer for both open_element calls
+	ansuz.end_element(ctx) // End Buttons Container
+
+	ansuz.end_element(ctx) // End Root Container
 
 	ansuz.end_layout(ctx)
 }

@@ -191,7 +191,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	ansuz.begin_layout(ctx)
 
 	// Container principal
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -205,55 +205,63 @@ render :: proc(ctx: ^ansuz.Context) {
 	render_file_list(ctx, height)
 	render_status_bar(ctx)
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx) // Fim Container Principal
 
 	ansuz.end_layout(ctx)
 }
 
 render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.BrightBlue, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
+			box_style = .Rounded,
+			style = ansuz.style(.BrightBlue, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+			},
 		},
-		.Rounded,
 	)
-	ansuz.layout_text(ctx, "File Explorer", ansuz.style(.BrightCyan, .Default, {.Bold}))
+	ansuz.label(ctx, "File Explorer", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
 	// Caminho atual (truncado se muito longo)
 	path_display := g_state.current_path
 	if len(path_display) > 60 {
 		path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
 	}
-	ansuz.layout_text(ctx, path_display, ansuz.style(.White, .Default, {}))
-	ansuz.layout_end_container(ctx)
+	ansuz.label(ctx, path_display, {style = ansuz.style(.White, .Default, {})})
+	ansuz.end_element(ctx)
 }
 
 render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.Yellow, .Default, {}),
 		{
-			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
-			overflow = .Hidden,
+			box_style = .Sharp,
+			style = ansuz.style(.Yellow, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+				overflow = .Hidden,
+			},
 		},
-		.Sharp,
 	)
 
 	if g_state.error_msg != "" {
-		ansuz.layout_text(ctx, g_state.error_msg, ansuz.style(.BrightRed, .Default, {.Bold}))
-		ansuz.layout_end_container(ctx)
+		ansuz.label(ctx, g_state.error_msg, {style = ansuz.style(.BrightRed, .Default, {.Bold})})
+		ansuz.end_element(ctx)
 		return
 	}
 
 	if len(g_state.entries) == 0 {
-		ansuz.layout_text(ctx, "(diretorio vazio)", ansuz.style(.BrightBlack, .Default, {.Dim}))
-		ansuz.layout_end_container(ctx)
+		ansuz.label(
+			ctx,
+			"(diretorio vazio)",
+			{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+		)
+		ansuz.end_element(ctx)
 		return
 	}
 
@@ -278,7 +286,7 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 
 		// Ícone e cor baseado no tipo
 		icon: string
-		color: ansuz.Ansi
+		color: ansuz.TerminalColor
 		if entry.is_dir {
 			icon = "[D]"
 			color = .BrightBlue
@@ -309,14 +317,14 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 			style = {.Bold}
 		}
 
-		ansuz.layout_text(ctx, line, ansuz.style(color, .Default, style))
+		ansuz.label(ctx, line, {style = ansuz.style(color, .Default, style)})
 	}
 
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx)
 }
 
 render_status_bar :: proc(ctx: ^ansuz.Context) {
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .LeftToRight,
@@ -347,8 +355,8 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 		info = " [Q/ESC] Sair"
 	}
 
-	ansuz.layout_text(ctx, info, ansuz.style(.BrightBlack, .Default, {.Dim}))
-	ansuz.layout_end_container(ctx)
+	ansuz.label(ctx, info, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+	ansuz.end_element(ctx)
 }
 
 format_size :: proc(bytes: i64) -> string {

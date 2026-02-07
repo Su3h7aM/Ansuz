@@ -42,7 +42,7 @@ render :: proc(ctx: ^ansuz.Context) {
 	ansuz.begin_layout(ctx)
 
 	// Container principal que preenche toda a tela
-	ansuz.layout_begin_container(
+	ansuz.begin_element(
 		ctx,
 		{
 			direction = .TopToBottom,
@@ -52,30 +52,32 @@ render :: proc(ctx: ^ansuz.Context) {
 	)
 
 	// Box com bordas arredondadas
-	ansuz.layout_box(
+	ansuz.begin_element(
 		ctx,
-		ansuz.style(.BrightCyan, .Default, {}),
 		{
-			sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
-			padding = ansuz.padding_all(1),
-			alignment = {.Center, .Center},
-			direction = .TopToBottom,
-			gap = 1,
+			box_style = .Rounded,
+			style = ansuz.style(.BrightCyan, .Default, {}),
+			layout = {
+				sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
+				padding = ansuz.padding_all(1),
+				alignment = {.Center, .Center},
+				direction = .TopToBottom,
+				gap = 1,
+			},
 		},
-		.Rounded,
 	)
+
 	// Título com estilo
-	ansuz.layout_text(ctx, "Hello, Ansuz!", ansuz.style(.BrightYellow, .Default, {.Bold}))
+	ansuz.label(ctx, "Hello, Ansuz!", {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
 
 	// Subtítulo
-	ansuz.layout_text(ctx, "Uma biblioteca TUI para Odin", ansuz.style(.White, .Default, {}))
+	ansuz.label(ctx, "Uma biblioteca TUI para Odin", {style = ansuz.style(.White, .Default, {})})
 
 	// Instruções
-	ansuz.layout_text(ctx, "[Q/ESC] sair", ansuz.style(.BrightBlack, .Default, {.Dim}))
+	ansuz.label(ctx, "[Q/ESC] sair", {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 
-	ansuz.layout_end_container(ctx)
-
-	ansuz.layout_end_container(ctx)
+	ansuz.end_element(ctx) // Fim do Box
+	ansuz.end_element(ctx) // Fim do Container Principal
 
 	ansuz.end_layout(ctx)
 }

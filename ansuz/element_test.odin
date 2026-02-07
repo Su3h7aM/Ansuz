@@ -180,3 +180,39 @@ test_element_layout_integration :: proc(t: ^testing.T) {
 
 	testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes (container + text)")
 }
+
+@(test)
+test_widget_theme_integration :: proc(t: ^testing.T) {
+	// Initialize minimal context
+	ctx := new(Context)
+	defer free(ctx)
+	defer delete(ctx.focusable_items) // Clean up focusable items allocated by register_focusable
+	ctx.layout_ctx = init_layout_context()
+	defer destroy_layout_context(&ctx.layout_ctx)
+
+
+	// Initialize theme
+	ctx.theme = new(Theme)
+	ctx.theme^ = default_theme_full()
+	defer free(ctx.theme)
+
+	// Customize theme
+	ctx.theme.button.prefix = "[CUSTOM] "
+
+	// Create button
+	reset_layout_context(&ctx.layout_ctx, Rect{0, 0, 80, 24})
+	widget_button(ctx, "Test")
+
+	// Check the last added node (widget_button adds one node for the element)
+	// element() adds a leaf node.
+	node := ctx.layout_ctx.nodes[0] // Should be the button
+
+	// Expected text: "[CUSTOM] Test"
+	expected := "[CUSTOM] Test"
+
+	testing.expect(
+		t,
+		node.render_cmd.text == expected,
+		"Button identifier should use theme prefix",
+	)
+}

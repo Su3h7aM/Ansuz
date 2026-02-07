@@ -7,9 +7,9 @@ import "core:mem"
 
 // Sizing rules for layout elements
 SizingType :: enum {
+	FitContent, // Size according to children or content (Default/0)
 	Fixed, // Fixed size in cells
 	Percent, // Percentage of parent's available space (0.0 to 1.0)
-	FitContent, // Size according to children or content
 	Grow, // Grow to fill remaining space
 }
 
@@ -200,6 +200,7 @@ _add_node :: proc(
 	config: LayoutConfig,
 	is_container: bool,
 ) -> LayoutNodeId {
+
 	parent_idx := len(l_ctx.stack) > 0 ? l_ctx.stack[len(l_ctx.stack) - 1] : INVALID_NODE
 
 	node := LayoutNode {
@@ -373,6 +374,7 @@ _rect_is_visible :: proc(rect: Rect) -> bool {
 }
 
 finish_layout :: proc(l_ctx: ^LayoutContext, ansuz_ctx: ^Context) {
+
 	if len(l_ctx.nodes) == 0 do return
 
 	// Pass 1: Measure `Fit`, Bottom-Up
@@ -404,11 +406,14 @@ _render_recursive :: proc(
 ) {
 	node := &l_ctx.nodes[int(node_idx)]
 
+
 	// Early exit: compute visible rect and skip if completely invisible
 	visible_rect := rect_intersection(node.final_rect, parent_clip)
 	if !_rect_is_visible(visible_rect) {
+
 		return // Element is completely outside clip bounds, skip entirely
 	}
+
 
 	// Set clip rect for rendering
 	set_clip_rect(&ansuz_ctx.buffer, parent_clip)

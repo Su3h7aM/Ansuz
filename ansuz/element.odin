@@ -55,18 +55,17 @@ element_default :: proc() -> Element {
 // Element API - Clay-style immediate mode element creation
 // ============================================================================
 
-// open_element starts a container element.
-// Returns the context for use with defer pattern via close_element.
-@(deferred_out = close_element)
-open_element :: proc(ctx: ^Context, el: Element = {}) -> ^Context {
+// begin_element starts a container element.
+// Must be paired with end_element().
+begin_element :: proc(ctx: ^Context, el: Element = {}) {
 	_process_element_start(ctx, el, true)
-	return ctx
 }
 
-// close_element ends a container element (called automatically via defer)
-close_element :: proc(ctx: ^Context) {
+// end_element ends the current container element.
+end_element :: proc(ctx: ^Context) {
 	end_container(&ctx.layout_ctx)
 }
+
 
 // element adds a leaf element (non-container)
 element :: proc(ctx: ^Context, el: Element = {}) {
@@ -164,20 +163,17 @@ widget_button :: proc(ctx: ^Context, lbl: string) -> bool {
 	focused := is_focused(ctx, elem_id)
 	interaction := interact(ctx, elem_id, Rect{})
 
-	// Style based on state
-	btn_style := style(.White, .Default, {})
-	prefix := "[ ] "
-	if focused {
-		btn_style = style(.Black, .BrightCyan, {.Bold})
-		prefix = "[*] "
-	}
+	// Get theme for current state
+	theme := get_button_theme(ctx.theme, focused)
 
 	element(
 		ctx,
 		Element {
-			content = fmt.tprintf("%s%s", prefix, lbl),
-			style = btn_style,
+			content = fmt.tprintf("%s%s", theme.prefix, lbl),
+			style = theme.style,
 			sizing = {.X = grow(), .Y = fixed(1)},
+			focusable = true,
+			id_source = lbl,
 		},
 	)
 
@@ -197,19 +193,17 @@ widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool {
 		checked^ = !checked^
 	}
 
-	// Style
-	chk_style := style(.White, .Default, {})
-	icon := checked^ ? "[x]" : "[ ]"
-	if focused {
-		chk_style = style(.Black, .BrightCyan, {.Bold})
-	}
+	// Get theme for current state
+	theme := get_checkbox_theme(ctx.theme, checked^, focused)
 
 	element(
 		ctx,
 		Element {
-			content = fmt.tprintf("%s %s", icon, lbl),
-			style = chk_style,
+			content = fmt.tprintf("%s%s", theme.prefix, lbl),
+			style = theme.style,
 			sizing = {.X = grow(), .Y = fixed(1)},
+			focusable = true,
+			id_source = lbl,
 		},
 	)
 
