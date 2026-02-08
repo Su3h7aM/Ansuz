@@ -30,14 +30,14 @@ interact :: proc(ctx: ^Context, id: u64, rect: Rect) -> Interaction {
 }
 
 // button renders a button widget and returns true if clicked
-button :: proc(ctx: ^Context, label: string) -> bool {
-	id := id(ctx, label)
-	register_focusable(ctx, id)
+button :: proc(ctx: ^Context, label_text: string) -> bool {
+	button_id := id(ctx, label_text)
+	register_focusable(ctx, button_id)
 
-	focused := is_focused(ctx, id)
+	focused := is_focused(ctx, button_id)
 
 	// Create dummy rect for interaction
-	interaction := interact(ctx, id, Rect{})
+	interaction := interact(ctx, button_id, Rect{})
 
 	// Determine style
 	btn_style := style(.White, .Default, {})
@@ -49,23 +49,18 @@ button :: proc(ctx: ^Context, label: string) -> bool {
 	}
 
 	// Render
-	layout_text(
-		ctx,
-		fmt.tprintf("%s%s", prefix, label),
-		btn_style,
-		{sizing = {.X = grow(), .Y = fixed(1)}},
-	)
+	label(ctx, fmt.tprintf("%s%s", prefix, label_text), Element{sizing = {.X = grow(), .Y = fixed(1)}, style = btn_style})
 
 	return interaction == .Clicked
 }
 
 // checkbox renders a checkbox widget
-checkbox :: proc(ctx: ^Context, label: string, checked: ^bool) -> bool {
-	id := id(ctx, label)
-	register_focusable(ctx, id)
+checkbox :: proc(ctx: ^Context, label_str: string, checked: ^bool) -> bool {
+	check_id := id(ctx, label_str)
+	register_focusable(ctx, check_id)
 
-	focused := is_focused(ctx, id)
-	interaction := interact(ctx, id, Rect{})
+	focused := is_focused(ctx, check_id)
+	interaction := interact(ctx, check_id, Rect{})
 
 	if interaction == .Clicked {
 		checked^ = !checked^
@@ -80,12 +75,7 @@ checkbox :: proc(ctx: ^Context, label: string, checked: ^bool) -> bool {
 	}
 
 	// Render
-	layout_text(
-		ctx,
-		fmt.tprintf("%s %s", icon, label),
-		chk_style,
-		{sizing = {.X = grow(), .Y = fixed(1)}},
-	)
+	label(ctx, fmt.tprintf("%s %s", icon, label_str), Element{sizing = {.X = grow(), .Y = fixed(1)}, style = chk_style})
 
 	return interaction == .Clicked
 }

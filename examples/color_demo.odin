@@ -46,12 +46,11 @@ render :: proc(ctx: ^ansuz.Context) {
 		}, proc(ctx: ^ansuz.Context) {
 			// Título
 			ansuz.box(ctx, {
-				style = ansuz.style(.BrightCyan, .Default, {.Bold}),
 				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
 				alignment = {.Center, .Center},
 				direction = .TopToBottom,
-			}, .Double, proc(ctx: ^ansuz.Context) {
-				ansuz.label(ctx, "ANSUZ COLOR SYSTEM DEMO", {style = ansuz.default_style()})
+			}, ansuz.style(.BrightCyan, .Default, {.Bold}), .Double, proc(ctx: ^ansuz.Context) {
+				ansuz.label(ctx, "ANSUZ COLOR SYSTEM DEMO", ansuz.Element{style = ansuz.default_style()})
 			})
 
 			// Seção 1: Cores ANSI (16 cores)
@@ -67,7 +66,7 @@ render :: proc(ctx: ^ansuz.Context) {
 			render_256_section(ctx)
 
 			// Rodapé
-			ansuz.label(ctx, "[Q/ESC] Quit", {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+			ansuz.label(ctx, "[Q/ESC] Quit", ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 		})
 	})
 }
@@ -76,32 +75,28 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 	ansuz.label(
 		ctx,
 		"1. Standard ANSI Colors (16-color palette)",
-		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
+		ansuz.Element{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
+	// Normal colors
 	ansuz.hstack(ctx, {
 		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)},
 		gap = 1,
 	}, proc(ctx: ^ansuz.Context) {
-		// Normal params
 		colors := [?]ansuz.Ansi{.Black, .Red, .Green, .Yellow, .Blue, .Magenta, .Cyan, .White}
 		names := [?]string{"Blk", "Red", "Grn", "Yel", "Blu", "Mag", "Cyn", "Wht"}
 
 		for color, i in colors {
-			style := ansuz.style(color, .Default, {})
-			if color == .Black do style.bg = .White // Hack para ler preto no fundo preto
-
-			ansuz.box(ctx, {
-				style = style,
+			box_style := ansuz.style(color, .Default, {})
+			if color == .Black do box_style.bg = .White
+			ansuz.label(ctx, names[i], ansuz.Element{
+				style = box_style,
 				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-				alignment = {.Center, .Center},
-			}, .Rounded, proc(ctx: ^ansuz.Context) {
-				ansuz.label(ctx, names[i], {style = style})
 			})
 		}
 	})
 
-	// Bright params
+	// Bright colors
 	ansuz.hstack(ctx, {
 		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(4)},
 		gap = 1,
@@ -116,15 +111,13 @@ render_ansi_section :: proc(ctx: ^ansuz.Context) {
 			.BrightCyan,
 			.BrightWhite,
 		}
+		names := [?]string{"Blk", "Red", "Grn", "Yel", "Blu", "Mag", "Cyn", "Wht"}
 
 		for color, i in bright_colors {
-			style := ansuz.style(color, .Default, {})
-			ansuz.box(ctx, {
-				style = style,
+			box_style := ansuz.style(color, .Default, {})
+			ansuz.label(ctx, names[i], ansuz.Element{
+				style = box_style,
 				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-				alignment = {.Center, .Center},
-			}, .Rounded, proc(ctx: ^ansuz.Context) {
-				ansuz.label(ctx, names[i], {style = style}) // Reutiliza nomes
 			})
 		}
 	})
@@ -134,20 +127,20 @@ render_styles_section :: proc(ctx: ^ansuz.Context) {
 	ansuz.label(
 		ctx,
 		"2. Styles & Modifiers",
-		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
+		ansuz.Element{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
 	ansuz.hstack(ctx, {
 		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
 		gap = 2,
 	}, proc(ctx: ^ansuz.Context) {
-		ansuz.label(ctx, "Normal", {style = ansuz.default_style()})
-		ansuz.label(ctx, "Bold", {style = ansuz.style(.Default, .Default, {.Bold})})
-		ansuz.label(ctx, "Dim", {style = ansuz.style(.Default, .Default, {.Dim})})
-		ansuz.label(ctx, "Italic", {style = ansuz.style(.Default, .Default, {.Italic})})
-		ansuz.label(ctx, "Underline", {style = ansuz.style(.Default, .Default, {.Underline})})
-		ansuz.label(ctx, "Blink", {style = ansuz.style(.Default, .Default, {.Blink})})
-		ansuz.label(ctx, "Reverse", {style = ansuz.style(.Default, .Default, {.Reverse})})
+		ansuz.label(ctx, "Normal", ansuz.Element{style = ansuz.default_style()})
+		ansuz.label(ctx, "Bold", ansuz.Element{style = ansuz.style(.Default, .Default, {.Bold})})
+		ansuz.label(ctx, "Dim", ansuz.Element{style = ansuz.style(.Default, .Default, {.Dim})})
+		ansuz.label(ctx, "Italic", ansuz.Element{style = ansuz.style(.Default, .Default, {.Italic})})
+		ansuz.label(ctx, "Underline", ansuz.Element{style = ansuz.style(.Default, .Default, {.Underline})})
+		ansuz.label(ctx, "Blink", ansuz.Element{style = ansuz.style(.Default, .Default, {.Blink})})
+		ansuz.label(ctx, "Reverse", ansuz.Element{style = ansuz.style(.Default, .Default, {.Reverse})})
 	})
 }
 
@@ -155,7 +148,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 	ansuz.label(
 		ctx,
 		"3. TrueColor (RGB) Gradients",
-		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
+		ansuz.Element{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
 	ansuz.vstack(ctx, {
@@ -170,7 +163,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 				r := u8(255 * (1.0 - t))
 				g := u8(255 * t)
 				b := u8(0)
-				ansuz.label(ctx, "█", {style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})})
+				ansuz.label(ctx, "█", ansuz.Element{style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})})
 			}
 		})
 
@@ -181,7 +174,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 				r := u8(255 * t)
 				g := u8(0)
 				b := u8(255)
-				ansuz.label(ctx, "█", {style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})})
+				ansuz.label(ctx, "█", ansuz.Element{style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})})
 			}
 		})
 
@@ -200,7 +193,7 @@ render_rgb_section :: proc(ctx: ^ansuz.Context) {
 				ansuz.label(
 					ctx,
 					string(str_buf[:]),
-					{style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})},
+					ansuz.Element{style = ansuz.style(ansuz.rgb(r, g, b), .Default, {})},
 				)
 			}
 		})
@@ -211,7 +204,7 @@ render_256_section :: proc(ctx: ^ansuz.Context) {
 	ansuz.label(
 		ctx,
 		"4. 256-Color Palette (Color Cube & Grayscale)",
-		{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
+		ansuz.Element{style = ansuz.style(.White, .Default, {.Bold, .Underline})},
 	)
 
 	// Color Cube Slice
@@ -221,7 +214,7 @@ render_256_section :: proc(ctx: ^ansuz.Context) {
 	}, proc(ctx: ^ansuz.Context) {
 		for i in 0 ..< 36 {
 			// Primeiras 36 cores do cubo (indices 16-51)
-			ansuz.label(ctx, "■ ", {style = ansuz.style(ansuz.color256(u8(16 + i)), .Default, {})})
+			ansuz.label(ctx, "■ ", ansuz.Element{style = ansuz.style(ansuz.color256(u8(16 + i)), .Default, {})})
 		}
 	})
 
@@ -232,7 +225,7 @@ render_256_section :: proc(ctx: ^ansuz.Context) {
 	}, proc(ctx: ^ansuz.Context) {
 		for i in 0 ..< 24 {
 			// Grayscale indices 232-255
-			ansuz.label(ctx, "█ ", {style = ansuz.style(ansuz.color256(u8(232 + i)), .Default, {})})
+			ansuz.label(ctx, "█ ", ansuz.Element{style = ansuz.style(ansuz.color256(u8(232 + i)), .Default, {})})
 		}
 	})
 }

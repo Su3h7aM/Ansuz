@@ -49,25 +49,24 @@ render :: proc(ctx: ^ansuz.Context) {
 		}, proc(ctx: ^ansuz.Context) {
 			// Box com bordas arredondadas
 			ansuz.box(ctx, {
-				style = ansuz.style(.BrightCyan, .Default, {}),
 				sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
 				padding = ansuz.padding_all(1),
 				alignment = {.Center, .Center},
 				direction = .TopToBottom,
 				gap = 1,
-			}, .Rounded, proc(ctx: ^ansuz.Context) {
+			}, ansuz.style(.BrightCyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
 				// Título com estilo
-				ansuz.label(ctx, "Hello, Ansuz!", {
+				ansuz.label(ctx, "Hello, Ansuz!", ansuz.Element{
 					style = ansuz.style(.BrightYellow, .Default, {.Bold}),
 				})
 
 				// Subtítulo
-				ansuz.label(ctx, "Uma biblioteca TUI para Odin", {
+				ansuz.label(ctx, "Uma biblioteca TUI para Odin", ansuz.Element{
 					style = ansuz.style(.White, .Default, {}),
 				})
 
 				// Instruções
-				ansuz.label(ctx, "[Q/ESC] sair", {
+				ansuz.label(ctx, "[Q/ESC] sair", ansuz.Element{
 					style = ansuz.style(.BrightBlack, .Default, {.Dim}),
 				})
 			})

@@ -19,9 +19,11 @@ main :: proc() {
 	ansuz.run(
 		ctx,
 		proc(ctx: ^ansuz.Context) -> bool {
-			// 1. Process Input
-			events := ansuz.poll_events(ctx)
-			for event in events {
+			// 1. Render UI first to register widgets as focusable
+			render_ui(ctx)
+
+			// 2. Process events AFTER rendering (so handle_tab_navigation works)
+			for event in ansuz.poll_events(ctx) {
 				if ansuz.is_quit_key(event) {
 					return false
 				}
@@ -36,7 +38,6 @@ main :: proc() {
 				}
 			}
 
-			render_ui(ctx)
 			return true
 		},
 	)
@@ -59,7 +60,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 			ansuz.label(
 				ctx,
 				"Native Widgets Demo (Scoped API)",
-				{
+				ansuz.Element{
 					style = ansuz.style(.BrightWhite, .Default, {.Bold, .Underline}),
 					sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
 				},
@@ -68,7 +69,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 			ansuz.label(
 				ctx,
 				"Press TAB to cycle focus. Enter/Space to activate.",
-				{
+				ansuz.Element{
 					style = ansuz.style(.White, .Default, {}),
 					sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
 				},
@@ -96,7 +97,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 					ansuz.label(
 						ctx,
 						"  (Toggle is ON)",
-						{
+						ansuz.Element{
 							style = ansuz.style(.Green, .Default, {}),
 							sizing = {.X = ansuz.fit(), .Y = ansuz.fixed(1)},
 						},

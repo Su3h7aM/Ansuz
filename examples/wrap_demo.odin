@@ -67,11 +67,10 @@ main :: proc() {
 
 					// Flexible Box with Wrapped Text
 					ansuz.box(ctx, {
-						style = ansuz.style(.Green, .Default, {}),
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 						padding = {1, 1, 1, 1},
-					}, .Rounded, proc(ctx: ^ansuz.Context) {
+					}, ansuz.style(.Green, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
 						ansuz.label(
 							ctx,
 							"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
@@ -97,12 +96,11 @@ main :: proc() {
 
 					// Fixed Width Column Test
 					ansuz.box(ctx, {
-						style = ansuz.style(.Blue, .Default, {}),
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.fixed(40), .Y = ansuz.fit()},
 						padding = {1, 1, 0, 0},
 						gap = 0,
-					}, .Rounded, proc(ctx: ^ansuz.Context) {
+					}, ansuz.style(.Blue, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
 						ansuz.label(
 							ctx,
 							"Fixed Width (40) Column with Wrapping",

@@ -187,8 +187,6 @@ go_up :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	height := ctx.height
-
 	// API 100% scoped - sem begin/end explícitos
 	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
 		// Container principal
@@ -199,7 +197,7 @@ render :: proc(ctx: ^ansuz.Context) {
 			gap = 0,
 		}, proc(ctx: ^ansuz.Context) {
 			render_header(ctx)
-			render_file_list(ctx, height)
+			render_file_list(ctx, ctx.height)
 			render_status_bar(ctx)
 		})
 	})
@@ -207,32 +205,42 @@ render :: proc(ctx: ^ansuz.Context) {
 
 render_header :: proc(ctx: ^ansuz.Context) {
 	ansuz.box(ctx, {
-		style = ansuz.style(.BrightBlue, .Default, {}),
 		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
 		padding = {1, 1, 1, 1},
 		direction = .TopToBottom,
-	}, .Rounded, proc(ctx: ^ansuz.Context) {
-		ansuz.label(ctx, "File Explorer", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
+	}, ansuz.style(.BrightBlue, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
+		ansuz.label(ctx, "File Explorer", ansuz.Element{style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
 		// Caminho atual (truncado se muito longo)
 		path_display := g_state.current_path
 		if len(path_display) > 60 {
 			path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
 		}
-		ansuz.label(ctx, path_display, {style = ansuz.style(.White, .Default, {})})
+		ansuz.label(ctx, path_display, ansuz.Element{style = ansuz.style(.White, .Default, {})})
 	})
 }
 
 render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
+	// Calcula janela visível fora do callback (tem acesso aos parâmetros)
+	visible_lines := screen_height - 8
+	if visible_lines < 3 do visible_lines = 3
+
+	// Ajusta scroll para manter seleção visível
+	if g_state.selected < g_state.scroll_offset {
+		g_state.scroll_offset = g_state.selected
+	}
+	if g_state.selected >= g_state.scroll_offset + visible_lines {
+		g_state.scroll_offset = g_state.selected - visible_lines + 1
+	}
+
 	ansuz.box(ctx, {
-		style = ansuz.style(.Yellow, .Default, {}),
 		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 		padding = {1, 1, 1, 1},
 		direction = .TopToBottom,
 		overflow = .Hidden,
-	}, .Sharp, proc(ctx: ^ansuz.Context) {
+	}, ansuz.style(.Yellow, .Default, {}), .Sharp, proc(ctx: ^ansuz.Context) {
 		if g_state.error_msg != "" {
-			ansuz.label(ctx, g_state.error_msg, {style = ansuz.style(.BrightRed, .Default, {.Bold})})
+			ansuz.label(ctx, g_state.error_msg, ansuz.Element{style = ansuz.style(.BrightRed, .Default, {.Bold})})
 			return
 		}
 
@@ -240,26 +248,15 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 			ansuz.label(
 				ctx,
 				"(diretorio vazio)",
-				{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+				ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
 			)
 			return
 		}
 
-		// Calcula janela visível (considerando header + status = ~6 linhas)
-		visible_lines := screen_height - 8
-		if visible_lines < 3 do visible_lines = 3
-
-		// Ajusta scroll para manter seleção visível
-		if g_state.selected < g_state.scroll_offset {
-			g_state.scroll_offset = g_state.selected
-		}
-		if g_state.selected >= g_state.scroll_offset + visible_lines {
-			g_state.scroll_offset = g_state.selected - visible_lines + 1
-		}
-
-		// Renderiza entradas visíveis
+		// Renderiza entradas (usa ctx.height como limite aproximado)
+		max_visible := min(len(g_state.entries), g_state.scroll_offset + 50) // Max 50 items
 		for i := g_state.scroll_offset;
-		    i < min(len(g_state.entries), g_state.scroll_offset + visible_lines);
+		    i < max_visible;
 		    i += 1 {
 			entry := g_state.entries[i]
 			is_selected := i == g_state.selected
@@ -292,12 +289,12 @@ render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
 
 			line := fmt.tprintf("%s%s %-40s %s", selector, icon, entry.name, size_str)
 
-			style: ansuz.StyleFlags = {}
+			style_flags: ansuz.StyleFlags = {}
 			if is_selected {
-				style = {.Bold}
+				style_flags = {.Bold}
 			}
 
-			ansuz.label(ctx, line, {style = ansuz.style(color, .Default, style)})
+			ansuz.label(ctx, line, ansuz.Element{style = ansuz.style(color, .Default, style_flags)})
 		}
 	})
 }
@@ -330,7 +327,7 @@ render_status_bar :: proc(ctx: ^ansuz.Context) {
 			info = " [Q/ESC] Sair"
 		}
 
-		ansuz.label(ctx, info, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+		ansuz.label(ctx, info, ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 	})
 }
 

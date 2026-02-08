@@ -46,7 +46,7 @@ container :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context)) {
 // box - Creates a bordered box container
 // Automatically adds padding for the border so content doesn't overlap it.
 // The body callback is called to add child elements inside the box.
-box :: proc(ctx: ^Context, config: LayoutConfig, box_style: BoxStyle, body: proc(^Context)) {
+box :: proc(ctx: ^Context, config: LayoutConfig, style: Style, box_style: BoxStyle, body: proc(^Context)) {
 	// Automatically add padding for the border
 	modified_config := config
 	modified_config.padding.left += 1
@@ -57,7 +57,7 @@ box :: proc(ctx: ^Context, config: LayoutConfig, box_style: BoxStyle, body: proc
 	node_idx := begin_container(&ctx.layout_ctx, modified_config)
 	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand{
 		type      = .Box,
-		style     = config.style,
+		style     = style,
 		box_style = box_style,
 	}
 	body(ctx)
@@ -83,11 +83,11 @@ hstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context)) {
 // rect - Creates a filled rectangular container
 // Automatically applies the fill character to the entire container area.
 // The body callback is called to add child elements (they will overlay the fill).
-rect :: proc(ctx: ^Context, config: LayoutConfig, char: rune, body: proc(^Context)) {
+rect :: proc(ctx: ^Context, config: LayoutConfig, style: Style, char: rune, body: proc(^Context)) {
 	node_idx := begin_container(&ctx.layout_ctx, config)
 	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand{
 		type  = .Rect,
-		style = config.style,
+		style = style,
 		char  = char,
 	}
 	body(ctx)

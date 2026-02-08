@@ -443,13 +443,13 @@ _render_recursive :: proc(
 			w := max(0, cmd.rect.w)
 			h := max(0, cmd.rect.h)
 			if w > 0 && h > 0 {
-				box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
+				_box(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.style, cmd.box_style)
 			}
 		case .Rect:
 			w := max(0, cmd.rect.w)
 			h := max(0, cmd.rect.h)
 			if w > 0 && h > 0 {
-				rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
+				_rect(ansuz_ctx, cmd.rect.x, cmd.rect.y, w, h, cmd.char, cmd.style)
 			}
 		}
 	}

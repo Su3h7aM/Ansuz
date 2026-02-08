@@ -328,13 +328,13 @@ text :: proc(ctx: ^Context, x, y: int, content: string, style: Style) {
     write_string(&ctx.buffer, x, y, content, style.fg, style.bg, style.flags)
 }
 
-// box draws a bordered box
-box :: proc(ctx: ^Context, x, y, width, height: int, style: Style, box_style: BoxStyle = .Sharp) {
+// _box draws a bordered box (internal use by layout engine)
+_box :: proc(ctx: ^Context, x, y, width, height: int, style: Style, box_style: BoxStyle = .Sharp) {
     draw_box(&ctx.buffer, x, y, width, height, style.fg, style.bg, style.flags, box_style)
 }
 
-// rect fills a rectangular region with a character
-rect :: proc(ctx: ^Context, x, y, width, height: int, char: rune, style: Style) {
+// _rect fills a rectangular region with a character (internal use by layout engine)
+_rect :: proc(ctx: ^Context, x, y, width, height: int, char: rune, style: Style) {
     fill_rect(&ctx.buffer, x, y, width, height, char, style.fg, style.bg, style.flags)
 }
 
@@ -381,14 +381,21 @@ register_focusable :: proc(ctx: ^Context, id: u64) {
 
 // handle_tab_navigation processes Tab/Shift+Tab to cycle focus
 // Returns true if focus was changed
+// NOTE: Falls back to current frame's focusable_items if prev_focusable_items is empty (first frame)
 handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
-    if len(ctx.prev_focusable_items) == 0 {
+    // Use prev_focusable_items if available, otherwise fallback to current frame's items
+    items := ctx.prev_focusable_items
+    if len(items) == 0 && len(ctx.focusable_items) > 0 {
+        items = ctx.focusable_items
+    }
+
+    if len(items) == 0 {
         return false
     }
 
     // Find current index
     idx := -1
-    for id, i in ctx.prev_focusable_items {
+    for id, i in items {
         if id == ctx.focus_id {
             idx = i
             break
@@ -399,7 +406,7 @@ handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
     if idx == -1 {
         // Not currently focused, or focused item gone -> start at 0 (or end if reverse)
         if reverse {
-            next_idx = len(ctx.prev_focusable_items) - 1
+            next_idx = len(items) - 1
         } else {
             next_idx = 0
         }
@@ -408,17 +415,17 @@ handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
         if reverse {
             next_idx = idx - 1
             if next_idx < 0 {
-                next_idx = len(ctx.prev_focusable_items) - 1
+                next_idx = len(items) - 1
             }
         } else {
             next_idx = idx + 1
-            if next_idx >= len(ctx.prev_focusable_items) {
+            if next_idx >= len(items) {
                 next_idx = 0
             }
         }
     }
 
-    new_id := ctx.prev_focusable_items[next_idx]
+    new_id := items[next_idx]
     set_focus(ctx, new_id)
     return true
 }

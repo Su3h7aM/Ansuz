@@ -149,12 +149,11 @@ render :: proc(ctx: ^ansuz.Context) {
 
 render_cpu_panel :: proc(ctx: ^ansuz.Context) {
 	ansuz.box(ctx, {
-		style = ansuz.style(.Cyan, .Default, {}),
 		sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 		padding = {1, 1, 1, 1},
 		direction = .TopToBottom,
 		gap = 0,
-	}, .Rounded, proc(ctx: ^ansuz.Context) {
+	}, ansuz.style(.Cyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
 		// Título
 		ansuz.label(ctx, "󰻠 CPU", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
@@ -172,12 +171,11 @@ render_cpu_panel :: proc(ctx: ^ansuz.Context) {
 
 render_memory_panel :: proc(ctx: ^ansuz.Context) {
 	ansuz.box(ctx, {
-		style = ansuz.style(.Magenta, .Default, {}),
 		sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
 		padding = {1, 1, 1, 1},
 		direction = .TopToBottom,
 		gap = 0,
-	}, .Rounded, proc(ctx: ^ansuz.Context) {
+	}, ansuz.style(.Magenta, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
 		// Título
 		ansuz.label(ctx, "󰍛 Memory", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
 
@@ -206,12 +204,11 @@ render_memory_panel :: proc(ctx: ^ansuz.Context) {
 
 render_processes_panel :: proc(ctx: ^ansuz.Context) {
 	ansuz.box(ctx, {
-		style = ansuz.style(.Yellow, .Default, {}),
 		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 		padding = {1, 1, 1, 1},
 		direction = .TopToBottom,
 		gap = 0,
-	}, .Sharp, proc(ctx: ^ansuz.Context) {
+	}, ansuz.style(.Yellow, .Default, {}), .Sharp, proc(ctx: ^ansuz.Context) {
 		// Título
 		ansuz.label(ctx, "󰓹 Processes", {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
 
