@@ -188,8 +188,8 @@ begin_frame :: proc(ctx: ^Context) {
     ctx.focusable_items = temp
     clear(&ctx.focusable_items)
 
-    // Clear input keys for new frame
-    clear(&ctx.input_keys)
+    // NOTE: input_keys is cleared in poll_events() before adding new keys,
+    // NOT here. This allows the pattern: poll_events() -> render() -> process events
 }
 
 
@@ -223,6 +223,9 @@ end_frame :: proc(ctx: ^Context) {
     ctx.last_frame_time = time.diff(ctx.frame_start_time, frame_end_time)
 
     ctx.frame_count += 1
+
+    // Clear input keys at the END of frame (after all widgets have checked them)
+    clear(&ctx.input_keys)
 }
 
 // run executes the event-driven main loop
@@ -281,7 +284,13 @@ run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
 // poll_events reads and parses input events from the terminal
 // Returns a slice of events that occurred since last poll
 // Events are consumed from the internal buffer
+// NOTE: This clears input_keys before reading, so call BEFORE rendering
 poll_events :: proc(ctx: ^Context) -> []Event {
+    // Clear previous frame's input keys before capturing new ones
+    // This must be done here (not in begin_frame) to allow the pattern:
+    // poll_events() -> render_ui() -> process events
+    clear(&ctx.input_keys)
+
     // Read raw input and parse into events
     // This is a simplified version - production would buffer partial sequences
     events: [dynamic]Event

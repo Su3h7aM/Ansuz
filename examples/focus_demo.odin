@@ -2,8 +2,26 @@ package examples
 
 import ansuz "../ansuz"
 import "core:fmt"
+import "core:os"
+
+// Global log file for debugging
+g_log_file: os.Handle
+
+log_debug :: proc(msg: string) {
+	if g_log_file != os.INVALID_HANDLE {
+		fmt.fprintln(g_log_file, msg)
+		os.flush(g_log_file)
+	}
+}
 
 main :: proc() {
+	// Open debug log file
+	log_file, log_err := os.open("/tmp/focus_demo_debug.log", os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o644)
+	if log_err == os.ERROR_NONE {
+		g_log_file = log_file
+		defer os.close(g_log_file)
+	}
+
 	// Initialize context
 	ctx, err := ansuz.init()
 	if err != .None {
@@ -19,11 +37,20 @@ main :: proc() {
 	ansuz.run(
 		ctx,
 		proc(ctx: ^ansuz.Context) -> bool {
-			// 1. Render UI first to register widgets as focusable
+			// IMPORTANT: poll_events() clears input_keys and captures new keys.
+			// Widgets check input_keys during render for Enter/Space activation.
+			// So we MUST call poll_events() BEFORE render_ui().
+			events := ansuz.poll_events(ctx)
+
+			// Render UI - widgets will check input_keys for activation
 			render_ui(ctx)
 
-			// 2. Process events AFTER rendering (so handle_tab_navigation works)
-			for event in ansuz.poll_events(ctx) {
+			// Process events AFTER rendering
+			// TAB navigation uses prev_focusable_items (from last frame)
+			log_debug(fmt.tprintf("DEBUG: Processing %d events", len(events)))
+			for event, i in events {
+				log_debug(fmt.tprintf("DEBUG: Event %d type", i))
+				
 				if ansuz.is_quit_key(event) {
 					return false
 				}
@@ -31,9 +58,15 @@ main :: proc() {
 				// Handle Tab key
 				#partial switch e in event {
 				case ansuz.KeyEvent:
+					log_debug(fmt.tprintf("DEBUG: Key pressed: %v", e.key))
 					if e.key == .Tab {
+						log_debug("DEBUG: TAB detected!")
 						shift_held := .Shift in e.modifiers
-						ansuz.handle_tab_navigation(ctx, shift_held)
+						result := ansuz.handle_tab_navigation(ctx, shift_held)
+						log_debug(fmt.tprintf("DEBUG: handle_tab_navigation returned: %v", result))
+						log_debug(fmt.tprintf("DEBUG: focus_id: %d", ctx.focus_id))
+						log_debug(fmt.tprintf("DEBUG: prev_focusable_items count: %d", len(ctx.prev_focusable_items)))
+						log_debug(fmt.tprintf("DEBUG: focusable_items count: %d", len(ctx.focusable_items)))
 					}
 				}
 			}
