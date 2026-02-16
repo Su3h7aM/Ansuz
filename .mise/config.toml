@@ -1,2 +1,4 @@
 [tools]
+"github:DanielGavin/ols" = "latest"
+"go:github.com/steveyegge/beads/cmd/bd" = "latest"
 odin = "latest"
