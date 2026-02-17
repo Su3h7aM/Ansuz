@@ -21,21 +21,20 @@ main :: proc() {
 	}
 	defer ansuz.shutdown(ctx)
 
-	ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+	for {
 		for event in ansuz.poll_events(ctx) {
-			if ansuz.is_quit_key(event) {
-				return false
-			}
+			if ansuz.is_quit_key(event) do return
 		}
 
-		render(ctx)
-		return true
-	})
+		if ansuz.render(ctx) {
+			render(ctx)
+		}
+
+		ansuz.wait_for_event(ctx)
+	}
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API scoped com @(deferred_in_out)
-	if ansuz.layout(ctx) {
 		// Container Principal
 		if ansuz.container(ctx, {
 			direction = .TopToBottom,
@@ -211,5 +210,4 @@ render :: proc(ctx: ^ansuz.Context) {
 			// Rodapé
 			ansuz.label(ctx, "[Q/ESC] Quit", ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 		}
-	}
 }

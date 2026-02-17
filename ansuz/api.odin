@@ -159,22 +159,31 @@ shutdown :: proc(ctx: ^Context) {
     free(ctx, ctx.allocator)
 }
 
-// begin_frame starts a new frame
-// Call this at the beginning of your render loop
-// In immediate mode, we clear the entire buffer each frame
-begin_frame :: proc(ctx: ^Context) {
+// render starts and completes a full frame using @(deferred_in_out).
+// This is the single entry point for rendering a frame.
+// The deferred _scoped_end_render runs automatically when the scope exits,
+// processing layout and flushing output to the terminal.
+//
+// Usage:
+//   if ansuz.render(ctx) {
+//       if ansuz.container(ctx, { ... }) {
+//           ansuz.label(ctx, "Hello!")
+//       }
+//   }
+//
+@(deferred_in_out = _scoped_end_render)
+render :: proc(ctx: ^Context) -> bool {
+    // --- Frame setup ---
+
     // Record frame start time for FPS/frame time calculation
     ctx.frame_start_time = time.now()
 
     // Clear per-frame temporary allocations (strings from fmt.tprintf, etc.)
-    // This uses Odin's built-in scratch arena allocator
     free_all(context.temp_allocator)
 
-    // Check for terminal size changes (every frame)
-    // Since we now use ioctl() which is non-blocking, this is safe and efficient
+    // Check for terminal size changes
     current_width, current_height, size_err := get_terminal_size()
     if size_err == .None && (current_width != ctx.width || current_height != ctx.height) {
-        // Terminal was resized - update context
         _handle_resize(ctx, current_width, current_height)
     }
 
@@ -188,95 +197,43 @@ begin_frame :: proc(ctx: ^Context) {
     ctx.focusable_items = temp
     clear(&ctx.focusable_items)
 
-    // NOTE: input_keys is cleared in poll_events() before adding new keys,
-    // NOT here. This allows the pattern: poll_events() -> render() -> process events
+    // --- Layout setup ---
+    reset_layout_context(&ctx.layout_ctx, Rect{0, 0, ctx.width, ctx.height})
+
+    return true
 }
 
+// _scoped_end_render is the deferred counterpart of render().
+// It processes layout, renders to the buffer, and flushes output to the terminal.
+_scoped_end_render :: proc(ctx: ^Context, ok: bool) {
+    if ok {
+        // Process layout (3-pass: sizing, positioning, render commands to buffer)
+        finish_layout(&ctx.layout_ctx, ctx)
 
-// end_frame finishes the current frame and outputs to terminal
-// In immediate mode, we render the entire buffer every frame
-end_frame :: proc(ctx: ^Context) {
-    // Begin synchronized update to prevent flickering (Mode 2026)
-    // This is especially important for Ghostty terminal emulator
-    begin_sync_update()
+        // Begin synchronized update to prevent flickering (Mode 2026)
+        begin_sync_update()
 
-    // Check terminal size one last time before rendering
-    // This handles the race condition where terminal shrinks *during* the frame
-    // If we don't do this, we might write a line that no longer exists, causing scroll/flicker
-    real_w, real_h, _ := get_terminal_size()
+        // Check terminal size one last time before rendering
+        // This handles the race condition where terminal shrinks *during* the frame
+        real_w, real_h, _ := get_terminal_size()
 
-    // Generate full render output, clipping to actual terminal size
-    // Reusable builder avoids per-frame allocations
-    output := render_to_string(&ctx.buffer, &ctx.render_buffer, real_w, real_h)
+        // Generate full render output, clipping to actual terminal size
+        output := render_to_string(&ctx.buffer, &ctx.render_buffer, real_w, real_h)
 
-    // Write to terminal
-    write_ansi(output)
-    // Move cursor to home (1,1) to prevent scrolling on shrink if cursor was at bottom
-    write_ansi("\x1b[H")
+        // Write to terminal
+        write_ansi(output)
+        write_ansi("\x1b[H")
 
-    // End synchronized update - terminal atomically displays the frame
-    end_sync_update()
-    flush_output()
+        // End synchronized update - terminal atomically displays the frame
+        end_sync_update()
+        flush_output()
 
-    // Calculate frame time (for debug purposes)
-    frame_end_time := time.now()
-    ctx.last_frame_time = time.diff(ctx.frame_start_time, frame_end_time)
+        // Calculate frame time
+        ctx.last_frame_time = time.diff(ctx.frame_start_time, time.now())
+        ctx.frame_count += 1
 
-    ctx.frame_count += 1
-
-    // Clear input keys at the END of frame (after all widgets have checked them)
-    clear(&ctx.input_keys)
-}
-
-// run executes the event-driven main loop
-// This is the primary entry point for event-driven TUI applications.
-// The callback is called whenever an event occurs (input or resize).
-//
-// The callback receives the context and returns true to continue, false to exit.
-// Inside the callback, you should:
-//   1. Call poll_events() to get pending input events
-//   2. Process events and update your application state
-//   3. Use Layout API to define your UI
-//
-// Example:
-//   ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
-//       for event in ansuz.poll_events(ctx) {
-//           if is_quit(event) do return false
-//       }
-//       render_my_ui(ctx)
-//       return true
-//   })
-//
-run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
-    // Initial render pass (to show UI immediately)
-    begin_frame(ctx)
-    if !update(ctx) {
-        end_frame(ctx)
-        return
-    }
-    end_frame(ctx)
-
-    for {
-        // Wait for events (input or resize) - blocks until something happens
-        result, new_w, new_h := wait_for_event(ctx.width, ctx.height)
-
-        // Handle resize
-        if result == .Resize {
-            _handle_resize(ctx, new_w, new_h)
-        }
-
-        // Start frame
-        begin_frame(ctx)
-
-        // Call user's update/render callback
-        should_continue := update(ctx)
-
-        // End frame (renders to terminal)
-        end_frame(ctx)
-
-        if !should_continue {
-            break
-        }
+        // Clear input keys at the END of frame (after all widgets have checked them)
+        clear(&ctx.input_keys)
     }
 }
 

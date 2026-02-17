@@ -48,6 +48,21 @@ _free_test_context :: proc(ctx: ^Context) {
 	free(ctx)
 }
 
+// _test_render is a test-only layout pass without terminal I/O.
+// Mirrors the public render() API but skips frame setup and terminal output.
+@(deferred_in_out = _test_end_render)
+_test_render :: proc(ctx: ^Context) -> bool {
+	clear_buffer(&ctx.buffer)
+	reset_layout_context(&ctx.layout_ctx, Rect{0, 0, ctx.width, ctx.height})
+	return true
+}
+
+_test_end_render :: proc(ctx: ^Context, ok: bool) {
+	if ok {
+		finish_layout(&ctx.layout_ctx, ctx)
+	}
+}
+
 // --- Single Container Tests ---
 
 @(test)
@@ -55,7 +70,7 @@ test_single_container :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		container(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(10)},
 		})
@@ -70,7 +85,7 @@ test_single_box :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if box(ctx, {
 			sizing = {.X = fixed(20), .Y = fixed(5)},
 		}, style(.White, .Black, {}), .Sharp) {
@@ -87,7 +102,7 @@ test_single_vstack :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(30), .Y = fixed(10)},
 		}) {
@@ -106,7 +121,7 @@ test_single_hstack :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if hstack(ctx, {
 			sizing = {.X = fixed(30), .Y = fixed(5)},
 		}) {
@@ -125,7 +140,7 @@ test_single_rect :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if rect(ctx, {
 			sizing = {.X = fixed(20), .Y = fixed(5)},
 		}, style(.Red, .Default, {}), '█') {
@@ -144,7 +159,7 @@ test_nested_vstack :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(20)},
 		}) {
@@ -167,7 +182,7 @@ test_nested_hstack_in_vstack :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(20)},
 		}) {
@@ -191,7 +206,7 @@ test_deeply_nested :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {}) {
 			if hstack(ctx, {}) {
 				if vstack(ctx, {}) {
@@ -212,7 +227,7 @@ test_nested_boxes :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if box(ctx, {
 			sizing = {.X = fixed(30), .Y = fixed(15)},
 		}, style(.White, .Black, {}), .Sharp) {
@@ -236,7 +251,7 @@ test_early_exit_with_return :: proc(t: ^testing.T) {
 	defer _free_test_context(ctx)
 
 	_test_early_exit_helper :: proc(ctx: ^Context) -> int {
-		if layout(ctx) {
+		if _test_render(ctx) {
 			if vstack(ctx, {}) {
 				label(ctx, "Before")
 				if false {
@@ -261,7 +276,7 @@ test_conditional_container :: proc(t: ^testing.T) {
 
 	show_box := true
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if show_box {
 			if box(ctx, {
 				sizing = {.X = fixed(20), .Y = fixed(5)},
@@ -283,7 +298,7 @@ test_local_variables_in_container :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(30), .Y = fit()},
 		}) {
@@ -305,7 +320,7 @@ test_modify_local_variable :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {}) {
 			value := 10
 			label(ctx, fmt.tprintf("Value: %d", value))
@@ -328,7 +343,7 @@ test_container_sizing_preserved :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if container(ctx, {
 			sizing = {.X = fixed(50), .Y = fixed(25)},
 			padding = padding_all(2),
@@ -355,7 +370,7 @@ test_container_gap_preserved :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(30), .Y = fixed(20)},
 			gap = 2,
@@ -379,7 +394,7 @@ test_container_alignment_preserved :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(20)},
 			alignment = Alignment{.Center, .Center},
@@ -404,7 +419,7 @@ test_zstack_basic :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if zstack(ctx, {
 			sizing = {.X = fixed(30), .Y = fixed(10)},
 		}) {
@@ -429,7 +444,7 @@ test_spacer_basic :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if hstack(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(5)},
 		}) {
@@ -448,7 +463,7 @@ test_multiple_spacers :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if hstack(ctx, {
 			sizing = {.X = fixed(40), .Y = fixed(5)},
 		}) {
@@ -469,7 +484,7 @@ test_empty_container :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {
 			sizing = {.X = fixed(20), .Y = fixed(10)},
 		}) {
@@ -492,7 +507,7 @@ test_many_nested_levels :: proc(t: ^testing.T) {
 		}
 	}
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		_nested_levels_helper(ctx, 10)
 	}
 
@@ -505,19 +520,19 @@ test_multiple_layouts :: proc(t: ^testing.T) {
 	ctx := _make_test_context()
 	defer _free_test_context(ctx)
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if vstack(ctx, {}) {
 			label(ctx, "First Layout")
 		}
 	}
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if hstack(ctx, {}) {
 			label(ctx, "Second Layout")
 		}
 	}
 
-	if layout(ctx) {
+	if _test_render(ctx) {
 		if box(ctx, {}, style(.White, .Black, {}), .Sharp) {
 			label(ctx, "Third Layout")
 		}

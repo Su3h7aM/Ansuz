@@ -8,7 +8,7 @@ package ansuz
 // Odin's vendor/microui library.
 //
 // Example:
-//   if ansuz.layout(ctx) {
+//   if ansuz.render(ctx) {
 //       if ansuz.container(ctx, {
 //           direction = .TopToBottom,
 //           sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
@@ -26,23 +26,9 @@ package ansuz
 // - No global state workarounds
 // - More natural control flow (break, continue, return work normally)
 // - Cleanup is guaranteed even on early return
-
-// --- Layout (top-level) ---
-
-// layout starts a complete layout pass for the screen.
-// Must be the outermost scope for all container/element calls.
-// Usage: if ansuz.layout(ctx) { ... }
-@(deferred_in_out = _scoped_end_layout)
-layout :: proc(ctx: ^Context) -> bool {
-	reset_layout_context(&ctx.layout_ctx, Rect{0, 0, ctx.width, ctx.height})
-	return true
-}
-
-_scoped_end_layout :: proc(ctx: ^Context, ok: bool) {
-	if ok {
-		finish_layout(&ctx.layout_ctx, ctx)
-	}
-}
+//
+// NOTE: render() is defined in api.odin. It handles frame setup, layout
+// initialization, and terminal output via @(deferred_in_out).
 
 // --- Container ---
 

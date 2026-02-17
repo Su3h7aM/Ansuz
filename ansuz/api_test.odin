@@ -92,18 +92,15 @@ test_poll_events_api_signature :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_begin_end_frame_api_signature :: proc(t: ^testing.T) {
-    begin_proc := begin_frame
-    end_proc := end_frame
-
-    testing.expect(t, begin_proc != nil, "begin_frame function should exist")
-    testing.expect(t, end_proc != nil, "end_frame function should exist")
+test_render_api_signature :: proc(t: ^testing.T) {
+    render_proc := render
+    testing.expect(t, render_proc != nil, "render function should exist")
 }
 
 @(test)
 test_scoped_api_signatures :: proc(t: ^testing.T) {
     // Verify scoped API functions exist and return bool (for if pattern)
-    layout_proc := layout
+    render_proc := render
     container_proc := container
     box_proc := box
     vstack_proc := vstack
@@ -112,7 +109,7 @@ test_scoped_api_signatures :: proc(t: ^testing.T) {
     zstack_proc := zstack
     spacer_proc := spacer
 
-    testing.expect(t, layout_proc != nil, "layout function should exist")
+    testing.expect(t, render_proc != nil, "render function should exist")
     testing.expect(t, container_proc != nil, "container function should exist")
     testing.expect(t, box_proc != nil, "box function should exist")
     testing.expect(t, vstack_proc != nil, "vstack function should exist")
@@ -122,7 +119,7 @@ test_scoped_api_signatures :: proc(t: ^testing.T) {
     testing.expect(t, spacer_proc != nil, "spacer function should exist")
 
     // Verify deferred cleanup functions exist
-    testing.expect(t, _scoped_end_layout != nil, "_scoped_end_layout should exist")
+    testing.expect(t, _scoped_end_render != nil, "_scoped_end_render should exist")
     testing.expect(t, _scoped_end_container != nil, "_scoped_end_container should exist")
     testing.expect(t, _scoped_end_box != nil, "_scoped_end_box should exist")
     testing.expect(t, _scoped_end_vstack != nil, "_scoped_end_vstack should exist")

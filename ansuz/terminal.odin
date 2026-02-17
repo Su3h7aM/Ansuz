@@ -283,18 +283,11 @@ WaitResult :: enum {
 // Uses poll() on stdin with periodic timeout to detect terminal resize via ioctl
 //
 // Parameters:
-//   last_width, last_height: Previous terminal dimensions (to detect resize)
-//   timeout_ms: Maximum time to wait (-1 = infinite, but will use internal timeout for resize detection)
+//   ctx: The Ansuz context (uses ctx.width/ctx.height to detect resize)
+//   timeout_ms: Maximum time to wait (-1 = infinite, 0 = immediate, >0 = milliseconds)
 //
-// Returns: (result, new_width, new_height)
-wait_for_event :: proc(
-	last_width, last_height: int,
-	timeout_ms: i32 = -1,
-) -> (
-	WaitResult,
-	int,
-	int,
-) {
+// Returns: WaitResult indicating what happened (.Input, .Resize, .None, .Error)
+wait_for_event :: proc(ctx: ^Context, timeout_ms: i32 = -1) -> WaitResult {
 	for {
 		// Use 100ms internal timeout for resize detection if infinite wait requested
 		poll_timeout := timeout_ms == -1 ? c.int(100) : c.int(timeout_ms)
@@ -311,22 +304,22 @@ wait_for_event :: proc(
 
 		// Check for terminal resize by querying current size
 		new_width, new_height, _ := get_terminal_size()
-		if new_width != last_width || new_height != last_height {
-			return .Resize, new_width, new_height
+		if new_width != ctx.width || new_height != ctx.height {
+			return .Resize
 		}
 
 		// Check poll result
 		if ret < 0 {
-			return .Error, new_width, new_height
+			return .Error
 		}
 
 		if ret > 0 && .IN in fds[0].revents {
-			return .Input, new_width, new_height
+			return .Input
 		}
 
 		// Timeout - if explicit timeout requested, return
 		if timeout_ms != -1 {
-			return .None, new_width, new_height
+			return .None
 		}
 
 		// If infinite wait requested (timeout_ms == -1), loop again

@@ -40,16 +40,11 @@ main :: proc() {
 	g_stats.min_frame_time = time.Duration(999 * time.Millisecond)
 	g_stats.stress_level = 5
 
-	// Loop contínuo para benchmark real (não usa ansuz.run que é event-driven)
+	// Loop contínuo para benchmark real
 	for {
-		ansuz.begin_frame(ctx)
-
 		// Processa eventos de entrada (non-blocking)
 		for event in ansuz.poll_events(ctx) {
-			if ansuz.is_quit_key(event) {
-				ansuz.end_frame(ctx)
-				return
-			}
+			if ansuz.is_quit_key(event) do return
 
 			// Teclas para ajustar stress level
 			if key_event, ok := event.(ansuz.KeyEvent); ok {
@@ -62,9 +57,9 @@ main :: proc() {
 		}
 
 		// Renderiza UI + stress test
-		render(ctx)
-
-		ansuz.end_frame(ctx)
+		if ansuz.render(ctx) {
+			render(ctx)
+		}
 
 		// Atualiza estatísticas após o frame
 		update_stats(ctx)
@@ -101,8 +96,6 @@ update_stats :: proc(ctx: ^ansuz.Context) {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API scoped com @(deferred_in_out) - sem callbacks
-	if ansuz.layout(ctx) {
 		// Container principal
 		if ansuz.container(ctx, {
 			direction = .TopToBottom,
@@ -248,11 +241,10 @@ render :: proc(ctx: ^ansuz.Context) {
 				ansuz.label(
 					ctx,
 					" [Up/Down] Stress | [Q/ESC] Sair",
-					{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-				)
+				{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+			)
 			}
 		}
-	}
 }
 
 // Funções auxiliares

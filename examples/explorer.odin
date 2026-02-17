@@ -46,18 +46,19 @@ main :: proc() {
 	init_explorer()
 	defer cleanup_explorer()
 
-	// Loop principal - usa ansuz.run() para resposta imediata a eventos
-	ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+	// Loop principal
+	for {
 		for event in ansuz.poll_events(ctx) {
-			if ansuz.is_quit_key(event) {
-				return false
-			}
+			if ansuz.is_quit_key(event) do return
 			handle_input(event)
 		}
 
-		render(ctx)
-		return true
-	})
+		if ansuz.render(ctx) {
+			render(ctx)
+		}
+
+		ansuz.wait_for_event(ctx)
+	}
 }
 
 init_explorer :: proc() {
@@ -187,8 +188,6 @@ go_up :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API scoped com @(deferred_in_out)
-	if ansuz.layout(ctx) {
 		// Container principal
 		if ansuz.container(ctx, {
 			direction = .TopToBottom,
@@ -320,7 +319,6 @@ render :: proc(ctx: ^ansuz.Context) {
 				ansuz.label(ctx, info, ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 			}
 		}
-	}
 }
 
 format_size :: proc(bytes: i64) -> string {

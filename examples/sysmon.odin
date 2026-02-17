@@ -55,14 +55,9 @@ main :: proc() {
 
 	// Loop contínuo para atualizar dados em tempo real
 	for {
-		ansuz.begin_frame(ctx)
-
 		// Processa eventos (non-blocking)
 		for event in ansuz.poll_events(ctx) {
-			if ansuz.is_quit_key(event) {
-				ansuz.end_frame(ctx)
-				return
-			}
+			if ansuz.is_quit_key(event) do return
 
 			// Ajusta sample rate com Up/Down
 			if key_event, ok := event.(ansuz.KeyEvent); ok {
@@ -81,9 +76,9 @@ main :: proc() {
 			g_last_update = time.now()
 		}
 
-		render(ctx)
-
-		ansuz.end_frame(ctx)
+		if ansuz.render(ctx) {
+			render(ctx)
+		}
 	}
 }
 
@@ -120,8 +115,6 @@ update_data :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API scoped com @(deferred_in_out)
-	if ansuz.layout(ctx) {
 		// Container principal
 		if ansuz.container(ctx, {
 			direction = .TopToBottom,
@@ -241,7 +234,6 @@ render :: proc(ctx: ^ansuz.Context) {
 				ansuz.label(ctx, status, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
 			}
 		}
-	}
 }
 
 render_progress_bar :: proc(
