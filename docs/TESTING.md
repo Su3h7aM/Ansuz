@@ -32,55 +32,16 @@ Tests are organized by module and functionality:
 
 ### Test Files
 
-- **buffer_test.odin** (25 tests) - Frame buffer operations
-  - Initialization and destruction
-  - Cell operations (get, set, write_string)
-  - Fill and draw operations
-  - Resize functionality
-  - Edge cases (out-of-bounds, negative dimensions)
-
-- **colors_test.odin** (56 tests) - Color and style conversions
-  - All 17 Color enum values (foreground and background)
-  - All 9 StyleFlag values
-  - Style sequences and combinations
-  - Predefined styles
-
-- **event_test.odin** (110 tests) - Input event parsing and handling
-  - Control keys (Ctrl+C, Ctrl+D, Ctrl+Z, ESC, Enter, Tab, Backspace)
-  - Printable ASCII characters
-  - Escape sequences (arrow keys, Home, End, PageUp/PageDown, Delete/Insert, F1-F4)
-  - Event buffer operations (push, pop, clear, has_events)
-  - Event type casting and validation
-
-- **layout_test.odin** (24 tests) - Layout system calculations
-  - Sizing constructors (fixed, percent, fit, grow)
-  - Layout directions (horizontal, vertical)
-  - Padding and gap handling
-  - Alignment variations
-  - Nested containers
-  - Edge cases
-
-- **api_test.odin** (18 tests) - High-level API integration
-  - API function signatures
-  - Context structure verification
-  - Predefined styles
-  - Error handling flow
-
-- **terminal_test.odin** (27 tests) - Terminal I/O operations
-  - ANSI escape sequences
-  - Cursor operations
-  - Alternate buffer management
-  - Function existence verification
-
-- **edge_case_test.odin** (38 tests) - Edge cases and error handling
-  - Out-of-bounds access
-  - Empty strings and zero-length buffers
-  - Negative dimensions
-  - Buffer overflow scenarios
-  - Unicode characters
-  - Error enum values
-
-**Total: 210 tests**
+- **buffer_test.odin** - Frame buffer operations (init/destroy, cell ops, fill/draw, resize, edge cases)
+- **colors_test.odin** - Color and style conversions, ANSI sequence generation
+- **event_test.odin** - Input parsing, control keys, escape sequences, and event utilities
+- **layout_test.odin** - Layout sizing, directions, padding/gap, alignment, nested containers
+- **layout_test_wrapping.odin** - Wrapped text sizing and layout behavior
+- **api_test.odin** - High-level API integration and context initialization
+- **terminal_test.odin** - ANSI escape sequences, cursor ops, alternate buffer handling
+- **element_test.odin** - Element API configuration and rendering
+- **focus_test.odin** - Focus tracking and navigation helpers
+- **edge_case_test.odin** - Bounds checks, empty inputs, Unicode handling, error enums
 
 ## Writing Tests
 

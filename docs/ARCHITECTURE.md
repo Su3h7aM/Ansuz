@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Ansuz is a Terminal User Interface (TUI) library for the Odin programming language, designed with an immediate-mode API pattern inspired by Clay and architectural concepts from OpenTUI.
+Ansuz is a Terminal User Interface (TUI) library for the Odin programming language, designed with an immediate-mode API pattern inspired by Clay.
 
 ## Table of Contents
 
@@ -62,15 +62,15 @@ Ansuz operates in **Raw Mode**, disabling canonical line buffering and echoing t
 
 ### 2.1 Core Components
 
-1.  **Render Buffer**: 2D grid of cells (rune + style).
+1.  **Render Buffer**: Single 2D grid of cells (rune + style) that is cleared every frame.
 2.  **Event Loop**: Capture input -> Update State -> Layout -> Render -> Output.
 3.  **Layout Engine**: Calculates widget positions/sizes.
-4.  **Diffing**: Only writes changed cells to the terminal to minimize bandwidth and flickering.
+4.  **Full-Frame Renderer**: The entire buffer is converted to ANSI output each frame (no diffing).
 
 ### 2.2 Rendering Flow
 
 ```
-Input -> Event Processing -> Layout -> Rendering (to Buffer) -> Diff -> Output (ANSI)
+Input -> Event Processing -> Layout -> Rendering (to Buffer) -> Full Redraw Output (ANSI)
 ```
 
 ---
@@ -150,11 +150,10 @@ ansuz/
 **Cell**:
 ```odin
 Cell :: struct {
-    rune:       rune,
-    fg:         TerminalColor, // Union: Ansi, Color256, RGB
-    bg:         TerminalColor,
-    style:      StyleFlags,
-    dirty:      bool,
+    rune:  rune,
+    fg:    TerminalColor, // Union: Ansi, Color256, RGB
+    bg:    TerminalColor,
+    style: StyleFlags,
 }
 ```
 

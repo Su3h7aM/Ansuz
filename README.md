@@ -2,7 +2,7 @@
 
 **A Terminal User Interface (TUI) Library for Odin**
 
-Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nicbarker/clay) and [OpenTUI](https://github.com/neurocyte/opentui), designed specifically for the Odin programming language.
+Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nicbarker/clay), designed specifically for the Odin programming language.
 
 ## Features
 
@@ -51,10 +51,15 @@ package main
 import ansuz "ansuz"
 
 main :: proc() {
-    ctx, _ := ansuz.init()
+    ctx, err := ansuz.init()
+    if err != .None do return
     defer ansuz.shutdown(ctx)
 
     ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+        for event in ansuz.poll_events(ctx) {
+            if ansuz.is_quit_key(event) do return false
+        }
+
         if ansuz.layout(ctx) {
             if ansuz.container(ctx, {
                 direction = .TopToBottom,
@@ -68,7 +73,8 @@ main :: proc() {
                 }
             }
         }
-        return false
+
+        return true
     })
 }
 ```
@@ -85,10 +91,11 @@ main :: proc() {
 **Platform**: Unix/Linux
 
 **Key implemented features:**
-- ✅ Core immediate mode architecture
-- ✅ Flexible Layout System
+- ✅ Core immediate mode architecture with full-frame redraws
+- ✅ Scoped layout API and Clay-style element helpers
 - ✅ Basic Drawing (Text, Rects, Boxes)
 - ✅ Input Handling (Keys, Resize)
+- ✅ Theme-driven widgets (buttons, checkboxes) with focus management
 
 See `AGENTS.md` for internal development workflows and contribution guidelines.
 
