@@ -286,49 +286,49 @@ run :: proc(ctx: ^Context, update: proc(ctx: ^Context) -> bool) {
 // Events are consumed from the internal buffer
 // NOTE: This clears input_keys before reading, so call BEFORE rendering
 poll_events :: proc(ctx: ^Context) -> []Event {
-    // Clear previous frame's input keys before capturing new ones
-    // This must be done here (not in begin_frame) to allow the pattern:
-    // poll_events() -> render_ui() -> process events
-    clear(&ctx.input_keys)
+	// Clear previous frame's input keys before capturing new ones
+	// This must be done here (not in begin_frame) to allow the pattern:
+	// poll_events() -> render_ui() -> process events
+	clear(&ctx.input_keys)
 
-    // Read raw input and parse into events
-    // This is a simplified version - production would buffer partial sequences
-    events: [dynamic]Event
+	// Read raw input and parse into events
+	// This is a simplified version - production would buffer partial sequences
+	events: [dynamic]Event
 
-    input_buffer: [32]u8
-    bytes_read := 0
+	input_buffer: [32]u8
+	bytes_read := 0
 
-    // Read all available input
-    for {
-        b, available := read_input()
-        if !available {
-            break
-        }
+	// Read all available input
+	for {
+		b, available := read_input()
+		if !available {
+			break
+		}
 
-        input_buffer[bytes_read] = b
-        bytes_read += 1
+		input_buffer[bytes_read] = b
+		bytes_read += 1
 
-        // Try to parse what we have
-        if bytes_read >= len(input_buffer) {
-            break
-        }
-    }
+		// Try to parse what we have
+		if bytes_read >= len(input_buffer) {
+			break
+		}
+	}
 
-    // Parse the input if we got any
-    if bytes_read > 0 {
-        ev, parsed := parse_input(input_buffer[:bytes_read])
-        if parsed {
-            append(&events, ev)
+	// Parse the input if we got any
+	if bytes_read > 0 {
+		ev, parsed := parse_input(input_buffer[:bytes_read])
+		if parsed {
+			append(&events, ev)
 
-            // Store key events for widgets to check later
-            #partial switch e in ev {
-            case KeyEvent:
-                append(&ctx.input_keys, e)
-            }
-        }
-    }
+			// Store key events for widgets to check later
+			#partial switch e in ev {
+			case KeyEvent:
+				append(&ctx.input_keys, e)
+			}
+		}
+	}
 
-    return events[:]
+	return events[:]
 }
 
 // text is a convenience function to write styled text to the buffer
@@ -392,49 +392,49 @@ register_focusable :: proc(ctx: ^Context, id: u64) {
 // Returns true if focus was changed
 // NOTE: Falls back to current frame's focusable_items if prev_focusable_items is empty (first frame)
 handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
-    // Use prev_focusable_items if available, otherwise fallback to current frame's items
-    items := ctx.prev_focusable_items
-    if len(items) == 0 && len(ctx.focusable_items) > 0 {
-        items = ctx.focusable_items
-    }
+	// Use prev_focusable_items if available, otherwise fallback to current frame's items
+	items := ctx.prev_focusable_items
+	if len(items) == 0 && len(ctx.focusable_items) > 0 {
+		items = ctx.focusable_items
+	}
 
-    if len(items) == 0 {
-        return false
-    }
+	if len(items) == 0 {
+		return false
+	}
 
-    // Find current index
-    idx := -1
-    for id, i in items {
-        if id == ctx.focus_id {
-            idx = i
-            break
-        }
-    }
+	// Find current index
+	idx := -1
+	for id, i in items {
+		if id == ctx.focus_id {
+			idx = i
+			break
+		}
+	}
 
-    next_idx := 0
-    if idx == -1 {
-        // Not currently focused, or focused item gone -> start at 0 (or end if reverse)
-        if reverse {
-            next_idx = len(items) - 1
-        } else {
-            next_idx = 0
-        }
-    } else {
-        // Move to next/prev
-        if reverse {
-            next_idx = idx - 1
-            if next_idx < 0 {
-                next_idx = len(items) - 1
-            }
-        } else {
-            next_idx = idx + 1
-            if next_idx >= len(items) {
-                next_idx = 0
-            }
-        }
-    }
+	next_idx := 0
+	if idx == -1 {
+		// Not currently focused, or focused item gone -> start at 0 (or end if reverse)
+		if reverse {
+			next_idx = len(items) - 1
+		} else {
+			next_idx = 0
+		}
+	} else {
+		// Move to next/prev
+		if reverse {
+			next_idx = idx - 1
+			if next_idx < 0 {
+				next_idx = len(items) - 1
+			}
+		} else {
+			next_idx = idx + 1
+			if next_idx >= len(items) {
+				next_idx = 0
+			}
+		}
+	}
 
-    new_id := items[next_idx]
-    set_focus(ctx, new_id)
-    return true
+	new_id := items[next_idx]
+	set_focus(ctx, new_id)
+	return true
 }

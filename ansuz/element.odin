@@ -171,11 +171,18 @@ interact :: proc(ctx: ^Context, id: u64, rect: Rect) -> Interaction {
 	}
 
 	// Check for activation keys (Enter or Space)
-	for k in ctx.input_keys {
+	// NOTE: We consume the key by removing it from input_keys after detection
+	// to prevent multiple widgets from processing the same key in one frame
+	for i := 0; i < len(ctx.input_keys); i += 1 {
+		k := ctx.input_keys[i]
 		if k.key == .Enter {
+			// Consume the key
+			unordered_remove(&ctx.input_keys, i)
 			return .Clicked
 		}
 		if k.key == .Char && k.rune == ' ' {
+			// Consume the key
+			unordered_remove(&ctx.input_keys, i)
 			return .Clicked
 		}
 	}
@@ -187,7 +194,8 @@ interact :: proc(ctx: ^Context, id: u64, rect: Rect) -> Interaction {
 // Returns true if clicked
 widget_button :: proc(ctx: ^Context, lbl: string) -> bool {
     elem_id := u64(element_id(lbl))
-    register_focusable(ctx, elem_id)
+    // NOTE: register_focusable is called automatically by _process_element_start
+    // when the Element has focusable=true, so we don't call it here
 
     focused := is_focused(ctx, elem_id)
     interaction := interact(ctx, elem_id, Rect{})
@@ -213,7 +221,8 @@ widget_button :: proc(ctx: ^Context, lbl: string) -> bool {
 // Returns true if toggled this frame
 widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool {
     elem_id := u64(element_id(lbl))
-    register_focusable(ctx, elem_id)
+    // NOTE: register_focusable is called automatically by _process_element_start
+    // when the Element has focusable=true, so we don't call it here
 
     focused := is_focused(ctx, elem_id)
     interaction := interact(ctx, elem_id, Rect{})
