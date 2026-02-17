@@ -105,6 +105,26 @@ Event :: union {
 	MouseEvent,
 }
 
+// _parse_modifier_bits parses modifier bitmask from ANSI escape sequences
+// Returns KeyModifiers set based on bits:
+// 1 = no modifier
+// 2 = Shift
+// 4 = Alt
+// 8 = Ctrl
+_parse_modifier_bits :: proc(modifier_code: int) -> KeyModifiers {
+	modifiers: KeyModifiers = {}
+	if modifier_code & 2 != 0 {
+		modifiers |= {.Shift}
+	}
+	if modifier_code & 4 != 0 {
+		modifiers |= {.Alt}
+	}
+	if modifier_code & 8 != 0 {
+		modifiers |= {.Ctrl}
+	}
+	return modifiers
+}
+
 // parse_input attempts to parse raw terminal input into an Event
 // This is a simplified parser for the MVP - handles basic keys and Ctrl+C
 // A full implementation would parse complete ANSI escape sequences
@@ -168,6 +188,55 @@ parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
 			return KeyEvent{key = .End}, true
 		}
 
+		// Handle sequences with modifiers: ESC[1;N~ where N is modifier bits
+		// Also handles F-keys with modifiers: ESC[1;N;5~ where 5 is F5 code
+		if len(bytes) >= 4 && bytes[2] == '1' {
+			if bytes[3] == ';' && len(bytes) >= 6 {
+				modifier_code := int(bytes[4]) - 48
+				modifiers := _parse_modifier_bits(modifier_code)
+				
+				if len(bytes) >= 7 && bytes[5] == '~' {
+					switch bytes[6] {
+					case '5':
+						return KeyEvent{key = .F5, modifiers = modifiers}, true
+					case '6':
+						return KeyEvent{key = .F6, modifiers = modifiers}, true
+					case '7':
+						return KeyEvent{key = .F7, modifiers = modifiers}, true
+					case '8':
+						return KeyEvent{key = .F8, modifiers = modifiers}, true
+					case '9':
+						return KeyEvent{key = .F9, modifiers = modifiers}, true
+					case '1':
+						if len(bytes) >= 8 && bytes[7] == '0' {
+							return KeyEvent{key = .F10, modifiers = modifiers}, true
+						}
+						if len(bytes) >= 8 && bytes[7] == '1' {
+							return KeyEvent{key = .F11, modifiers = modifiers}, true
+						}
+						if len(bytes) >= 8 && bytes[7] == '2' {
+							return KeyEvent{key = .F12, modifiers = modifiers}, true
+						}
+					}
+				} else if len(bytes) >= 6 && bytes[5] == '~' {
+					switch bytes[4] {
+					case '1':
+						return KeyEvent{key = .Home, modifiers = modifiers}, true
+					case '2':
+						return KeyEvent{key = .Insert, modifiers = modifiers}, true
+					case '3':
+						return KeyEvent{key = .Delete, modifiers = modifiers}, true
+					case '4':
+						return KeyEvent{key = .End, modifiers = modifiers}, true
+					case '5':
+						return KeyEvent{key = .PageUp, modifiers = modifiers}, true
+					case '6':
+						return KeyEvent{key = .PageDown, modifiers = modifiers}, true
+					}
+				}
+			}
+		}
+
 		// Handle sequences like ESC[3~ (Delete), ESC[5~ (PageUp), etc.
 		if len(bytes) >= 4 && bytes[3] == '~' {
 			switch bytes[2] {
@@ -183,7 +252,7 @@ parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
 				return KeyEvent{key = .PageUp}, true
 			case '6':
 				return KeyEvent{key = .PageDown}, true
-			// F5-F10 (different encoding)
+			// F5-F12 (different encoding)
 			case 11:
 				return KeyEvent{key = .F5}, true
 			case 12:
@@ -216,6 +285,56 @@ parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
 		case 'S':
 			return KeyEvent{key = .F4}, true
 		}
+	}
+
+	// Mouse events: ESC [ M <button+modifiers> <x+32> <y+32>
+	// Format: \x1b[M<btn><x><y> where coordinates are offset by 32 (0 becomes space)
+	if len(bytes) >= 6 && bytes[0] == 27 && bytes[1] == '[' && bytes[2] == 'M' {
+		button_code := bytes[3]
+		x := int(bytes[4]) - 32
+		y := int(bytes[5]) - 32
+		
+		button: MouseButton
+		pressed: bool = true
+		modifiers: KeyModifiers = {}
+		
+		// Parse button code (lower 2 bits determine button, bit 2 is release flag, bits 3-4 are modifiers)
+		button_type := button_code & 0b00000011
+		release_flag := button_code & 0b00000100 != 0
+		
+		mod_code := (button_code & 0b00110000) >> 4
+		if mod_code & 1 != 0 {
+			modifiers |= {.Shift}
+		}
+		if mod_code & 2 != 0 {
+			modifiers |= {.Alt}
+		}
+		if mod_code & 4 != 0 {
+			modifiers |= {.Ctrl}
+		}
+		
+		if release_flag {
+			pressed = false
+		}
+		
+		switch button_type {
+		case 0:
+			button = .Left
+		case 1:
+			button = .Middle
+		case 2:
+			button = .Right
+		case 3:
+			button = .None
+		}
+		
+		return MouseEvent{
+			button = button,
+			x = x,
+			y = y,
+			pressed = pressed,
+			modifiers = modifiers,
+		}, true
 	}
 
 	// Unrecognized sequence
