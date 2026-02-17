@@ -156,6 +156,33 @@ _element_to_render_cmd :: proc(el: Element) -> RenderCommand {
 // High-Level Widget Helpers (using Element internally)
 // ============================================================================
 
+// Interaction state for a widget
+Interaction :: enum {
+	None,
+	Hovered, // For future mouse support
+	Clicked,
+}
+
+// interact handles standard widget interaction logic (focus, clicks)
+// rect argument is currently unused but reserved for mouse hit testing
+interact :: proc(ctx: ^Context, id: u64, rect: Rect) -> Interaction {
+	if !is_focused(ctx, id) {
+		return .None
+	}
+
+	// Check for activation keys (Enter or Space)
+	for k in ctx.input_keys {
+		if k.key == .Enter {
+			return .Clicked
+		}
+		if k.key == .Char && k.rune == ' ' {
+			return .Clicked
+		}
+	}
+
+	return .Hovered
+}
+
 // widget_button creates a button using the Element API
 // Returns true if clicked
 widget_button :: proc(ctx: ^Context, lbl: string) -> bool {

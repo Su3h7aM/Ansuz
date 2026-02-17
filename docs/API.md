@@ -1,10 +1,103 @@
 # API Reference
 
-Ansuz provides a **100% scoped callback API** for immediate-mode TUI development in Odin.
+Ansuz provides a **scoped layout API** for immediate-mode TUI development in Odin.
 
 ## Scoped Layout API (Primary API)
 
-The scoped API uses callbacks to define UI structure without explicit begin/end calls.
+The scoped API uses Odin's `@(deferred_in_out)` attribute to automatically close containers when the scope exits.
+
+```odin
+// Import scoped API (automatically included in ansuz package)
+import ansuz "ansuz"
+```
+
+### Layout Management
+
+```odin
+// Start a complete layout pass for the screen
+// Usage: if ansuz.layout(ctx) { ... }
+layout :: proc(ctx: ^Context) -> bool
+
+// Generic container with children
+// Usage: if ansuz.container(ctx, config) { ... }
+container :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool
+
+// Bordered box container
+// Usage: if ansuz.box(ctx, config, style, box_style) { ... }
+box :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG, style: Style = {}, box_style: BoxStyle = .Sharp) -> bool
+
+// Convenience shortcuts
+// Usage: if ansuz.vstack(ctx, config) { ... }  // Vertical (TopToBottom)
+vstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool
+// Usage: if ansuz.hstack(ctx, config) { ... }  // Horizontal (LeftToRight)
+hstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool
+
+// Overlay stacking container (children stack on top of each other)
+// Usage: if ansuz.zstack(ctx, config) { ... }
+zstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool
+
+// Filled rectangle container
+// Usage: if ansuz.rect(ctx, config, style, char) { ... }
+rect :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG, style: Style = {}, char: rune = ' ') -> bool
+
+// Flexible space filler (grows to fill remaining space)
+// Usage: ansuz.spacer(ctx, config)
+spacer :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG)
+```
+
+### Leaf Elements
+
+```odin
+// Text element (leaf node)
+// Usage: ansuz.label(ctx, "text")
+label :: proc(ctx: ^Context, txt: string)
+
+// Generic element (leaf node)
+// Usage: ansuz.element(ctx, Element{...})
+element :: proc(ctx: ^Context, el: Element)
+```
+
+### Interactive Widgets
+
+```odin
+// Button - returns true if clicked
+// Usage: if ansuz.widget_button(ctx, "label") { ... }
+widget_button :: proc(ctx: ^Context, lbl: string) -> bool
+
+// Checkbox - returns true if toggled
+// Usage: checked := true; if ansuz.widget_checkbox(ctx, "label", &checked) { ... }
+widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool
+```
+
+## Layout Configuration
+
+```odin
+LayoutConfig :: struct {
+    direction: LayoutDirection,      // .LeftToRight, .TopToBottom, .ZStack
+    sizing: [Axis]Sizing,            // Size constraints for X and Y
+    padding: Padding,                // Internal spacing
+    gap: int,                        // Space between children
+    alignment: Alignment,            // Positioning
+    overflow: Overflow,              // .Hidden, .Visible, .Scroll
+    scroll_offset: [2]int,           // x, y scroll position
+    wrap_text: bool,                 // Enable text wrapping
+    min_width: int,                   // Minimum width constraint
+    min_height: int,                  // Minimum height constraint
+    max_width: int,                   // Maximum width constraint (0 = no max)
+    max_height: int,                  // Maximum height constraint (0 = no max)
+}
+
+// Sizing helpers
+fixed :: proc(value: int) -> Sizing       // Exact size
+grow :: proc(weight: f32 = 1.0) -> Sizing  // Fill remaining space
+fit :: proc() -> Sizing                    // Shrink to content
+percent :: proc(value: f32) -> Sizing     // Percentage of parent (0.0-1.0)
+
+// Padding helpers
+padding_all :: proc(value: int) -> Padding
+```
+
+## Context Management
 
 ```odin
 // Import the scoped API

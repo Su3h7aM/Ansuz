@@ -92,15 +92,18 @@ Ansuz uses an immediate mode paradigm where the UI is declared every frame based
 
 **Immediate Mode (Ansuz):**
 ```odin
-if button("Click Me") { do_something() }
+if ansuz.layout(ctx) {
+    if ansuz.container(ctx, config) {
+        ansuz.label(ctx, "Click Me")
+    }
+}
 ```
 
-**Retained Mode (Classic):**
-```odin
-btn := create_button("Click Me")
-btn.on_click = do_something
-container.add(btn)
-```
+**Benefits over callback API:**
+- **Local variables accessible**: Variables in enclosing scope work inside blocks (no closures needed)
+- **No global state workarounds**: Odin doesn't support closures in callbacks, so scoped API eliminates this limitation
+- **Natural control flow**: `return`, `break`, `continue` work normally
+- **Auto-cleanup guaranteed**: Containers close automatically even on early return via `@(deferred_in_out)`
 
 ---
 
@@ -113,8 +116,8 @@ The project follows a flat structure for the core library to keep imports simple
 ```
 ansuz/
 ├── ansuz/             # Core library source
-│   ├── api.odin       # Public API & Context
-│   ├── scoped.odin    # Scoped callback API (primary interface)
+│   ├── api.odin       # Public API & Context management
+│   ├── scoped.odin    # Scoped layout API (primary interface - @(deferred_in_out) pattern)
 │   ├── element.odin    # Element and widget definitions
 │   ├── buffer.odin    # Frame buffer algorithms
 │   ├── colors.odin    # Color system
@@ -122,7 +125,10 @@ ansuz/
 │   ├── layout.odin    # Layout engine implementation
 │   ├── terminal.odin  # Lower-level terminal I/O (termios)
 │   ├── theme.odin     # Theme definitions
-│   └── widgets.odin   # High-level widget implementations
+│   ├── api_test.odin  # Unit tests for API
+│   ├── scoped_test.odin # Unit tests for scoped API
+│   ├── layout_test.odin # Unit tests for layout
+│   └── ...
 ├── examples/          # Example programs
 ├── docs/              # Documentation
 └── .mise/tasks/       # Build/Test scripts
@@ -130,15 +136,14 @@ ansuz/
 
 ### 4.2 Core Modules
 
-- **api.odin**: The high-level entry point. Manages the `Context` and frame lifecycle (`begin_frame`, `end_frame`), event loop (`run`), and focus management.
-- **scoped.odin**: The primary API for UI declaration. Provides 100% scoped callback interface with `layout()`, `container()`, `box()`, `vstack()`, `hstack()`.
-- **element.odin**: Element definitions and leaf nodes (`label()`, `element()`), plus interactive widgets (`widget_button`, `widget_checkbox`).
-- **buffer.odin**: Manages the rendering grid. Handles resizing and ANSI output generation.
-- **layout.odin**: Implements the 3-pass layout solver (Measure -> Resolve -> Position) with Clay-inspired algorithms.
+- **api.odin**: The high-level entry point. Manages `Context` and frame lifecycle (`begin_frame`, `end_frame`), event loop (`run`), and focus management.
+- **scoped.odin**: The primary API for UI declaration. Provides scoped interface with `@(deferred_in_out)` attribute for automatic cleanup. Functions: `layout()`, `container()`, `box()`, `vstack()`, `hstack()`, `zstack()`, `rect()`, `spacer()`.
+- **element.odin**: Element definitions and leaf nodes (`label()`, `element()`), plus interactive widgets (`widget_button`, `widget_checkbox`) with theme support.
+- **buffer.odin**: Manages the rendering grid. Handles resizing and ANSI output generation with diffing optimization.
+- **layout.odin**: Implements the 3-pass layout solver (Measure -> Resolve -> Position) with Clay-inspired algorithms. Supports flex layout, ZStack overlay, and min/max constraints.
 - **terminal.odin**: Handles platform-specific system calls (`tcgetattr`, `tcsetattr`) and raw ANSI output using native Odin functions from `core:sys/posix`.
-- **event.odin**: Parses raw bytes from stdin into structured `Event` enums (Keys, Resizes).
-- **theme.odin**: Theme definitions and style helpers for widgets.
-- **widgets.odin**: High-level interactive widgets with built-in focus and state management.
+- **event.odin**: Parses raw bytes from stdin into structured `Event` enums (Keys, Resizes). Supports F1-F12, modifiers (Ctrl, Alt, Shift), and mouse events.
+- **theme.odin**: Theme definitions and style helpers for widgets with full customization support.
 
 ### 4.3 Data Structures
 

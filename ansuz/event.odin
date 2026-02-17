@@ -121,13 +121,13 @@ parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
 		switch b {
 		case 3:
 			// Ctrl+C
-			return KeyEvent{key = .Ctrl_C}, true
+			return KeyEvent{key = .Ctrl_C, modifiers = {.Ctrl}}, true
 		case 4:
 			// Ctrl+D
-			return KeyEvent{key = .Ctrl_D}, true
+			return KeyEvent{key = .Ctrl_D, modifiers = {.Ctrl}}, true
 		case 26:
 			// Ctrl+Z
-			return KeyEvent{key = .Ctrl_Z}, true
+			return KeyEvent{key = .Ctrl_Z, modifiers = {.Ctrl}}, true
 		case 27:
 			// ESC
 			return KeyEvent{key = .Escape}, true
@@ -183,6 +183,23 @@ parse_input :: proc(bytes: []u8) -> (event: Event, parsed: bool) {
 				return KeyEvent{key = .PageUp}, true
 			case '6':
 				return KeyEvent{key = .PageDown}, true
+			// F5-F10 (different encoding)
+			case 11:
+				return KeyEvent{key = .F5}, true
+			case 12:
+				return KeyEvent{key = .F6}, true
+			case 13:
+				return KeyEvent{key = .F7}, true
+			case 14:
+				return KeyEvent{key = .F8}, true
+			case 15:
+				return KeyEvent{key = .F9}, true
+			case 17:
+				return KeyEvent{key = .F10}, true
+			case 18:
+				return KeyEvent{key = .F11}, true
+			case 19:
+				return KeyEvent{key = .F12}, true
 			}
 		}
 	}

@@ -49,28 +49,35 @@ odin build examples/hello_world.odin -file -out:bin/hello_world
 package main
 
 import ansuz "ansuz"
-import "core:fmt"
 
 main :: proc() {
     ctx, _ := ansuz.init()
     defer ansuz.shutdown(ctx)
 
-    for !ansuz.should_close(ctx) {
-        // Handle events
-        for event in ansuz.poll_events(ctx) {
-            // ... handle input
+    ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
+        if ansuz.layout(ctx) {
+            if ansuz.container(ctx, {
+                direction = .TopToBottom,
+                sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+                alignment = {.Center, .Center},
+            }) {
+                if ansuz.box(ctx, {
+                    sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
+                }, ansuz.style(.BrightCyan, .Default, {}), .Rounded) {
+                    ansuz.label(ctx, "Hello, Ansuz!")
+                }
+            }
         }
-
-        // Render UI
-        ansuz.begin_frame(ctx)
-        
-        ansuz.write_text(ctx, 10, 5, "Hello, Ansuz!", 
-            ansuz.Style{fg = ansuz.Ansi.BrightYellow, bg = ansuz.Ansi.Default, flags = {.Bold}})
-        
-        ansuz.end_frame(ctx)
-    }
+        return false
+    })
 }
 ```
+
+**Key features of the new scoped API:**
+- **No callbacks** - Use `if ansuz.container(ctx) { ... }` instead of callback procs
+- **Local variables accessible** - Variables in enclosing scope work inside blocks
+- **Auto-cleanup** - Containers close automatically when scope exits via `@(deferred_in_out)`
+- **Natural control flow** - `return`, `break`, `continue` work normally
 
 ## Current Status
 
