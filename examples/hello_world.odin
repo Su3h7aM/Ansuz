@@ -3,7 +3,7 @@
 // Este exemplo mostra:
 // - Inicialização e shutdown do contexto
 // - Loop de eventos com ansuz.run()
-// - Sistema de layout com API 100% scoped (callbacks)
+// - Sistema de layout com API scoped (@deferred_in_out)
 // - Texto estilizado com cores
 // - Centralização de elementos
 // - Tratamento de eventos (Ctrl+C para sair)
@@ -39,22 +39,22 @@ main :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API 100% scoped - sem begin/end explícitos
-	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+	// API scoped com @(deferred_in_out) - sem callbacks, sem begin/end explícitos
+	if ansuz.layout(ctx) {
 		// Container principal que preenche toda a tela
-		ansuz.container(ctx, {
+		if ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			alignment = {.Center, .Center}, // Centraliza o conteúdo
-		}, proc(ctx: ^ansuz.Context) {
+		}) {
 			// Box com bordas arredondadas
-			ansuz.box(ctx, {
+			if ansuz.box(ctx, {
 				sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
 				padding = ansuz.padding_all(1),
 				alignment = {.Center, .Center},
 				direction = .TopToBottom,
 				gap = 1,
-			}, ansuz.style(.BrightCyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
+			}, ansuz.style(.BrightCyan, .Default, {}), .Rounded) {
 				// Título com estilo
 				ansuz.label(ctx, "Hello, Ansuz!", ansuz.Element{
 					style = ansuz.style(.BrightYellow, .Default, {.Bold}),
@@ -69,7 +69,7 @@ render :: proc(ctx: ^ansuz.Context) {
 				ansuz.label(ctx, "[Q/ESC] sair", ansuz.Element{
 					style = ansuz.style(.BrightBlack, .Default, {.Dim}),
 				})
-			})
-		})
-	})
+			}
+		}
+	}
 }

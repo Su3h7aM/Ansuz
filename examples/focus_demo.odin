@@ -50,7 +50,7 @@ main :: proc() {
 			log_debug(fmt.tprintf("DEBUG: Processing %d events", len(events)))
 			for event, i in events {
 				log_debug(fmt.tprintf("DEBUG: Event %d type", i))
-				
+
 				if ansuz.is_quit_key(event) {
 					return false
 				}
@@ -80,15 +80,15 @@ main :: proc() {
 checkbox_state := false
 
 render_ui :: proc(ctx: ^ansuz.Context) {
-	// API 100% scoped - sem begin/end explícitos
-	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+	// API scoped com @(deferred_in_out) - sem begin/end explícitos
+	if ansuz.layout(ctx) {
 		// Root container
-		ansuz.container(ctx, {
+		if ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 1, 1},
 			gap = 1,
-		}, proc(ctx: ^ansuz.Context) {
+		}) {
 			// Title using label()
 			ansuz.label(
 				ctx,
@@ -109,13 +109,13 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 			)
 
 			// Nested container for buttons
-			ansuz.container(ctx, {
+			if ansuz.container(ctx, {
 				direction = .TopToBottom,
 				sizing = {.X = ansuz.fixed(50), .Y = ansuz.fit()},
 				padding = {2, 2, 1, 1},
 				gap = 1,
-			}, proc(ctx: ^ansuz.Context) {
-				// Use the new widget_button API
+			}) {
+				// Use new widget_button API
 				if ansuz.widget_button(ctx, "Button 1") {
 					// Clicked!
 				}
@@ -139,7 +139,7 @@ render_ui :: proc(ctx: ^ansuz.Context) {
 
 				ansuz.widget_button(ctx, "Another Button")
 				ansuz.widget_button(ctx, "Exit")
-			})
-		})
-	})
+			}
+		}
+	}
 }

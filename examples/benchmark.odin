@@ -6,7 +6,7 @@
 // - Renderização intensiva para stress test
 // - Estatísticas em tempo real
 // - Loop contínuo (não event-driven)
-// - API 100% scoped com callbacks
+// - API scoped com @(deferred_in_out)
 
 package benchmark
 
@@ -101,197 +101,158 @@ update_stats :: proc(ctx: ^ansuz.Context) {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API 100% scoped - sem begin/end explícitos
-	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+	// API scoped com @(deferred_in_out) - sem callbacks
+	if ansuz.layout(ctx) {
 		// Container principal
-		ansuz.container(ctx, {
+		if ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
-		}, proc(ctx: ^ansuz.Context) {
+		}) {
 			// Header
-			render_header(ctx)
+			if ansuz.box(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+				alignment = {.Center, .Center},
+			}, ansuz.style(.BrightBlue, .Default, {}), .Double) {
+				ansuz.label(
+					ctx,
+					"ANSUZ PERFORMANCE BENCHMARK",
+					{style = ansuz.style(.BrightYellow, .Default, {.Bold})},
+				)
+			}
 
 			// Estatísticas principais
-			render_main_stats(ctx)
+			if ansuz.hstack(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(8)},
+				gap = 1,
+				padding = {0, 0, 1, 0},
+			}) {
+				// FPS Box
+				if ansuz.box(ctx, {
+					sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					direction = .TopToBottom,
+				}, ansuz.style(.Green, .Default, {}), .Rounded) {
+					ansuz.label(ctx, "FPS", {style = ansuz.style(.BrightGreen, .Default, {.Bold})})
 
-			// Stress test area
-			render_stress_test(ctx)
+					fps := calculate_fps()
+					fps_str := fmt.tprintf("%.1f", fps)
+					ansuz.label(ctx, fps_str, {style = ansuz.style(get_fps_color(fps), .Default, {.Bold})})
+
+					ansuz.label(ctx, "", {style = ansuz.default_style()})
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Frames: %d", g_stats.frame_count),
+						{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+					)
+				}
+
+				// Frame Time Box
+				if ansuz.box(ctx, {
+					sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					direction = .TopToBottom,
+				}, ansuz.style(.Cyan, .Default, {}), .Rounded) {
+					ansuz.label(ctx, "Frame Time", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
+
+					avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
+					ansuz.label(
+						ctx,
+						fmt.tprintf("%.2f ms", avg_ms),
+						{style = ansuz.style(.White, .Default, {.Bold})},
+					)
+
+					min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
+					max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Min: %.2f ms", min_ms),
+						{style = ansuz.style(.BrightBlack, .Default, {})},
+					)
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Max: %.2f ms", max_ms),
+						{style = ansuz.style(.BrightBlack, .Default, {})},
+					)
+				}
+
+				// Stress Level Box
+				if ansuz.box(ctx, {
+					sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					direction = .TopToBottom,
+				}, ansuz.style(.Magenta, .Default, {}), .Rounded) {
+					ansuz.label(ctx, "Stress Level", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
+
+					ansuz.label(
+						ctx,
+						fmt.tprintf("%d / 10", g_stats.stress_level),
+						{style = ansuz.style(get_stress_color(g_stats.stress_level), .Default, {.Bold})},
+					)
+
+					ansuz.label(ctx, "", {style = ansuz.default_style()})
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Elements: %d", g_stats.elements_count),
+						{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+					)
+				}
+			}
+
+			// Stress test area - NO GLOBALS NEEDED with @(deferred_in_out)!
+			stress_rows := g_stats.stress_level * 4
+			stress_cols := g_stats.stress_level * 2
+			stress_frame := g_stats.frame_count
+
+			if ansuz.box(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+				overflow = .Hidden,
+			}, ansuz.style(.Yellow, .Default, {}), .Sharp) {
+				// Título com info do stress level
+				title := fmt.tprintf(
+					"Stress Test [Level %d: %d elements]",
+					g_stats.stress_level,
+					g_stats.stress_level * 20,
+				)
+				ansuz.label(ctx, title, {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
+
+				// Renderiza cada linha - local vars accessible inside if block!
+				for r in 0 ..< stress_rows {
+					if ansuz.container(ctx, {
+						sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
+						direction = .LeftToRight,
+						overflow = .Hidden,
+					}) {
+						// Renderiza células - NO GLOBAL NEEDED!
+						for c in 0 ..< stress_cols {
+							pattern := generate_stress_pattern(r, c, stress_frame)
+							color := get_rainbow_color(r + c)
+							ansuz.label(ctx, pattern, {style = ansuz.style(color, .Default, {})})
+						}
+					}
+				}
+
+				// Calcula elementos totais
+				g_stats.elements_count = stress_rows * stress_cols
+			}
 
 			// Controles
-			render_controls(ctx)
-		})
-	})
-}
-
-render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-		alignment = {.Center, .Center},
-	}, ansuz.style(.BrightBlue, .Default, {}), .Double, proc(ctx: ^ansuz.Context) {
-		ansuz.label(
-			ctx,
-			"ANSUZ PERFORMANCE BENCHMARK",
-			{style = ansuz.style(.BrightYellow, .Default, {.Bold})},
-		)
-	})
-}
-
-render_main_stats :: proc(ctx: ^ansuz.Context) {
-	ansuz.hstack(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(8)},
-		gap = 1,
-		padding = {0, 0, 1, 0},
-	}, proc(ctx: ^ansuz.Context) {
-		// FPS Box
-		ansuz.box(ctx, {
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
-		}, ansuz.style(.Green, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-			ansuz.label(ctx, "FPS", {style = ansuz.style(.BrightGreen, .Default, {.Bold})})
-
-			fps := calculate_fps()
-			fps_str := fmt.tprintf("%.1f", fps)
-			ansuz.label(ctx, fps_str, {style = ansuz.style(get_fps_color(fps), .Default, {.Bold})})
-
-			ansuz.label(ctx, "", {style = ansuz.default_style()})
-			ansuz.label(
-				ctx,
-				fmt.tprintf("Frames: %d", g_stats.frame_count),
-				{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-			)
-		})
-
-		// Frame Time Box
-		ansuz.box(ctx, {
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
-		}, ansuz.style(.Cyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-			ansuz.label(ctx, "Frame Time", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
-
-			avg_ms := f64(g_stats.avg_frame_time) / f64(time.Millisecond)
-			ansuz.label(
-				ctx,
-				fmt.tprintf("%.2f ms", avg_ms),
-				{style = ansuz.style(.White, .Default, {.Bold})},
-			)
-
-			min_ms := f64(g_stats.min_frame_time) / f64(time.Millisecond)
-			max_ms := f64(g_stats.max_frame_time) / f64(time.Millisecond)
-			ansuz.label(
-				ctx,
-				fmt.tprintf("Min: %.2f ms", min_ms),
-				{style = ansuz.style(.BrightBlack, .Default, {})},
-			)
-			ansuz.label(
-				ctx,
-				fmt.tprintf("Max: %.2f ms", max_ms),
-				{style = ansuz.style(.BrightBlack, .Default, {})},
-			)
-		})
-
-		// Stress Level Box
-		ansuz.box(ctx, {
-			sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-			padding = {1, 1, 1, 1},
-			direction = .TopToBottom,
-		}, ansuz.style(.Magenta, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-			ansuz.label(ctx, "Stress Level", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
-
-			ansuz.label(
-				ctx,
-				fmt.tprintf("%d / 10", g_stats.stress_level),
-				{style = ansuz.style(get_stress_color(g_stats.stress_level), .Default, {.Bold})},
-			)
-
-			ansuz.label(ctx, "", {style = ansuz.default_style()})
-			ansuz.label(
-				ctx,
-				fmt.tprintf("Elements: %d", g_stats.elements_count),
-				{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-			)
-		})
-	})
-}
-
-// Global state para stress test (Odin não suporta closures)
-g_stress_rows: int
-g_stress_cols: int
-g_stress_frame: u64
-g_current_row: int // Row atual sendo renderizada
-
-render_stress_test :: proc(ctx: ^ansuz.Context) {
-	// Atualiza estado global antes de iniciar render
-	g_stress_rows = g_stats.stress_level * 4
-	g_stress_cols = g_stats.stress_level * 2
-	g_stress_frame = g_stats.frame_count
-
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-		overflow = .Hidden,
-	}, ansuz.style(.Yellow, .Default, {}), .Sharp, proc(ctx: ^ansuz.Context) {
-		// Título com info do stress level
-		title := fmt.tprintf(
-			"Stress Test [Level %d: %d elements]",
-			g_stats.stress_level,
-			g_stats.stress_level * 20,
-		)
-		ansuz.label(ctx, title, {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
-
-		// Renderiza cada linha - usa variável global para evitar closure capture
-		for r in 0 ..< g_stress_rows {
-			g_current_row = r
-			render_stress_row(ctx)
+			if ansuz.container(ctx, {
+				direction = .LeftToRight,
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
+				alignment = {.Center, .Center},
+			}) {
+				ansuz.label(
+					ctx,
+					" [Up/Down] Stress | [Q/ESC] Sair",
+					{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+				)
+			}
 		}
-
-		// Calcula elementos totais
-		g_stats.elements_count = g_stress_rows * g_stress_cols
-	})
-}
-
-// Global state para célula atual
-g_current_col: int
-
-// Helper para renderizar uma linha do stress test
-render_stress_row :: proc(ctx: ^ansuz.Context) {
-	ansuz.container(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
-		direction = .LeftToRight,
-		overflow = .Hidden,
-	}, proc(ctx: ^ansuz.Context) {
-		for c in 0 ..< g_stress_cols {
-			g_current_col = c
-			render_stress_cell(ctx)
-		}
-	})
-}
-
-// Helper para renderizar uma célula individual
-render_stress_cell :: proc(ctx: ^ansuz.Context) {
-	row := g_current_row
-	col := g_current_col
-	pattern := generate_stress_pattern(row, col, g_stress_frame)
-	color := get_rainbow_color(row + col)
-	ansuz.label(ctx, pattern, {style = ansuz.style(color, .Default, {})})
-}
-
-render_controls :: proc(ctx: ^ansuz.Context) {
-	ansuz.container(ctx, {
-		direction = .LeftToRight,
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
-		alignment = {.Center, .Center},
-	}, proc(ctx: ^ansuz.Context) {
-		ansuz.label(
-			ctx,
-			" [Up/Down] Stress | [Q/ESC] Sair",
-			{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-		)
-	})
+	}
 }
 
 // Funções auxiliares
@@ -346,7 +307,7 @@ generate_pattern :: proc(row: int, frame: u64) -> string {
 
 	// Usa fmt.tprintf para criar string que persiste durante o frame
 	return fmt.tprintf(
-		"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+		"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
 		rune(base),
 		rune(base + 1),
 		rune(base + 2),
@@ -407,121 +368,6 @@ generate_pattern :: proc(row: int, frame: u64) -> string {
 		rune(base + 5),
 		rune(base + 6),
 		rune(base + 7),
-	)
-}
-
-make_frame_graph :: proc() -> string {
-	// Encontra min e max para normalização
-	min_val: time.Duration = time.Duration(999 * time.Millisecond)
-	max_val: time.Duration = 0
-	valid_count := 0
-
-	for ft in g_history {
-		if ft > 0 {
-			valid_count += 1
-			if ft > max_val do max_val = ft
-			if ft < min_val do min_val = ft
-		}
-	}
-
-	// Caracteres ASCII para o gráfico (altura crescente)
-	bars := [8]rune{'.', '-', '=', '+', '*', '#', '@', '@'}
-
-	// Gera 60 caracteres de gráfico, lendo na ordem correta do buffer circular
-	graph_chars: [60]rune
-
-	// Se não temos dados suficientes, mostra slots vazios preenchidos conforme os dados entram
-	if valid_count < 2 {
-		for i in 0 ..< 60 {
-			idx := (g_history_idx + i) % 60
-			if g_history[idx] > 0 {
-				graph_chars[i] = '#'
-			} else {
-				graph_chars[i] = ' '
-			}
-		}
-	} else {
-		// Usa escala absoluta: 0-16ms (para ~60fps: 16.67ms/frame)
-		// Valores acima de 16ms ficam no topo
-		scale_max := time.Duration(16 * time.Millisecond)
-
-		for i in 0 ..< 60 {
-			idx := (g_history_idx + i) % 60
-			ft := g_history[idx]
-			if ft <= 0 {
-				graph_chars[i] = ' '
-			} else {
-				// Normaliza usando escala absoluta
-				normalized := int(f64(ft) / f64(scale_max) * 7)
-				if normalized > 7 do normalized = 7
-				if normalized < 0 do normalized = 0
-				graph_chars[i] = bars[normalized]
-			}
-		}
-	}
-
-	return fmt.tprintf(
-		"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-		graph_chars[0],
-		graph_chars[1],
-		graph_chars[2],
-		graph_chars[3],
-		graph_chars[4],
-		graph_chars[5],
-		graph_chars[6],
-		graph_chars[7],
-		graph_chars[8],
-		graph_chars[9],
-		graph_chars[10],
-		graph_chars[11],
-		graph_chars[12],
-		graph_chars[13],
-		graph_chars[14],
-		graph_chars[15],
-		graph_chars[16],
-		graph_chars[17],
-		graph_chars[18],
-		graph_chars[19],
-		graph_chars[20],
-		graph_chars[21],
-		graph_chars[22],
-		graph_chars[23],
-		graph_chars[24],
-		graph_chars[25],
-		graph_chars[26],
-		graph_chars[27],
-		graph_chars[28],
-		graph_chars[29],
-		graph_chars[30],
-		graph_chars[31],
-		graph_chars[32],
-		graph_chars[33],
-		graph_chars[34],
-		graph_chars[35],
-		graph_chars[36],
-		graph_chars[37],
-		graph_chars[38],
-		graph_chars[39],
-		graph_chars[40],
-		graph_chars[41],
-		graph_chars[42],
-		graph_chars[43],
-		graph_chars[44],
-		graph_chars[45],
-		graph_chars[46],
-		graph_chars[47],
-		graph_chars[48],
-		graph_chars[49],
-		graph_chars[50],
-		graph_chars[51],
-		graph_chars[52],
-		graph_chars[53],
-		graph_chars[54],
-		graph_chars[55],
-		graph_chars[56],
-		graph_chars[57],
-		graph_chars[58],
-		graph_chars[59],
 	)
 }
 

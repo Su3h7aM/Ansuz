@@ -11,7 +11,7 @@
 // - Barras de progresso visuais
 // - Dados simulados dinâmicos
 // - Sample rate configurável
-// - API 100% scoped com callbacks
+// - API scoped com @(deferred_in_out)
 
 package sysmon
 
@@ -120,141 +120,128 @@ update_data :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API 100% scoped - sem begin/end explícitos
-	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+	// API scoped com @(deferred_in_out)
+	if ansuz.layout(ctx) {
 		// Container principal
-		ansuz.container(ctx, {
+		if ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 1,
-		}, proc(ctx: ^ansuz.Context) {
+		}) {
 			// Linha superior: CPU + Memory (lado a lado)
-			ansuz.hstack(ctx, {
+			if ansuz.hstack(ctx, {
 				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(10)},
 				gap = 1,
-			}, proc(ctx: ^ansuz.Context) {
-				render_cpu_panel(ctx)
-				render_memory_panel(ctx)
-			})
+			}) {
+				// CPU Panel
+				if ansuz.box(ctx, {
+					sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					direction = .TopToBottom,
+					gap = 0,
+				}, ansuz.style(.Cyan, .Default, {}), .Rounded) {
+					// Título
+					ansuz.label(ctx, "󰻠 CPU", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
-			// Processos (preenche o resto)
-			render_processes_panel(ctx)
+					// Barra total
+					render_progress_bar(ctx, "Total", g_data.cpu_total, .BrightGreen)
 
-			// Barra de status
-			render_status_bar(ctx)
-		})
-	})
-}
+					// Cores individuais
+					for i in 0 ..< 4 {
+						name := fmt.tprintf("Core %d", i + 1)
+						color := get_cpu_color(g_data.cpu_cores[i])
+						render_progress_bar(ctx, name, g_data.cpu_cores[i], color)
+					}
+				}
 
-render_cpu_panel :: proc(ctx: ^ansuz.Context) {
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-		gap = 0,
-	}, ansuz.style(.Cyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-		// Título
-		ansuz.label(ctx, "󰻠 CPU", {style = ansuz.style(.BrightCyan, .Default, {.Bold})})
+				// Memory Panel
+				if ansuz.box(ctx, {
+					sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
+					padding = {1, 1, 1, 1},
+					direction = .TopToBottom,
+					gap = 0,
+				}, ansuz.style(.Magenta, .Default, {}), .Rounded) {
+					// Título
+					ansuz.label(ctx, "󰍛 Memory", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
 
-		// Barra total
-		render_progress_bar(ctx, "Total", g_data.cpu_total, .BrightGreen)
+					// Barra de uso
+					pct := (g_data.memory_used / g_data.memory_total) * 100.0
+					render_progress_bar(ctx, "Used", pct, .BrightBlue)
 
-		// Cores individuais
-		for i in 0 ..< 4 {
-			name := fmt.tprintf("Core %d", i + 1)
-			color := get_cpu_color(g_data.cpu_cores[i])
-			render_progress_bar(ctx, name, g_data.cpu_cores[i], color)
-		}
-	})
-}
-
-render_memory_panel :: proc(ctx: ^ansuz.Context) {
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(1), .Y = ansuz.grow()},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-		gap = 0,
-	}, ansuz.style(.Magenta, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-		// Título
-		ansuz.label(ctx, "󰍛 Memory", {style = ansuz.style(.BrightMagenta, .Default, {.Bold})})
-
-		// Barra de uso
-		pct := (g_data.memory_used / g_data.memory_total) * 100.0
-		render_progress_bar(ctx, "Used", pct, .BrightBlue)
-
-		// Detalhes
-		ansuz.label(
-			ctx,
-			fmt.tprintf("Used:  %.1f GB", g_data.memory_used),
-			{style = ansuz.style(.White, .Default, {})},
-		)
-		ansuz.label(
-			ctx,
-			fmt.tprintf("Free:  %.1f GB", g_data.memory_total - g_data.memory_used),
-			{style = ansuz.style(.BrightBlack, .Default, {})},
-		)
-		ansuz.label(
-			ctx,
-			fmt.tprintf("Total: %.1f GB", g_data.memory_total),
-			{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-		)
-	})
-}
-
-render_processes_panel :: proc(ctx: ^ansuz.Context) {
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-		gap = 0,
-	}, ansuz.style(.Yellow, .Default, {}), .Sharp, proc(ctx: ^ansuz.Context) {
-		// Título
-		ansuz.label(ctx, "󰓹 Processes", {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
-
-		// Cabeçalho
-		ansuz.label(
-			ctx,
-			"  PID   │ Name              │ CPU    │ Memory",
-			{style = ansuz.style(.White, .Default, {.Bold})},
-		)
-		ansuz.label(
-			ctx,
-			"────────┼───────────────────┼────────┼─────────",
-			{style = ansuz.style(.BrightBlack, .Default, {})},
-		)
-
-		// Lista de processos
-		for proc_info in g_data.processes {
-			line := fmt.tprintf(
-				"  %-5d │ %-17s │ %5.1f%% │ %4d MB",
-				proc_info.pid,
-				proc_info.name,
-				proc_info.cpu,
-				proc_info.memory_mb,
-			)
-
-			color: ansuz.TerminalColor = .White
-			if proc_info.cpu > 10.0 {
-				color = .BrightRed
-			} else if proc_info.cpu > 5.0 {
-				color = .BrightYellow
+					// Detalhes
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Used:  %.1f GB", g_data.memory_used),
+						{style = ansuz.style(.White, .Default, {})},
+					)
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Free:  %.1f GB", g_data.memory_total - g_data.memory_used),
+						{style = ansuz.style(.BrightBlack, .Default, {})},
+					)
+					ansuz.label(
+						ctx,
+						fmt.tprintf("Total: %.1f GB", g_data.memory_total),
+						{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+					)
+				}
 			}
 
-			ansuz.label(ctx, line, {style = ansuz.style(color, .Default, {})})
-		}
-	})
-}
+			// Processos (preenche o resto)
+			if ansuz.box(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+				gap = 0,
+			}, ansuz.style(.Yellow, .Default, {}), .Sharp) {
+				// Título
+				ansuz.label(ctx, "󰓹 Processes", {style = ansuz.style(.BrightYellow, .Default, {.Bold})})
 
-render_status_bar :: proc(ctx: ^ansuz.Context) {
-	ansuz.container(ctx, {
-		direction = .LeftToRight,
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
-		alignment = {.Center, .Center},
-	}, proc(ctx: ^ansuz.Context) {
-		status := fmt.tprintf(" [Up/Down] Rate: %dms | [Q/ESC] Sair", g_sample_rate_ms)
-		ansuz.label(ctx, status, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
-	})
+				// Cabeçalho
+				ansuz.label(
+					ctx,
+					"  PID   │ Name              │ CPU    │ Memory",
+					{style = ansuz.style(.White, .Default, {.Bold})},
+				)
+				ansuz.label(
+					ctx,
+					"────────┼───────────────────┼────────┼─────────",
+					{style = ansuz.style(.BrightBlack, .Default, {})},
+				)
+
+				// Lista de processos
+				for proc_info in g_data.processes {
+					line := fmt.tprintf(
+						"  %-5d │ %-17s │ %5.1f%% │ %4d MB",
+						proc_info.pid,
+						proc_info.name,
+						proc_info.cpu,
+						proc_info.memory_mb,
+					)
+
+					color: ansuz.TerminalColor = .White
+					if proc_info.cpu > 10.0 {
+						color = .BrightRed
+					} else if proc_info.cpu > 5.0 {
+						color = .BrightYellow
+					}
+
+					ansuz.label(ctx, line, {style = ansuz.style(color, .Default, {})})
+				}
+			}
+
+			// Barra de status
+			if ansuz.container(ctx, {
+				direction = .LeftToRight,
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
+				alignment = {.Center, .Center},
+			}) {
+				status := fmt.tprintf(" [Up/Down] Rate: %dms | [Q/ESC] Sair", g_sample_rate_ms)
+				ansuz.label(ctx, status, {style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+			}
+		}
+	}
 }
 
 render_progress_bar :: proc(

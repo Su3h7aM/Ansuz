@@ -7,7 +7,7 @@
 // - Diferentes estilos para arquivos vs diretórios
 // - Status bar dinâmica com info do item selecionado
 // - Layout responsivo
-// - API 100% scoped com callbacks
+// - API scoped com @(deferred_in_out)
 
 package explorer
 
@@ -187,148 +187,140 @@ go_up :: proc() {
 }
 
 render :: proc(ctx: ^ansuz.Context) {
-	// API 100% scoped - sem begin/end explícitos
-	ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+	// API scoped com @(deferred_in_out)
+	if ansuz.layout(ctx) {
 		// Container principal
-		ansuz.container(ctx, {
+		if ansuz.container(ctx, {
 			direction = .TopToBottom,
 			sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 			padding = {1, 1, 0, 0},
 			gap = 0,
-		}, proc(ctx: ^ansuz.Context) {
-			render_header(ctx)
-			render_file_list(ctx, ctx.height)
-			render_status_bar(ctx)
-		})
-	})
-}
+		}) {
+			// Header
+			if ansuz.box(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+			}, ansuz.style(.BrightBlue, .Default, {}), .Rounded) {
+				ansuz.label(ctx, "File Explorer", ansuz.Element{style = ansuz.style(.BrightCyan, .Default, {.Bold})})
 
-render_header :: proc(ctx: ^ansuz.Context) {
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-	}, ansuz.style(.BrightBlue, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
-		ansuz.label(ctx, "File Explorer", ansuz.Element{style = ansuz.style(.BrightCyan, .Default, {.Bold})})
+				// Caminho atual (truncado se muito longo)
+				path_display := g_state.current_path
+				if len(path_display) > 60 {
+					path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
+				}
+				ansuz.label(ctx, path_display, ansuz.Element{style = ansuz.style(.White, .Default, {})})
+			}
 
-		// Caminho atual (truncado se muito longo)
-		path_display := g_state.current_path
-		if len(path_display) > 60 {
-			path_display = fmt.tprintf("...%s", path_display[len(path_display) - 57:])
+			// File list - local vars accessible in if block!
+			visible_lines := ctx.height - 8
+			if visible_lines < 3 do visible_lines = 3
+
+			// Ajusta scroll para manter seleção visível
+			if g_state.selected < g_state.scroll_offset {
+				g_state.scroll_offset = g_state.selected
+			}
+			if g_state.selected >= g_state.scroll_offset + visible_lines {
+				g_state.scroll_offset = g_state.selected - visible_lines + 1
+			}
+
+			if ansuz.box(ctx, {
+				sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+				padding = {1, 1, 1, 1},
+				direction = .TopToBottom,
+				overflow = .Hidden,
+			}, ansuz.style(.Yellow, .Default, {}), .Sharp) {
+				if g_state.error_msg != "" {
+					ansuz.label(ctx, g_state.error_msg, ansuz.Element{style = ansuz.style(.BrightRed, .Default, {.Bold})})
+					return
+				}
+
+				if len(g_state.entries) == 0 {
+					ansuz.label(
+						ctx,
+						"(diretorio vazio)",
+						ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
+					)
+					return
+				}
+
+				// Renderiza entradas
+				max_visible := min(len(g_state.entries), g_state.scroll_offset + 50) // Max 50 items
+				for i := g_state.scroll_offset;
+				    i < max_visible;
+				    i += 1 {
+					entry := g_state.entries[i]
+					is_selected := i == g_state.selected
+
+					// Ícone e cor baseado no tipo
+					icon: string
+					color: ansuz.TerminalColor
+					if entry.is_dir {
+						icon = "[D]"
+						color = .BrightBlue
+					} else {
+						icon = "   "
+						color = .White
+					}
+
+					// Indicador de seleção
+					selector := "  "
+					if is_selected {
+						selector = "> "
+						color = .BrightYellow
+					}
+
+					// Tamanho formatado
+					size_str: string
+					if entry.is_dir {
+						size_str = "     "
+					} else {
+						size_str = format_size(entry.size)
+					}
+
+					line := fmt.tprintf("%s%s %-40s %s", selector, icon, entry.name, size_str)
+
+					style_flags: ansuz.StyleFlags = {}
+					if is_selected {
+						style_flags = {.Bold}
+					}
+
+					ansuz.label(ctx, line, ansuz.Element{style = ansuz.style(color, .Default, style_flags)})
+				}
+			}
+
+			// Status bar
+			if ansuz.container(ctx, {
+				direction = .LeftToRight,
+				sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
+				alignment = {.Center, .Center},
+			}) {
+				// Info do item selecionado
+				info: string
+				if len(g_state.entries) > 0 && g_state.selected < len(g_state.entries) {
+					entry := g_state.entries[g_state.selected]
+					if entry.is_dir {
+						info = fmt.tprintf(
+							" %d/%d | [Enter] Abrir | [Backspace] Voltar | [Q/ESC] Sair",
+							g_state.selected + 1,
+							len(g_state.entries),
+						)
+					} else {
+						info = fmt.tprintf(
+							" %d/%d | %s | [Backspace] Voltar | [Q/ESC] Sair",
+							g_state.selected + 1,
+							len(g_state.entries),
+							format_size(entry.size),
+						)
+					}
+				} else {
+					info = " [Q/ESC] Sair"
+				}
+
+				ansuz.label(ctx, info, ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
+			}
 		}
-		ansuz.label(ctx, path_display, ansuz.Element{style = ansuz.style(.White, .Default, {})})
-	})
-}
-
-render_file_list :: proc(ctx: ^ansuz.Context, screen_height: int) {
-	// Calcula janela visível fora do callback (tem acesso aos parâmetros)
-	visible_lines := screen_height - 8
-	if visible_lines < 3 do visible_lines = 3
-
-	// Ajusta scroll para manter seleção visível
-	if g_state.selected < g_state.scroll_offset {
-		g_state.scroll_offset = g_state.selected
 	}
-	if g_state.selected >= g_state.scroll_offset + visible_lines {
-		g_state.scroll_offset = g_state.selected - visible_lines + 1
-	}
-
-	ansuz.box(ctx, {
-		sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-		padding = {1, 1, 1, 1},
-		direction = .TopToBottom,
-		overflow = .Hidden,
-	}, ansuz.style(.Yellow, .Default, {}), .Sharp, proc(ctx: ^ansuz.Context) {
-		if g_state.error_msg != "" {
-			ansuz.label(ctx, g_state.error_msg, ansuz.Element{style = ansuz.style(.BrightRed, .Default, {.Bold})})
-			return
-		}
-
-		if len(g_state.entries) == 0 {
-			ansuz.label(
-				ctx,
-				"(diretorio vazio)",
-				ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})},
-			)
-			return
-		}
-
-		// Renderiza entradas (usa ctx.height como limite aproximado)
-		max_visible := min(len(g_state.entries), g_state.scroll_offset + 50) // Max 50 items
-		for i := g_state.scroll_offset;
-		    i < max_visible;
-		    i += 1 {
-			entry := g_state.entries[i]
-			is_selected := i == g_state.selected
-
-			// Ícone e cor baseado no tipo
-			icon: string
-			color: ansuz.TerminalColor
-			if entry.is_dir {
-				icon = "[D]"
-				color = .BrightBlue
-			} else {
-				icon = "   "
-				color = .White
-			}
-
-			// Indicador de seleção
-			selector := "  "
-			if is_selected {
-				selector = "> "
-				color = .BrightYellow
-			}
-
-			// Tamanho formatado
-			size_str: string
-			if entry.is_dir {
-				size_str = "     "
-			} else {
-				size_str = format_size(entry.size)
-			}
-
-			line := fmt.tprintf("%s%s %-40s %s", selector, icon, entry.name, size_str)
-
-			style_flags: ansuz.StyleFlags = {}
-			if is_selected {
-				style_flags = {.Bold}
-			}
-
-			ansuz.label(ctx, line, ansuz.Element{style = ansuz.style(color, .Default, style_flags)})
-		}
-	})
-}
-
-render_status_bar :: proc(ctx: ^ansuz.Context) {
-	ansuz.container(ctx, {
-		direction = .LeftToRight,
-		sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(1)},
-		alignment = {.Center, .Center},
-	}, proc(ctx: ^ansuz.Context) {
-		// Info do item selecionado
-		info: string
-		if len(g_state.entries) > 0 && g_state.selected < len(g_state.entries) {
-			entry := g_state.entries[g_state.selected]
-			if entry.is_dir {
-				info = fmt.tprintf(
-					" %d/%d | [Enter] Abrir | [Backspace] Voltar | [Q/ESC] Sair",
-					g_state.selected + 1,
-					len(g_state.entries),
-				)
-			} else {
-				info = fmt.tprintf(
-					" %d/%d | %s | [Backspace] Voltar | [Q/ESC] Sair",
-					g_state.selected + 1,
-					len(g_state.entries),
-					format_size(entry.size),
-				)
-			}
-		} else {
-			info = " [Q/ESC] Sair"
-		}
-
-		ansuz.label(ctx, info, ansuz.Element{style = ansuz.style(.BrightBlack, .Default, {.Dim})})
-	})
 }
 
 format_size :: proc(bytes: i64) -> string {

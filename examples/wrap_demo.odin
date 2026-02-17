@@ -5,14 +5,6 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-// Demo state (Global to avoid closure capture issues)
-State :: struct {
-	width:  int,
-	height: int,
-}
-
-var_state := State{}
-
 main :: proc() {
 	// Initialize library
 	ctx, err := ansuz.init()
@@ -42,18 +34,15 @@ main :: proc() {
 				}
 			}
 
-			// Update state
-			var_state.width, var_state.height = ctx.width, ctx.height
-
-			// Layout - API 100% scoped
-			ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+			// Layout - API scoped com @(deferred_in_out)
+			if ansuz.layout(ctx) {
 				// Root container
-				ansuz.container(ctx, {
+				if ansuz.container(ctx, {
 					direction = .TopToBottom,
 					sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 					padding = {2, 2, 1, 1},
 					gap = 1,
-				}, proc(ctx: ^ansuz.Context) {
+				}) {
 					ansuz.label(
 						ctx,
 						"Ansuz Text Wrapping Demo (Press 'q' to quit)",
@@ -61,19 +50,19 @@ main :: proc() {
 					)
 					ansuz.label(
 						ctx,
-						"Resize the terminal to see dynamic wrapping",
+						"Resize terminal to see dynamic wrapping",
 						{style = ansuz.style(.White, .Default, {})},
 					)
 
 					// Flexible Box with Wrapped Text
-					ansuz.box(ctx, {
+					if ansuz.box(ctx, {
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
 						padding = {1, 1, 1, 1},
-					}, ansuz.style(.Green, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
+					}, ansuz.style(.Green, .Default, {}), .Rounded) {
 						ansuz.label(
 							ctx,
-							"This is a long paragraph that should wrap automatically when the terminal is resized. It demonstrates the new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on the width available, ensuring all text is visible without horizontal scrolling.",
+							"This is a long paragraph that should wrap automatically when terminal is resized. It demonstrates new 'wrap_text' capability in functionality. The height of this element should adjust dynamically based on width available, ensuring all text is visible without horizontal scrolling.",
 							{
 								style = ansuz.style(.White, .Default, {}),
 								sizing = {.X = ansuz.grow(), .Y = ansuz.fit()},
@@ -92,15 +81,15 @@ main :: proc() {
 								wrap_text = true,
 							},
 						)
-					})
+					}
 
 					// Fixed Width Column Test
-					ansuz.box(ctx, {
+					if ansuz.box(ctx, {
 						direction = .TopToBottom,
 						sizing = {.X = ansuz.fixed(40), .Y = ansuz.fit()},
 						padding = {1, 1, 0, 0},
 						gap = 0,
-					}, ansuz.style(.Blue, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
+					}, ansuz.style(.Blue, .Default, {}), .Rounded) {
 						ansuz.label(
 							ctx,
 							"Fixed Width (40) Column with Wrapping",
@@ -115,9 +104,9 @@ main :: proc() {
 								wrap_text = true,
 							},
 						)
-					})
-				})
-			})
+					}
+				}
+			}
 
 			return true
 		},

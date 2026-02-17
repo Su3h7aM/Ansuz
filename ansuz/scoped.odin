@@ -1,52 +1,77 @@
 package ansuz
 
 // ============================================================================
-// Scoped Layout API - 100% Callback-Based
+// Scoped Layout API - @(deferred_in_out) Pattern
 // ============================================================================
-// This API provides a cleaner, more ergonomic interface that eliminates
-// explicit begin/end calls in favor of scoped callbacks.
+// This API uses Odin's @(deferred_in_out) attribute to automatically close
+// containers when the scope exits. This follows the same pattern used by
+// Odin's vendor/microui library.
 //
 // Example:
-//   ansuz.layout(ctx, proc(ctx) {
-//       ansuz.container(ctx, {
+//   if ansuz.layout(ctx) {
+//       if ansuz.container(ctx, {
 //           direction = .TopToBottom,
 //           sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
-//       }, proc(ctx) {
-//           ansuz.box(ctx, {
-//               style = ansuz.style(.BrightCyan, .Default, {}),
+//       }) {
+//           if ansuz.box(ctx, {
 //               sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(9)},
-//           }, .Rounded, proc(ctx) {
+//           }, ansuz.style(.BrightCyan, .Default, {}), .Rounded) {
 //               ansuz.label(ctx, "Hello, World!")
-//           })
-//       })
-//   })
+//           }
+//       }
+//   }
 //
-// NOTE: Odin callbacks do NOT capture variables from the enclosing scope.
-// Use global variables or explicit parameters to share state with callbacks.
+// Benefits over callback API:
+// - Local variables are accessible inside blocks (no closures needed)
+// - No global state workarounds
+// - More natural control flow (break, continue, return work normally)
+// - Cleanup is guaranteed even on early return
 
-// layout - Starts a complete layout definition for the screen
-// This replaces begin_layout() and end_layout() with a single scoped call.
-// The body callback should contain all container and element declarations.
-layout :: proc(ctx: ^Context, body: proc(^Context)) {
+// --- Layout (top-level) ---
+
+// layout starts a complete layout pass for the screen.
+// Must be the outermost scope for all container/element calls.
+// Usage: if ansuz.layout(ctx) { ... }
+@(deferred_in_out = _scoped_end_layout)
+layout :: proc(ctx: ^Context) -> bool {
 	reset_layout_context(&ctx.layout_ctx, Rect{0, 0, ctx.width, ctx.height})
-	body(ctx)
-	finish_layout(&ctx.layout_ctx, ctx)
+	return true
 }
 
-// container - Creates a layout container with children
-// This replaces begin_element()/end_element() for container elements.
-// The body callback is called to add child elements to this container.
-container :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context)) {
-	node_idx := begin_container(&ctx.layout_ctx, config)
-	body(ctx)
-	end_container(&ctx.layout_ctx)
-	_ = node_idx // Silence unused warning
+_scoped_end_layout :: proc(ctx: ^Context, ok: bool) {
+	if ok {
+		finish_layout(&ctx.layout_ctx, ctx)
+	}
 }
 
-// box - Creates a bordered box container
+// --- Container ---
+
+// container creates a layout container with children.
+// Usage: if ansuz.container(ctx, config) { ... }
+@(deferred_in_out = _scoped_end_container)
+container :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool {
+	begin_container(&ctx.layout_ctx, config)
+	return true
+}
+
+_scoped_end_container :: proc(ctx: ^Context, _: LayoutConfig, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- Box (bordered container) ---
+
+// box creates a bordered box container.
 // Automatically adds padding for the border so content doesn't overlap it.
-// The body callback is called to add child elements inside the box.
-box :: proc(ctx: ^Context, config: LayoutConfig, style: Style, box_style: BoxStyle, body: proc(^Context)) {
+// Usage: if ansuz.box(ctx, config, style, box_style) { ... }
+@(deferred_in_out = _scoped_end_box)
+box :: proc(
+	ctx: ^Context,
+	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
+	s: Style = {},
+	bs: BoxStyle = .Sharp,
+) -> bool {
 	// Automatically add padding for the border
 	modified_config := config
 	modified_config.padding.left += 1
@@ -55,41 +80,115 @@ box :: proc(ctx: ^Context, config: LayoutConfig, style: Style, box_style: BoxSty
 	modified_config.padding.bottom += 1
 
 	node_idx := begin_container(&ctx.layout_ctx, modified_config)
-	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand{
+	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand {
 		type      = .Box,
-		style     = style,
-		box_style = box_style,
+		style     = s,
+		box_style = bs,
 	}
-	body(ctx)
-	end_container(&ctx.layout_ctx)
+	return true
 }
 
-// vstack - Creates a vertical stack container (TopToBottom direction)
-// Convenience alias for container with direction = .TopToBottom
-vstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context)) {
+_scoped_end_box :: proc(ctx: ^Context, _: LayoutConfig, _: Style, _: BoxStyle, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- VStack (vertical stack) ---
+
+// vstack creates a vertical stack container (TopToBottom direction).
+// Usage: if ansuz.vstack(ctx, config) { ... }
+@(deferred_in_out = _scoped_end_vstack)
+vstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool {
 	modified := config
 	modified.direction = .TopToBottom
-	container(ctx, modified, body)
+	begin_container(&ctx.layout_ctx, modified)
+	return true
 }
 
-// hstack - Creates a horizontal stack container (LeftToRight direction)
-// Convenience alias for container with direction = .LeftToRight
-hstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context)) {
+_scoped_end_vstack :: proc(ctx: ^Context, _: LayoutConfig, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- HStack (horizontal stack) ---
+
+// hstack creates a horizontal stack container (LeftToRight direction).
+// Usage: if ansuz.hstack(ctx, config) { ... }
+@(deferred_in_out = _scoped_end_hstack)
+hstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool {
 	modified := config
 	modified.direction = .LeftToRight
-	container(ctx, modified, body)
+	begin_container(&ctx.layout_ctx, modified)
+	return true
 }
 
-// rect - Creates a filled rectangular container
-// Automatically applies the fill character to the entire container area.
-// The body callback is called to add child elements (they will overlay the fill).
-rect :: proc(ctx: ^Context, config: LayoutConfig, style: Style, char: rune, body: proc(^Context)) {
+_scoped_end_hstack :: proc(ctx: ^Context, _: LayoutConfig, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- Rect (filled rectangle container) ---
+
+// rect creates a filled rectangular container.
+// Usage: if ansuz.rect(ctx, config, style, char) { ... }
+@(deferred_in_out = _scoped_end_rect)
+rect :: proc(
+	ctx: ^Context,
+	config: LayoutConfig = DEFAULT_LAYOUT_CONFIG,
+	s: Style = {},
+	char: rune = ' ',
+) -> bool {
 	node_idx := begin_container(&ctx.layout_ctx, config)
-	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand{
+	ctx.layout_ctx.nodes[node_idx].render_cmd = RenderCommand {
 		type  = .Rect,
-		style = style,
+		style = s,
 		char  = char,
 	}
-	body(ctx)
+	return true
+}
+
+_scoped_end_rect :: proc(ctx: ^Context, _: LayoutConfig, _: Style, _: rune, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- ZStack (overlay stacking container) ---
+
+// zstack creates a container where all children stack on top of each other.
+// All children take the full size of the parent and are positioned at (0, 0).
+// Last child is rendered on top (like CSS absolute positioning).
+// Usage: if ansuz.zstack(ctx, config) { ... }
+@(deferred_in_out = _scoped_end_zstack)
+zstack :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) -> bool {
+	modified := config
+	modified.direction = .ZStack
+	begin_container(&ctx.layout_ctx, modified)
+	return true
+}
+
+_scoped_end_zstack :: proc(ctx: ^Context, _: LayoutConfig, ok: bool) {
+	if ok {
+		end_container(&ctx.layout_ctx)
+	}
+}
+
+// --- Spacer (flexible space filler) ---
+
+// spacer adds flexible space that grows to fill available space in flex containers.
+// It doesn't render anything (invisible element).
+// Usage: ansuz.spacer(ctx, config)
+spacer :: proc(ctx: ^Context, config: LayoutConfig = DEFAULT_LAYOUT_CONFIG) {
+	cfg := config
+	if cfg.sizing[.X].type == .FitContent {
+		cfg.sizing[.X] = grow(1)
+	}
+	if cfg.sizing[.Y].type == .FitContent {
+		cfg.sizing[.Y] = grow(1)
+	}
+	begin_container(&ctx.layout_ctx, cfg)
 	end_container(&ctx.layout_ctx)
 }

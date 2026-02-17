@@ -42,6 +42,7 @@ grow :: proc(weight: f32 = 1.0) -> Sizing {
 LayoutDirection :: enum {
 	LeftToRight,
 	TopToBottom,
+	ZStack,
 }
 
 Axis :: enum {
@@ -110,6 +111,10 @@ LayoutConfig :: struct {
 	overflow:      Overflow,
 	scroll_offset: [2]int, // x, y offset
 	wrap_text:     bool, // Enable text wrapping
+	min_width:     int,  // Minimum width constraint
+	min_height:    int,  // Minimum height constraint
+	max_width:     int,  // Maximum width constraint (0 = no max)
+	max_height:    int,  // Maximum height constraint (0 = no max)
 }
 
 DEFAULT_LAYOUT_CONFIG :: LayoutConfig {
@@ -121,6 +126,10 @@ DEFAULT_LAYOUT_CONFIG :: LayoutConfig {
 	overflow = .Hidden,
 	scroll_offset = {0, 0},
 	wrap_text = false,
+	min_width = 0,
+	min_height = 0,
+	max_width = 0,
+	max_height = 0,
 }
 
 Rect :: struct {
@@ -539,7 +548,23 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 				else do node.min_h = val
 			} else {
 				// Container logic
-				main_axis := _get_main_axis(node.config.direction)
+				// ZStack: all children overlay, so size is MAX on both axes
+				if node.config.direction == .ZStack {
+					max_w := 0
+					max_h := 0
+					c_idx := node.first_child
+					for c_idx != INVALID_NODE {
+						child := l_ctx.nodes[int(c_idx)]
+						max_w = max(max_w, child.min_w)
+						max_h = max(max_h, child.min_h)
+						c_idx = child.next_sibling
+					}
+					padding := node.config.padding.left + node.config.padding.right
+					node.min_w = max_w + padding
+					padding_v := node.config.padding.top + node.config.padding.bottom
+					node.min_h = max_h + padding_v
+				} else {
+					main_axis := _get_main_axis(node.config.direction)
 
 				// If current axis is the main axis of the container, we SUM children
 				if axis == main_axis {
@@ -580,6 +605,7 @@ _pass1_measure :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 		}
 	}
 }
+}
 
 _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 	node := &l_ctx.nodes[int(node_idx)]
@@ -598,6 +624,19 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 	pad_h := node.config.padding.top + node.config.padding.bottom
 	available_w := max(0, node.final_rect.w - pad_w)
 	available_h := max(0, node.final_rect.h - pad_h)
+
+	// ZStack: all children get full parent size
+	if node.config.direction == .ZStack {
+		child_idx := node.first_child
+		for child_idx != INVALID_NODE {
+			child := &l_ctx.nodes[int(child_idx)]
+			child.final_rect.w = available_w
+			child.final_rect.h = available_h
+			_pass2_resolve(l_ctx, child_idx)
+			child_idx = child.next_sibling
+		}
+		return
+	}
 
 	main_axis := _get_main_axis(node.config.direction)
 	cross_axis := _get_cross_axis(node.config.direction)
@@ -684,6 +723,20 @@ _pass2_resolve :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 		child.final_rect.w = child.min_w
 		child.final_rect.h = child.min_h
 
+		// Apply min/max constraints
+		if child.config.min_width > 0 {
+			child.final_rect.w = max(child.final_rect.w, child.config.min_width)
+		}
+		if child.config.min_height > 0 {
+			child.final_rect.h = max(child.final_rect.h, child.config.min_height)
+		}
+		if child.config.max_width > 0 {
+			child.final_rect.w = min(child.final_rect.w, child.config.max_width)
+		}
+		if child.config.max_height > 0 {
+			child.final_rect.h = min(child.final_rect.h, child.config.max_height)
+		}
+
 		// DYNAMIC HEIGHT RESOLUTION FOR WRAPPED TEXT
 		// If this child needs wrapping and logic deferred to here (Grow/Percent Width)
 		if child.config.wrap_text && !child.is_container {
@@ -721,6 +774,27 @@ _pass3_position :: proc(l_ctx: ^LayoutContext, node_idx: LayoutNodeId) {
 
 	content_w := max(0, node.final_rect.w - node.config.padding.left - node.config.padding.right)
 	content_h := max(0, node.final_rect.h - node.config.padding.top - node.config.padding.bottom)
+
+	// ZStack: all children positioned at (0, 0)
+	if node.config.direction == .ZStack {
+		child_idx := node.first_child
+		for child_idx != INVALID_NODE {
+			child := &l_ctx.nodes[int(child_idx)]
+			child.final_rect.x = start_x - node.config.scroll_offset.x
+			child.final_rect.y = start_y - node.config.scroll_offset.y
+			_clamp_rect(
+				&child.final_rect,
+				start_x,
+				start_y,
+				content_w,
+				content_h,
+				node.config.overflow,
+			)
+			_pass3_position(l_ctx, child_idx)
+			child_idx = child.next_sibling
+		}
+		return
+	}
 
 	main_axis := _get_main_axis(node.config.direction)
 	cross_axis := _get_cross_axis(node.config.direction)
