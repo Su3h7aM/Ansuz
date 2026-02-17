@@ -2,7 +2,7 @@
 
 **A Terminal User Interface (TUI) Library for Odin**
 
-Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nicbarker/clay) and [OpenTUI](https://github.com/neurocyte/opentui), designed specifically for the Odin programming language.
+Ansuz is an immediate-mode TUI library inspired by [Clay](https://github.com/nicbarker/clay), designed specifically for the Odin programming language.
 
 ## Features
 
@@ -49,26 +49,37 @@ odin build examples/hello_world.odin -file -out:bin/hello_world
 package main
 
 import ansuz "ansuz"
-import "core:fmt"
 
 main :: proc() {
-    ctx, _ := ansuz.init()
+    ctx, err := ansuz.init()
+    if err != .None do return
     defer ansuz.shutdown(ctx)
 
-    for !ansuz.should_close(ctx) {
-        // Handle events
+    ansuz.run(ctx, proc(ctx: ^ansuz.Context) -> bool {
         for event in ansuz.poll_events(ctx) {
-            // ... handle input
+            if ansuz.is_quit_key(event) do return false
         }
 
-        // Render UI
-        ansuz.begin_frame(ctx)
-        
-        ansuz.write_text(ctx, 10, 5, "Hello, Ansuz!", 
-            ansuz.Style{fg = ansuz.Ansi.BrightYellow, bg = ansuz.Ansi.Default, flags = {.Bold}})
-        
-        ansuz.end_frame(ctx)
-    }
+        ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
+            ansuz.container(ctx, {
+                direction = .TopToBottom,
+                sizing = {.X = ansuz.grow(), .Y = ansuz.grow()},
+                alignment = {.Center, .Center},
+            }, proc(ctx: ^ansuz.Context) {
+                ansuz.box(ctx, {
+                    sizing = {.X = ansuz.fixed(32), .Y = ansuz.fixed(5)},
+                    padding = ansuz.padding_all(1),
+                    alignment = {.Center, .Center},
+                }, ansuz.style(.BrightCyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
+                    ansuz.label(ctx, "Hello, Ansuz!", ansuz.Element{
+                        style = ansuz.style(.BrightYellow, .Default, {.Bold}),
+                    })
+                })
+            })
+        })
+
+        return true
+    })
 }
 ```
 
@@ -78,10 +89,11 @@ main :: proc() {
 **Platform**: Unix/Linux
 
 **Key implemented features:**
-- ✅ Core immediate mode architecture
-- ✅ Flexible Layout System
+- ✅ Core immediate mode architecture with full-frame redraws
+- ✅ Scoped layout API and Clay-style element helpers
 - ✅ Basic Drawing (Text, Rects, Boxes)
 - ✅ Input Handling (Keys, Resize)
+- ✅ Theme-driven widgets (buttons, checkboxes) with focus management
 
 See `AGENTS.md` for internal development workflows and contribution guidelines.
 

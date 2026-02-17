@@ -80,9 +80,8 @@ ansuz.container(ctx, {
 **Bordered Box:**
 ```odin
 ansuz.box(ctx, {
-    style = ansuz.style(.BrightCyan, .Default, {}),
     sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(10)},
-}, .Rounded, proc(ctx: ^ansuz.Context) {
+}, ansuz.style(.BrightCyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
     // Children (automatically padded for border)
 })
 ```
@@ -118,9 +117,8 @@ ansuz.layout(ctx, proc(ctx: ^ansuz.Context) {
     }, proc(ctx: ^ansuz.Context) {
         // Header
         ansuz.box(ctx, {
-            style = ansuz.style(.BrightBlue, .Default, {.Bold}),
             sizing = {.X = ansuz.grow(), .Y = ansuz.fixed(3)},
-        }, .Double, proc(ctx: ^ansuz.Context) {
+        }, ansuz.style(.BrightBlue, .Default, {.Bold}), .Double, proc(ctx: ^ansuz.Context) {
             ansuz.label(ctx, "My Application", {})
         })
 
