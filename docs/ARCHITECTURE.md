@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Ansuz is a Terminal User Interface (TUI) library for the Odin programming language, designed with an immediate-mode API pattern inspired by Clay and architectural concepts from OpenTUI.
+Ansuz is a Terminal User Interface (TUI) library for the Odin programming language, designed with an immediate-mode API pattern inspired by Clay.
 
 ## Table of Contents
 
@@ -62,15 +62,15 @@ Ansuz operates in **Raw Mode**, disabling canonical line buffering and echoing t
 
 ### 2.1 Core Components
 
-1.  **Render Buffer**: 2D grid of cells (rune + style).
+1.  **Render Buffer**: Single 2D grid of cells (rune + style) that is cleared every frame.
 2.  **Event Loop**: Capture input -> Update State -> Layout -> Render -> Output.
 3.  **Layout Engine**: Calculates widget positions/sizes.
-4.  **Diffing**: Only writes changed cells to the terminal to minimize bandwidth and flickering.
+4.  **Full-Frame Renderer**: The entire buffer is converted to ANSI output each frame (no diffing).
 
 ### 2.2 Rendering Flow
 
 ```
-Input -> Event Processing -> Layout -> Rendering (to Buffer) -> Diff -> Output (ANSI)
+Input -> Event Processing -> Layout -> Rendering (to Buffer) -> Full Redraw Output (ANSI)
 ```
 
 ---
@@ -130,26 +130,25 @@ ansuz/
 
 ### 4.2 Core Modules
 
-- **api.odin**: The high-level entry point. Manages the `Context` and frame lifecycle (`begin_frame`, `end_frame`), event loop (`run`), and focus management.
-- **scoped.odin**: The primary API for UI declaration. Provides 100% scoped callback interface with `layout()`, `container()`, `box()`, `vstack()`, `hstack()`.
-- **element.odin**: Element definitions and leaf nodes (`label()`, `element()`), plus interactive widgets (`widget_button`, `widget_checkbox`).
-- **buffer.odin**: Manages the rendering grid. Handles resizing and ANSI output generation.
+- **api.odin**: The high-level entry point. Manages the `Context`, frame lifecycle (`begin_frame`, `end_frame`), event loop (`run`), and focus utilities.
+- **scoped.odin**: The primary UI declaration API. Provides scoped callbacks with `layout()`, `container()`, `box()`, `rect()`, `vstack()`, `hstack()`.
+- **element.odin**: Element definitions and leaf nodes (`label()`, `element()`), plus themed widgets (`widget_button`, `widget_checkbox`).
+- **buffer.odin**: Manages the rendering grid, clipping, text wrapping, and ANSI output generation.
 - **layout.odin**: Implements the 3-pass layout solver (Measure -> Resolve -> Position) with Clay-inspired algorithms.
-- **terminal.odin**: Handles platform-specific system calls (`tcgetattr`, `tcsetattr`) and raw ANSI output using native Odin functions from `core:sys/posix`.
-- **event.odin**: Parses raw bytes from stdin into structured `Event` enums (Keys, Resizes).
+- **terminal.odin**: Handles raw terminal mode, alternate buffer, synchronized updates, and resize detection via native Odin POSIX/Linux calls.
+- **event.odin**: Parses raw bytes from stdin into structured `Event` enums (keys, resizes).
 - **theme.odin**: Theme definitions and style helpers for widgets.
-- **widgets.odin**: High-level interactive widgets with built-in focus and state management.
+- **widgets.odin**: Lightweight widget helpers (`button`, `checkbox`) using the lower-level element primitives.
 
 ### 4.3 Data Structures
 
 **Cell**:
 ```odin
 Cell :: struct {
-    rune:       rune,
-    fg:         TerminalColor, // Union: Ansi, Color256, RGB
-    bg:         TerminalColor,
-    style:      StyleFlags,
-    dirty:      bool,
+    rune:  rune,
+    fg:    TerminalColor, // Union: Ansi, Color256, RGB
+    bg:    TerminalColor,
+    style: StyleFlags,
 }
 ```
 

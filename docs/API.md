@@ -1,14 +1,13 @@
 # API Reference
 
-Ansuz provides a **100% scoped callback API** for immediate-mode TUI development in Odin.
+Ansuz provides a **scoped callback API** and Clay-style element helpers for immediate-mode TUI development in Odin.
 
 ## Scoped Layout API (Primary API)
 
 The scoped API uses callbacks to define UI structure without explicit begin/end calls.
 
 ```odin
-// Import the scoped API
-import "ansuz/scoped"
+import ansuz "ansuz"
 ```
 
 ### Layout Management
@@ -21,14 +20,14 @@ layout :: proc(ctx: ^Context, body: proc(^Context))
 container :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))
 
 // Bordered box container
-box :: proc(ctx: ^Context, config: LayoutConfig, box_style: BoxStyle, body: proc(^Context))
+box :: proc(ctx: ^Context, config: LayoutConfig, style: Style, box_style: BoxStyle, body: proc(^Context))
 
 // Convenience shortcuts
 vstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))  // Vertical (TopToBottom)
 hstack :: proc(ctx: ^Context, config: LayoutConfig, body: proc(^Context))  // Horizontal (LeftToRight)
 
 // Filled rectangle container
-rect :: proc(ctx: ^Context, config: LayoutConfig, char: rune, body: proc(^Context))
+rect :: proc(ctx: ^Context, config: LayoutConfig, style: Style, char: rune, body: proc(^Context))
 ```
 
 ### Leaf Elements
@@ -41,14 +40,34 @@ label :: proc(ctx: ^Context, txt: string, el: Element = {})
 element :: proc(ctx: ^Context, el: Element = {})
 ```
 
+### Element Configuration
+
+```odin
+Element :: struct {
+    using layout: LayoutConfig
+    style:        Style
+    box_style:    Maybe(BoxStyle)
+    fill_char:    Maybe(rune)
+    content:      Maybe(string)
+    focusable:    bool
+    id_source:    string
+}
+
+element_default :: proc() -> Element
+```
+
+Use `content` for text nodes, `box_style` for bordered elements, and `fill_char` for filled rectangles. Focusable elements should set `focusable = true` and provide `id_source` for stable IDs.
+
 ### Interactive Widgets
 
 ```odin
-// Button - returns true if clicked
+// Themed widgets built on the Element API
 widget_button :: proc(ctx: ^Context, lbl: string) -> bool
-
-// Checkbox - returns true if toggled
 widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool
+
+// Lightweight helpers (no theme lookups)
+button :: proc(ctx: ^Context, label_text: string) -> bool
+checkbox :: proc(ctx: ^Context, label_str: string, checked: ^bool) -> bool
 ```
 
 ## Layout Configuration
@@ -124,17 +143,20 @@ style :: proc(fg: TerminalColor, bg: TerminalColor, flags: StyleFlags) -> Style
 
 // Color helpers
 rgb :: proc(r, g, b: u8) -> TerminalColor      // TrueColor
+hex :: proc(value: u32) -> TerminalColor       // 0xRRGGBB
 color256 :: proc(index: u8) -> TerminalColor   // 256-color palette
+rgb_cube :: proc(r, g, b: u8) -> TerminalColor // 6×6×6 palette cube
+grayscale :: proc(level: u8) -> TerminalColor  // 24-step grayscale
 
 // Style flags
 StyleFlags :: bit_set[StyleFlag]
-StyleFlag :: enum { Bold, Dim, Italic, Underline, Blink, Reverse }
+StyleFlag :: enum { Bold, Dim, Italic, Underline, Blink, Reverse, Hidden, Strikethrough }
 ```
 
 ## Complete Example
 
 ```odin
-import ansuz "../ansuz"
+import ansuz "ansuz"
 
 main :: proc() {
     ctx, err := ansuz.init()
@@ -153,9 +175,8 @@ main :: proc() {
                 padding = ansuz.padding_all(1),
             }, proc(ctx: ^ansuz.Context) {
                 ansuz.box(ctx, {
-                    style = ansuz.style(.BrightCyan, .Default, {}),
                     sizing = {.X = ansuz.fixed(40), .Y = ansuz.fixed(10)},
-                }, .Rounded, proc(ctx: ^ansuz.Context) {
+                }, ansuz.style(.BrightCyan, .Default, {}), .Rounded, proc(ctx: ^ansuz.Context) {
                     ansuz.label(ctx, "Hello, Ansuz!", {})
                     ansuz.label(ctx, "Scoped API is clean!", {})
                 })
