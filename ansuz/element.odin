@@ -78,7 +78,7 @@ element :: proc(ctx: ^Context, el: Element = {}) {
 label :: proc(ctx: ^Context, txt: string, el: Element = {}) {
     modified := el
     modified.content = txt
-    if el.sizing[.Y].type == .FitContent {
+    if el.sizing[.Y].type == .FitContent && !el.wrap_text {
         modified.sizing[.Y] = fixed(1)
     }
     element(ctx, modified)
