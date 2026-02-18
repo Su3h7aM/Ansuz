@@ -69,7 +69,7 @@ test_ansi_to_bg_code_bright :: proc(t: ^testing.T) {
 @(test)
 test_color_offset_between_fg_bg :: proc(t: ^testing.T) {
 	// Verify that fg and bg codes are different for the same color
-	for color in Color {
+	for color in Ansi {
 		fg := ansi_to_fg_code(color)
 		bg := ansi_to_bg_code(color)
 		testing.expect(t, fg != bg, "FG and BG codes should be different")
@@ -316,7 +316,7 @@ test_all_color_values_unique_fg :: proc(t: ^testing.T) {
 	seen: [dynamic]string
 	defer delete(seen)
 
-	for color in Color {
+	for color in Ansi {
 		code := ansi_to_fg_code(color)
 		for seen_code in seen {
 			testing.expect(t, code != seen_code, "Color codes should be unique")

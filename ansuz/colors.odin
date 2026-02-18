@@ -331,13 +331,3 @@ to_ansi :: proc(style: Style) -> string {
 	return generate_style_sequence(style.fg, style.bg, style.flags)
 }
 
-// =============================================================================
-// Legacy Compatibility (Deprecated - will be removed)
-// =============================================================================
-
-// Color is an alias for Ansi (backward compatibility)
-// Color is an alias for Ansi (backward compatibility)
-// Color is an alias for Ansi (backward compatibility)
-Color :: Ansi
-
-// color_to_ansi_fg is deprecated, use ansi_to_fg_code instead

@@ -326,27 +326,6 @@ wait_for_event :: proc(ctx: ^Context, timeout_ms: i32 = -1) -> WaitResult {
 	}
 }
 
-// wait_for_input blocks until stdin has data available or timeout expires
-// timeout_ms: -1 for infinite wait, 0 for immediate return, >0 for milliseconds
-// Returns: true if data is available, false if timeout or error
-// DEPRECATED: Use wait_for_event() for event-driven rendering
-wait_for_input :: proc(timeout_ms: i32 = -1) -> bool {
-	fds: [1]posix.pollfd
-	fds[0] = posix.pollfd {
-		fd      = posix.FD(os.stdin),
-		events  = {.IN},
-		revents = {},
-	}
-
-	// Use official posix.poll()
-	ret := posix.poll(&fds[0], 1, c.int(timeout_ms))
-
-	// ret > 0: number of fds with events
-	// ret = 0: timeout
-	// ret < 0: error
-	return ret > 0 && .IN in fds[0].revents
-}
-
 // reset_terminal performs full terminal cleanup
 // Should be called before exiting the program
 reset_terminal :: proc() {

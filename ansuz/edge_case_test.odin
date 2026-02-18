@@ -222,8 +222,8 @@ test_buffer_resize_shrinker :: proc(t: ^testing.T) {
 
 @(test)
 test_color_enum_values :: proc(t: ^testing.T) {
-	// Test all Color enum values
-	colors := [?]Color {
+	// Test all Ansi enum values
+	colors := [?]Ansi {
 		.Default,
 		.Black,
 		.Red,
