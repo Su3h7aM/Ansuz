@@ -22,6 +22,17 @@ Theme :: struct {
 	checkbox_focused:         WidgetTheme,
 	checkbox_checked_focused: WidgetTheme,
 
+	// Input styles
+	input:                    WidgetTheme,
+	input_focused:            WidgetTheme,
+	input_placeholder:        Style,
+
+	// Select styles
+	select:                   WidgetTheme,
+	select_focused:           WidgetTheme,
+	select_open:              WidgetTheme,
+	select_open_focused:      WidgetTheme,
+
 	// Container styles
 	container:                Style,
 
@@ -75,6 +86,35 @@ default_theme_full :: proc() -> Theme {
 		checkbox_checked_focused = WidgetTheme {
 			style = Style{fg = Ansi.Black, bg = Ansi.BrightCyan, flags = {.Bold}},
 			prefix = "[x] ",
+		},
+
+		// Input
+		input = WidgetTheme {
+			style = Style{fg = Ansi.White, bg = Ansi.Default, flags = {}},
+			prefix = "",
+		},
+		input_focused = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Default, flags = {.Underline}},
+			prefix = "",
+		},
+		input_placeholder = Style{fg = Ansi.BrightBlack, bg = Ansi.Default, flags = {.Dim}},
+
+		// Select
+		select = WidgetTheme {
+			style = Style{fg = Ansi.White, bg = Ansi.Default, flags = {}},
+			prefix = "[v] ",
+		},
+		select_focused = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.BrightCyan, flags = {.Bold}},
+			prefix = "[v] ",
+		},
+		select_open = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.BrightCyan, flags = {.Bold}},
+			prefix = "[^] ",
+		},
+		select_open_focused = WidgetTheme {
+			style = Style{fg = Ansi.Black, bg = Ansi.BrightCyan, flags = {.Bold}},
+			prefix = "[^] ",
 		},
 
 		// Container
@@ -132,6 +172,35 @@ dark_theme :: proc() -> Theme {
 			prefix = "[x] ",
 		},
 
+		// Input
+		input = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Default, flags = {}},
+			prefix = "",
+		},
+		input_focused = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Default, flags = {.Underline}},
+			prefix = "",
+		},
+		input_placeholder = Style{fg = Ansi.BrightBlack, bg = Ansi.Default, flags = {.Dim}},
+
+		// Select
+		select = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Default, flags = {}},
+			prefix = "[v] ",
+		},
+		select_focused = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Cyan, flags = {.Bold}},
+			prefix = "[v] ",
+		},
+		select_open = WidgetTheme {
+			style = Style{fg = Ansi.BrightWhite, bg = Ansi.Cyan, flags = {.Bold}},
+			prefix = "[^] ",
+		},
+		select_open_focused = WidgetTheme {
+			style = Style{fg = Ansi.Black, bg = Ansi.Cyan, flags = {.Bold}},
+			prefix = "[^] ",
+		},
+
 		// Container
 		container = Style{fg = Ansi.Default, bg = Ansi.Default, flags = {}},
 
@@ -167,4 +236,17 @@ get_checkbox_theme :: proc(theme: ^Theme, checked, focused: bool) -> WidgetTheme
 		return checked ? theme.checkbox_checked_focused : theme.checkbox_focused
 	}
 	return checked ? theme.checkbox_checked : theme.checkbox
+}
+
+// get_input_theme returns the appropriate input theme for the current state
+get_input_theme :: proc(theme: ^Theme, focused: bool) -> WidgetTheme {
+	return focused ? theme.input_focused : theme.input
+}
+
+// get_select_theme returns the appropriate select theme for the current state
+get_select_theme :: proc(theme: ^Theme, is_open, focused: bool) -> WidgetTheme {
+	if is_open {
+		return focused ? theme.select_open_focused : theme.select_open
+	}
+	return focused ? theme.select_focused : theme.select
 }

@@ -67,7 +67,45 @@ widget_button :: proc(ctx: ^Context, lbl: string) -> bool
 // Checkbox - returns true if toggled
 // Usage: checked := true; if ansuz.widget_checkbox(ctx, "label", &checked) { ... }
 widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool
+
+// Input - returns true if value was modified this frame
+// Usage: value := ""; cursor := 0; if ansuz.widget_input(ctx, "id", &value, &cursor, "placeholder") { ... }
+widget_input :: proc(ctx: ^Context, lbl: string, value: ^string, cursor_pos: ^int, placeholder: string = "") -> bool
+
+// Select dropdown - returns true if selection changed
+// Usage: selected := 0; is_open := false; options := []string{"A", "B", "C"}; if ansuz.widget_select(ctx, "id", options, &selected, &is_open) { ... }
+widget_select :: proc(ctx: ^Context, lbl: string, options: []string, selected_idx: ^int, is_open: ^bool) -> bool
 ```
+
+#### Input Widget
+
+The input widget provides text entry with full keyboard navigation:
+
+- **Typing**: Any printable character is inserted at cursor position
+- **Backspace**: Deletes character before cursor
+- **Delete**: Deletes character at cursor
+- **Left/Right Arrows**: Move cursor one character
+- **Home**: Move cursor to start of text
+- **End**: Move cursor to end of text
+- **Placeholder**: Shown when value is empty
+
+**State Management**: The caller manages both the `value` string and `cursor_pos`. The widget modifies these directly based on keyboard input.
+
+**Memory Management**: The widget clones strings to persistent memory (ctx.allocator) so they survive across frames. The caller is responsible for freeing the string memory when no longer needed using `delete(value, ctx.allocator)`. Note that string literals like `""` should not be freed.
+
+#### Select Widget
+
+The select widget provides a dropdown menu for choosing from a list:
+
+- **Closed State**: Shows the currently selected option
+- **Open State (Enter/Space)**: Shows all options with the current one highlighted
+- **Navigation (Up/Down)**: Move selection within the dropdown
+- **Confirm (Enter)**: Select the highlighted option and close
+- **Cancel (Escape)**: Close without changing selection
+
+**State Management**: The caller manages both `selected_idx` (current selection) and `is_open` (dropdown visibility). The widget modifies these based on interaction.
+
+Both widgets support focus-based styling from the theme system and integrate with Tab navigation.
 
 ## Layout Configuration
 

@@ -2,6 +2,7 @@ package ansuz
 
 import "core:fmt"
 import "core:hash"
+import "core:strings"
 
 // ============================================================================
 // Element ID - Type-safe identifier for elements
@@ -220,30 +221,275 @@ widget_button :: proc(ctx: ^Context, lbl: string) -> bool {
 // widget_checkbox creates a checkbox using the Element API
 // Returns true if toggled this frame
 widget_checkbox :: proc(ctx: ^Context, lbl: string, checked: ^bool) -> bool {
-    elem_id := u64(element_id(lbl))
-    // NOTE: register_focusable is called automatically by _process_element_start
-    // when the Element has focusable=true, so we don't call it here
+	elem_id := u64(element_id(lbl))
+	// NOTE: register_focusable is called automatically by _process_element_start
+	// when the Element has focusable=true, so we don't call it here
 
-    focused := is_focused(ctx, elem_id)
-    interaction := interact(ctx, elem_id, Rect{})
+	focused := is_focused(ctx, elem_id)
+	interaction := interact(ctx, elem_id, Rect{})
 
-    if interaction == .Clicked {
-        checked^ = !checked^
-    }
+	if interaction == .Clicked {
+		checked^ = !checked^
+	}
 
-    // Get theme for current state
-    theme := get_checkbox_theme(ctx.theme, checked^, focused)
+	// Get theme for current state
+	theme := get_checkbox_theme(ctx.theme, checked^, focused)
 
-    element(
-        ctx,
-        Element {
-            content = fmt.tprintf("%s%s", theme.prefix, lbl),
-            style = theme.style,
-            sizing = {.X = grow(), .Y = fixed(1)},
-            focusable = true,
-            id_source = lbl,
-        },
-    )
+	element(
+		ctx,
+		Element {
+			content = fmt.tprintf("%s%s", theme.prefix, lbl),
+			style = theme.style,
+			sizing = {.X = grow(), .Y = fixed(1)},
+			focusable = true,
+			id_source = lbl,
+		},
+	)
 
-    return interaction == .Clicked
+	return interaction == .Clicked
+}
+
+// ============================================================================
+// Input Widget
+// ============================================================================
+
+// widget_input creates a text input field using the Element API
+// - value: pointer to the current text value (managed by caller)
+// - cursor_pos: pointer to cursor position (managed by caller)
+// - placeholder: text to show when value is empty (optional)
+// - Returns true if value was modified this frame
+widget_input :: proc(ctx: ^Context, lbl: string, value: ^string, cursor_pos: ^int, placeholder: string = "") -> bool {
+	elem_id := u64(element_id(lbl))
+	focused := is_focused(ctx, elem_id)
+	modified := false
+
+	// Process input keys only when focused
+	if focused {
+		for i := 0; i < len(ctx.input_keys); i += 1 {
+			k := ctx.input_keys[i]
+
+			#partial switch k.key {
+			case .Char:
+				// Insert character at cursor position
+				if k.rune != 0 {
+					new_value := fmt.tprintf("%s%c%s", value[:cursor_pos^], k.rune, value[cursor_pos^:])
+					// Clone to persistent allocator since temp_allocator gets freed each frame
+					// Note: Caller is responsible for freeing the old value if it was dynamically allocated
+					value^ = strings.clone(new_value, ctx.allocator)
+					cursor_pos^ += 1
+					modified = true
+					// Consume the key
+					unordered_remove(&ctx.input_keys, i)
+					i -= 1
+				}
+
+			case .Backspace:
+				// Delete character before cursor
+				if cursor_pos^ > 0 {
+					new_value := fmt.tprintf("%s%s", value[:cursor_pos^-1], value[cursor_pos^:])
+					// Clone to persistent allocator since temp_allocator gets freed each frame
+					// Note: Caller is responsible for freeing the old value if it was dynamically allocated
+					value^ = strings.clone(new_value, ctx.allocator)
+					cursor_pos^ -= 1
+					modified = true
+				}
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+
+			case .Delete:
+				// Delete character at cursor
+				if cursor_pos^ < len(value^) {
+					new_value := fmt.tprintf("%s%s", value[:cursor_pos^], value[cursor_pos^+1:])
+					// Clone to persistent allocator since temp_allocator gets freed each frame
+					// Note: Caller is responsible for freeing the old value if it was dynamically allocated
+					value^ = strings.clone(new_value, ctx.allocator)
+					modified = true
+				}
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+
+			case .Left:
+				// Move cursor left
+				if cursor_pos^ > 0 {
+					cursor_pos^ -= 1
+				}
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+
+			case .Right:
+				// Move cursor right
+				if cursor_pos^ < len(value^) {
+					cursor_pos^ += 1
+				}
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+
+			case .Home:
+				// Move cursor to start
+				cursor_pos^ = 0
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+
+			case .End:
+				// Move cursor to end
+				cursor_pos^ = len(value^)
+				// Consume the key
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+			}
+		}
+	}
+
+	// Get theme for current state
+	theme := get_input_theme(ctx.theme, focused)
+
+	// Determine what to display
+	display_text := value^
+	if len(display_text) == 0 && len(placeholder) > 0 {
+		display_text = placeholder
+		// Use placeholder style instead
+		theme.style = ctx.theme.input_placeholder
+	}
+
+	// Render the input field
+	element(
+		ctx,
+		Element {
+			content = display_text,
+			style = theme.style,
+			sizing = {.X = grow(), .Y = fixed(1)},
+			focusable = true,
+			id_source = lbl,
+		},
+	)
+
+	return modified
+}
+
+// ============================================================================
+// Select Widget
+// ============================================================================
+
+// widget_select creates a dropdown select widget using the Element API
+// - options: array of option labels
+// - selected_idx: pointer to the currently selected index (managed by caller)
+// - is_open: pointer to track if dropdown is open (managed by caller)
+// - Returns true if selection changed this frame
+widget_select :: proc(ctx: ^Context, lbl: string, options: []string, selected_idx: ^int, is_open: ^bool) -> bool {
+	elem_id := u64(element_id(lbl))
+	focused := is_focused(ctx, elem_id)
+	selection_changed := false
+
+	// Ensure selected_idx is valid
+	if selected_idx^ < 0 {
+		selected_idx^ = 0
+	}
+	if selected_idx^ >= len(options) {
+		selected_idx^ = len(options) - 1
+	}
+	if selected_idx^ < 0 {
+		selected_idx^ = 0
+	}
+
+	// Get display text for current selection
+	display_text := ""
+	if selected_idx^ >= 0 && selected_idx^ < len(options) {
+		display_text = options[selected_idx^]
+	} else {
+		display_text = "Select..."
+	}
+
+	// Process interaction when focused
+	if focused {
+		// Handle navigation when dropdown is open
+		if is_open^ {
+			for i := 0; i < len(ctx.input_keys); i += 1 {
+				k := ctx.input_keys[i]
+
+				#partial switch k.key {
+				case .Up:
+					// Move selection up
+					if selected_idx^ > 0 {
+						selected_idx^ -= 1
+					}
+					// Don't consume - let user keep navigating
+
+				case .Down:
+					// Move selection down
+					if selected_idx^ < len(options) - 1 {
+						selected_idx^ += 1
+					}
+					// Don't consume - let user keep navigating
+
+				case .Enter:
+					// Confirm selection and close
+					selection_changed = true
+					is_open^ = false
+					unordered_remove(&ctx.input_keys, i)
+					i -= 1
+
+			case .Escape:
+				// Close dropdown without changing
+				is_open^ = false
+				unordered_remove(&ctx.input_keys, i)
+				i -= 1
+			}
+		}
+		} else {
+			// Check for activation (Enter/Space) to toggle dropdown when closed
+			interaction := interact(ctx, elem_id, Rect{})
+			if interaction == .Clicked {
+				is_open^ = !is_open^
+			}
+		}
+	}
+
+	// Get theme for current state
+	theme := get_select_theme(ctx.theme, is_open^, focused)
+
+	// Render the select field
+	element(
+		ctx,
+		Element {
+			content = fmt.tprintf("%s%s", theme.prefix, display_text),
+			style = theme.style,
+			sizing = {.X = grow(), .Y = fixed(1)},
+			focusable = true,
+			id_source = lbl,
+		},
+	)
+
+	// Render dropdown options if open
+	if is_open^ {
+		for opt, idx in options {
+			is_selected := idx == selected_idx^
+			prefix := "  "
+			if is_selected {
+				prefix = "> "
+			}
+
+			opt_style := Style{fg = Ansi.White, bg = Ansi.Default, flags = {}}
+			if is_selected {
+				opt_style = Style{fg = Ansi.Black, bg = Ansi.BrightCyan, flags = {.Bold}}
+			}
+
+			element(
+				ctx,
+				Element {
+					content = fmt.tprintf("%s%s", prefix, opt),
+					style = opt_style,
+					sizing = {.X = grow(), .Y = fixed(1)},
+					focusable = false,
+					id_source = "",
+				},
+			)
+		}
+	}
+
+	return selection_changed
 }
