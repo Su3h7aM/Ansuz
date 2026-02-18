@@ -3,6 +3,11 @@ package ansuz
 import "core:mem"
 import "core:testing"
 
+import at "../terminal"
+import ab "../buffer"
+import ac "../color"
+import al "../layout"
+
 @(test)
 test_context_init :: proc(t: ^testing.T) {
     // Verify ContextError enum values exist
@@ -24,8 +29,8 @@ test_context_memory_layout :: proc(t: ^testing.T) {
     ctx_size := size_of(Context)
     testing.expect(t, ctx_size > 0, "Context should have non-zero size")
 
-    term_size := size_of(TerminalState)
-    buffer_size := size_of(FrameBuffer)
+    term_size := size_of(at.TerminalState)
+    buffer_size := size_of(ab.FrameBuffer)
     testing.expect(t, term_size > 0, "TerminalState should have size")
     testing.expect(t, buffer_size > 0, "FrameBuffer should have size")
 }
@@ -33,38 +38,37 @@ test_context_memory_layout :: proc(t: ^testing.T) {
 @(test)
 test_api_style_functions :: proc(t: ^testing.T) {
     // Test default_style
-    default := default_style()
-    testing.expect(t, default.fg == Ansi.Default, "default_style fg should be default")
-    testing.expect(t, default.bg == Ansi.Default, "default_style bg should be default")
+    default := ac.default_style()
+    testing.expect(t, default.fg == ac.Ansi.Default, "default_style fg should be default")
+    testing.expect(t, default.bg == ac.Ansi.Default, "default_style bg should be default")
     testing.expect(t, default.flags == {}, "default_style flags should be empty")
 
-    // Test style with various combinations
-    normal := style(.Default, .Default, {})
-    testing.expect(t, normal.fg == Ansi.Default)
-    testing.expect(t, normal.bg == Ansi.Default)
+    normal := ac.style(.Default, .Default, {})
+    testing.expect(t, normal.fg == ac.Ansi.Default)
+    testing.expect(t, normal.bg == ac.Ansi.Default)
     testing.expect(t, normal.flags == {})
 
-    bold := style(.Default, .Default, {.Bold})
-    testing.expect(t, bold.fg == Ansi.Default)
+    bold := ac.style(.Default, .Default, {.Bold})
+    testing.expect(t, bold.fg == ac.Ansi.Default)
     testing.expect(t, .Bold in bold.flags)
 
-    error_style := style(.Red, .Default, {.Bold})
-    testing.expect(t, error_style.fg == Ansi.Red)
+    error_style := ac.style(.Red, .Default, {.Bold})
+    testing.expect(t, error_style.fg == ac.Ansi.Red)
     testing.expect(t, .Bold in error_style.flags)
 
-    success := style(.Green, .Default, {})
-    testing.expect(t, success.fg == Ansi.Green)
+    success := ac.style(.Green, .Default, {})
+    testing.expect(t, success.fg == ac.Ansi.Green)
 
-    warning := style(.Yellow, .Default, {})
-    testing.expect(t, warning.fg == Ansi.Yellow)
+    warning := ac.style(.Yellow, .Default, {})
+    testing.expect(t, warning.fg == ac.Ansi.Yellow)
 
-    info := style(.Cyan, .Default, {})
-    testing.expect(t, info.fg == Ansi.Cyan)
+    info := ac.style(.Cyan, .Default, {})
+    testing.expect(t, info.fg == ac.Ansi.Cyan)
 
     // Test style with foreground only
-    fg_only := style(.Blue, .Default, {})
-    testing.expect(t, fg_only.fg == Ansi.Blue)
-    testing.expect(t, fg_only.bg == Ansi.Default)
+    fg_only := ac.style(.Blue, .Default, {})
+    testing.expect(t, fg_only.fg == ac.Ansi.Blue)
+    testing.expect(t, fg_only.bg == ac.Ansi.Default)
 }
 
 @(test)
@@ -146,32 +150,32 @@ test_shutdown_with_nil :: proc(t: ^testing.T) {
 test_layout_config_default :: proc(t: ^testing.T) {
     testing.expect(
         t,
-        DEFAULT_LAYOUT_CONFIG.direction == .TopToBottom,
+        al.DEFAULT_LAYOUT_CONFIG.direction == .TopToBottom,
         "Default direction should be TopToBottom",
     )
     testing.expect(
         t,
-        DEFAULT_LAYOUT_CONFIG.sizing[.X].type == .FitContent,
+        al.DEFAULT_LAYOUT_CONFIG.sizing[.X].type == .FitContent,
         "Default width sizing should be FitContent",
     )
     testing.expect(
         t,
-        DEFAULT_LAYOUT_CONFIG.sizing[.Y].type == .FitContent,
+        al.DEFAULT_LAYOUT_CONFIG.sizing[.Y].type == .FitContent,
         "Default height sizing should be FitContent",
     )
-    testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.padding.left, 0)
-    testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.padding.right, 0)
-    testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.padding.top, 0)
-    testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.padding.bottom, 0)
-    testing.expect_value(t, DEFAULT_LAYOUT_CONFIG.gap, 0)
+    testing.expect_value(t, al.DEFAULT_LAYOUT_CONFIG.padding.left, 0)
+    testing.expect_value(t, al.DEFAULT_LAYOUT_CONFIG.padding.right, 0)
+    testing.expect_value(t, al.DEFAULT_LAYOUT_CONFIG.padding.top, 0)
+    testing.expect_value(t, al.DEFAULT_LAYOUT_CONFIG.padding.bottom, 0)
+    testing.expect_value(t, al.DEFAULT_LAYOUT_CONFIG.gap, 0)
     testing.expect(
         t,
-        DEFAULT_LAYOUT_CONFIG.alignment.horizontal == .Left,
+        al.DEFAULT_LAYOUT_CONFIG.alignment.horizontal == .Left,
         "Default horizontal alignment should be Left",
     )
     testing.expect(
         t,
-        DEFAULT_LAYOUT_CONFIG.alignment.vertical == .Top,
+        al.DEFAULT_LAYOUT_CONFIG.alignment.vertical == .Top,
         "Default vertical alignment should be Top",
     )
 }
@@ -208,9 +212,9 @@ test_error_handling_flow :: proc(t: ^testing.T) {
 
 @(test)
 test_layout_api_with_style :: proc(t: ^testing.T) {
-    test_style := Style {
-        fg    = Ansi.Red,
-        bg    = Ansi.Blue,
+    test_style := ac.Style {
+        fg    = ac.Ansi.Red,
+        bg    = ac.Ansi.Blue,
         flags = {.Bold},
     }
 
@@ -218,8 +222,8 @@ test_layout_api_with_style :: proc(t: ^testing.T) {
     _ = test_style.bg
     _ = test_style.flags
 
-    testing.expect(t, test_style.fg == Ansi.Red)
-    testing.expect(t, test_style.bg == Ansi.Blue)
+    testing.expect(t, test_style.fg == ac.Ansi.Red)
+    testing.expect(t, test_style.bg == ac.Ansi.Blue)
     testing.expect(t, .Bold in test_style.flags)
 }
 

@@ -2,6 +2,8 @@ package ansuz
 
 import "core:testing"
 
+import ab "../buffer"
+
 @(test)
 test_focus_id_generation :: proc(t: ^testing.T) {
 	ctx := new(Context)
@@ -69,7 +71,7 @@ test_begin_frame_swaps_focusable :: proc(t: ^testing.T) {
 	ctx.focusable_items = make([dynamic]u64, ctx.allocator)
 	ctx.prev_focusable_items = make([dynamic]u64, ctx.allocator)
 	// Minimal mock
-	ctx.buffer.cells = make([]Cell, 10)
+	ctx.buffer.cells = make([]ab.Cell, 10)
 	defer {
 		delete(ctx.buffer.cells)
 		delete(ctx.focusable_items)

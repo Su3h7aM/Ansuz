@@ -2,6 +2,8 @@ package ansuz
 
 import "core:testing"
 
+import at "../terminal"
+
 // ============================================================================
 // Input Widget Tests
 // ============================================================================
@@ -64,8 +66,8 @@ test_widget_input_character_typing :: proc(t: ^testing.T) {
 	cursor_pos := 3
 
 	// Simulate typing 'l' and 'o'
-	append(&ctx.input_keys, KeyEvent{key = .Char, rune = 'l'})
-	append(&ctx.input_keys, KeyEvent{key = .Char, rune = 'o'})
+	append(&ctx.input_keys, at.KeyEvent{key = .Char, rune = 'l'})
+	append(&ctx.input_keys, at.KeyEvent{key = .Char, rune = 'o'})
 
 	// Set focus on the input
 	set_focus(ctx, u64(element_id("input4")))
@@ -89,7 +91,7 @@ test_widget_input_backspace :: proc(t: ^testing.T) {
 	cursor_pos := 5
 
 	// Simulate backspace
-	append(&ctx.input_keys, KeyEvent{key = .Backspace})
+	append(&ctx.input_keys, at.KeyEvent{key = .Backspace})
 
 	// Set focus
 	set_focus(ctx, u64(element_id("input5")))
@@ -113,7 +115,7 @@ test_widget_input_cursor_navigation :: proc(t: ^testing.T) {
 	cursor_pos := 5
 
 	// Move cursor to start
-	append(&ctx.input_keys, KeyEvent{key = .Home})
+	append(&ctx.input_keys, at.KeyEvent{key = .Home})
 
 	// Set focus
 	set_focus(ctx, u64(element_id("input6")))
@@ -127,7 +129,7 @@ test_widget_input_cursor_navigation :: proc(t: ^testing.T) {
 	// Reset and move right
 	cursor_pos = 0
 	clear(&ctx.input_keys)
-	append(&ctx.input_keys, KeyEvent{key = .Right})
+	append(&ctx.input_keys, at.KeyEvent{key = .Right})
 
 	if _test_render(ctx) {
 		widget_input(ctx, "input6", &value, &cursor_pos, "")
@@ -185,7 +187,7 @@ test_widget_select_open_toggle :: proc(t: ^testing.T) {
 
 	// Set focus and simulate Enter key
 	set_focus(ctx, u64(element_id("select3")))
-	append(&ctx.input_keys, KeyEvent{key = .Enter})
+	append(&ctx.input_keys, at.KeyEvent{key = .Enter})
 
 	// Need to simulate the interact() call by checking input_keys
 	// For now just test that widget renders without error
@@ -208,8 +210,8 @@ test_widget_select_navigation_when_open :: proc(t: ^testing.T) {
 
 	// Set focus and navigate down
 	set_focus(ctx, u64(element_id("select4")))
-	append(&ctx.input_keys, KeyEvent{key = .Down})
-	append(&ctx.input_keys, KeyEvent{key = .Down})
+	append(&ctx.input_keys, at.KeyEvent{key = .Down})
+	append(&ctx.input_keys, at.KeyEvent{key = .Down})
 
 	changed := false
 	if _test_render(ctx) {
@@ -231,7 +233,7 @@ test_widget_select_selection_when_open :: proc(t: ^testing.T) {
 
 	// Set focus and press Enter to confirm
 	set_focus(ctx, u64(element_id("select5")))
-	append(&ctx.input_keys, KeyEvent{key = .Enter})
+	append(&ctx.input_keys, at.KeyEvent{key = .Enter})
 
 	changed := false
 	if _test_render(ctx) {
@@ -253,7 +255,7 @@ test_widget_select_escape_closes :: proc(t: ^testing.T) {
 
 	// Set focus and press Escape
 	set_focus(ctx, u64(element_id("select6")))
-	append(&ctx.input_keys, KeyEvent{key = .Escape})
+	append(&ctx.input_keys, at.KeyEvent{key = .Escape})
 
 	if _test_render(ctx) {
 		widget_select(ctx, "select6", options, &selected_idx, &is_open)
@@ -274,7 +276,7 @@ test_widget_select_bounds_checking :: proc(t: ^testing.T) {
 
 	// Try to navigate past the end
 	set_focus(ctx, u64(element_id("select7")))
-	append(&ctx.input_keys, KeyEvent{key = .Down})
+	append(&ctx.input_keys, at.KeyEvent{key = .Down})
 
 	if _test_render(ctx) {
 		widget_select(ctx, "select7", options, &selected_idx, &is_open)
@@ -285,7 +287,7 @@ test_widget_select_bounds_checking :: proc(t: ^testing.T) {
 	// Try to navigate before start
 	selected_idx = 0
 	clear(&ctx.input_keys)
-	append(&ctx.input_keys, KeyEvent{key = .Up})
+	append(&ctx.input_keys, at.KeyEvent{key = .Up})
 
 	if _test_render(ctx) {
 		widget_select(ctx, "select7", options, &selected_idx, &is_open)

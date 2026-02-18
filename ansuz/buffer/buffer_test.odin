@@ -1,8 +1,10 @@
-package ansuz
+package ansuz_buffer
 
 import "core:mem"
 import "core:strings"
 import "core:testing"
+
+import ac "../color"
 
 @(test)
 test_buffer_init_destroy :: proc(t: ^testing.T) {
@@ -44,17 +46,17 @@ test_buffer_clear :: proc(t: ^testing.T) {
 	defer destroy_buffer(&buffer)
 
 	buffer.cells[0].rune = 'X'
-	buffer.cells[0].fg = Ansi.Red
+	buffer.cells[0].fg = ac.Ansi.Red
 
 	clear_buffer(&buffer)
 
 	testing.expect(t, buffer.cells[0].rune == ' ', "Cell should be space after clear")
 	testing.expect(
 		t,
-		buffer.cells[0].fg == Ansi.Default,
+		buffer.cells[0].fg == ac.Ansi.Default,
 		"Cell color should be default after clear",
 	)
-	testing.expect(t, buffer.cells[0].bg == Ansi.Default, "Cell bg should be default after clear")
+	testing.expect(t, buffer.cells[0].bg == ac.Ansi.Default, "Cell bg should be default after clear")
 	testing.expect(t, buffer.cells[0].style == {}, "Cell style should be empty after clear")
 }
 
@@ -85,38 +87,37 @@ test_buffer_set_cell :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	err := set_cell(&buffer, 5, 5, 'A', Ansi.Red, Ansi.Blue, {.Bold})
+	err := set_cell(&buffer, 5, 5, 'A', ac.Ansi.Red, ac.Ansi.Blue, {.Bold})
 	testing.expect(t, err == .None, "Setting valid cell should succeed")
 
 	cell := get_cell(&buffer, 5, 5)
 	testing.expect(t, cell.rune == 'A', "Cell should have correct rune")
-	testing.expect(t, cell.fg == Ansi.Red, "Cell should have correct fg color")
-	testing.expect(t, cell.bg == Ansi.Blue, "Cell should have correct bg color")
+	testing.expect(t, cell.fg == ac.Ansi.Red, "Cell should have correct fg color")
+	testing.expect(t, cell.bg == ac.Ansi.Blue, "Cell should have correct bg color")
 	testing.expect(t, .Bold in cell.style, "Cell should have bold style")
 
-	err = set_cell(&buffer, 10, 5, 'B', Ansi.Red, Ansi.Blue, {})
+	err = set_cell(&buffer, 10, 5, 'B', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, err == .OutOfBounds, "Setting out of bounds cell should return error")
 
-	err = set_cell(&buffer, 5, 10, 'C', Ansi.Red, Ansi.Blue, {})
+	err = set_cell(&buffer, 5, 10, 'C', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, err == .OutOfBounds, "Setting y out of bounds should return error")
 
-	err = set_cell(&buffer, -1, 5, 'D', Ansi.Red, Ansi.Blue, {})
+	err = set_cell(&buffer, -1, 5, 'D', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, err == .OutOfBounds, "Setting negative x should return error")
 }
 
 @(test)
 test_buffer_set_cell_with_defaults :: proc(t: ^testing.T) {
-	// Test set_cell with default values (replaces removed set_cell_simple)
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	err := set_cell(&buffer, 5, 5, 'X', Ansi.Default, Ansi.Default, {})
+	err := set_cell(&buffer, 5, 5, 'X', ac.Ansi.Default, ac.Ansi.Default, {})
 	testing.expect(t, err == .None, "Setting cell should succeed")
 
 	cell := get_cell(&buffer, 5, 5)
 	testing.expect(t, cell.rune == 'X', "Cell should have correct rune")
-	testing.expect(t, cell.fg == Ansi.Default, "Cell should have default fg")
-	testing.expect(t, cell.bg == Ansi.Default, "Cell should have default bg")
+	testing.expect(t, cell.fg == ac.Ansi.Default, "Cell should have default fg")
+	testing.expect(t, cell.bg == ac.Ansi.Default, "Cell should have default bg")
 	testing.expect(t, cell.style == {}, "Cell should have no styles")
 }
 
@@ -125,12 +126,12 @@ test_buffer_write_string :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(20, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	chars := write_string(&buffer, 0, 0, "Hello, World!", Ansi.Red, Ansi.Blue, {})
+	chars := write_string(&buffer, 0, 0, "Hello, World!", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 13, "Should write 13 characters")
 
 	cell := get_cell(&buffer, 0, 0)
 	testing.expect(t, cell.rune == 'H', "First char should be 'H'")
-	testing.expect(t, cell.fg == Ansi.Red, "First char should have red fg")
+	testing.expect(t, cell.fg == ac.Ansi.Red, "First char should have red fg")
 
 	cell2 := get_cell(&buffer, 5, 0)
 	testing.expect(t, cell2.rune == ',', "Fifth char should be comma")
@@ -144,16 +145,16 @@ test_buffer_write_string_bounds :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 5, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	chars := write_string(&buffer, 0, 0, "0123456789", Ansi.Red, Ansi.Blue, {})
+	chars := write_string(&buffer, 0, 0, "0123456789", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 10, "Should write all 10 chars")
 
-	chars = write_string(&buffer, 0, 0, "01234567890", Ansi.Red, Ansi.Blue, {})
+	chars = write_string(&buffer, 0, 0, "01234567890", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 10, "Should truncate to buffer width")
 
-	chars = write_string(&buffer, 5, 0, "0123456789", Ansi.Red, Ansi.Blue, {})
+	chars = write_string(&buffer, 5, 0, "0123456789", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 5, "Should write only 5 chars from x=5")
 
-	chars = write_string(&buffer, -5, 0, "ABC", Ansi.Red, Ansi.Blue, {})
+	chars = write_string(&buffer, -5, 0, "ABC", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 0, "Should write 0 chars with negative x starting outside buffer")
 }
 
@@ -162,13 +163,13 @@ test_buffer_write_string_out_of_bounds_y :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 5, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	chars := write_string(&buffer, 0, 5, "Test", Ansi.Red, Ansi.Blue, {})
+	chars := write_string(&buffer, 0, 5, "Test", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 0, "Should write 0 chars for y >= height")
 
-	chars = write_string(&buffer, 0, 10, "Test", Ansi.Red, Ansi.Blue, {})
+	chars = write_string(&buffer, 0, 10, "Test", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 0, "Should write 0 chars for y > height")
 
-	chars = write_string(&buffer, 0, -1, "Test", Ansi.Red, Ansi.Blue, {})
+	chars = write_string(&buffer, 0, -1, "Test", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 0, "Should write 0 chars for negative y")
 }
 
@@ -177,7 +178,7 @@ test_buffer_write_string_empty :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 5, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	chars := write_string(&buffer, 0, 0, "", Ansi.Red, Ansi.Blue, {})
+	chars := write_string(&buffer, 0, 0, "", ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, chars == 0, "Empty string should write 0 chars")
 }
 
@@ -186,15 +187,15 @@ test_buffer_fill_rect :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(20, 20, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	fill_rect(&buffer, 5, 5, 10, 5, 'X', Ansi.Red, Ansi.Blue, {.Bold})
+	fill_rect(&buffer, 5, 5, 10, 5, 'X', ac.Ansi.Red, ac.Ansi.Blue, {.Bold})
 
 	for y in 5 ..< 10 {
 		for x in 5 ..< 15 {
 			cell := get_cell(&buffer, x, y)
 			testing.expect(t, cell != nil, "Cell should exist")
 			testing.expect(t, cell.rune == 'X', "Cell should have 'X'")
-			testing.expect(t, cell.fg == Ansi.Red, "Cell should have red fg")
-			testing.expect(t, cell.bg == Ansi.Blue, "Cell should have blue bg")
+			testing.expect(t, cell.fg == ac.Ansi.Red, "Cell should have red fg")
+			testing.expect(t, cell.bg == ac.Ansi.Blue, "Cell should have blue bg")
 			testing.expect(t, .Bold in cell.style, "Cell should be bold")
 		}
 	}
@@ -211,7 +212,7 @@ test_buffer_draw_box :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(20, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	draw_box(&buffer, 5, 3, 10, 5, Ansi.Red, Ansi.Blue, {})
+	draw_box(&buffer, 5, 3, 10, 5, ac.Ansi.Red, ac.Ansi.Blue, {})
 
 	testing.expect_value(t, get_cell(&buffer, 5, 3).rune, '┌')
 	testing.expect_value(t, get_cell(&buffer, 14, 3).rune, '┐')
@@ -234,8 +235,8 @@ test_buffer_draw_box_too_small :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(20, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	draw_box(&buffer, 5, 3, 1, 5, Ansi.Red, Ansi.Blue, {})
-	draw_box(&buffer, 5, 3, 5, 1, Ansi.Red, Ansi.Blue, {})
+	draw_box(&buffer, 5, 3, 1, 5, ac.Ansi.Red, ac.Ansi.Blue, {})
+	draw_box(&buffer, 5, 3, 5, 1, ac.Ansi.Red, ac.Ansi.Blue, {})
 
 	center := get_cell(&buffer, 5, 3)
 	testing.expect(t, center.rune != '┌', "Too small box should not draw")
@@ -246,7 +247,7 @@ test_buffer_render_to_string :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(5, 3, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	write_string(&buffer, 0, 0, "ABC", Ansi.Red, Ansi.Blue, {})
+	write_string(&buffer, 0, 0, "ABC", ac.Ansi.Red, ac.Ansi.Blue, {})
 
 	builder := strings.builder_make(context.temp_allocator)
 	defer strings.builder_destroy(&builder)
@@ -265,8 +266,8 @@ test_buffer_resize :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	set_cell(&buffer, 5, 5, 'X', Ansi.Red, Ansi.Blue, {})
-	set_cell(&buffer, 9, 9, 'Y', Ansi.Green, Ansi.Yellow, {})
+	set_cell(&buffer, 5, 5, 'X', ac.Ansi.Red, ac.Ansi.Blue, {})
+	set_cell(&buffer, 9, 9, 'Y', ac.Ansi.Green, ac.Ansi.Yellow, {})
 
 	err := resize_buffer(&buffer, 20, 15)
 	testing.expect(t, err == .None, "Resize should succeed")
@@ -275,7 +276,7 @@ test_buffer_resize :: proc(t: ^testing.T) {
 
 	cell := get_cell(&buffer, 5, 5)
 	testing.expect(t, cell.rune == 'X', "Content should be preserved")
-	testing.expect(t, cell.fg == Ansi.Red, "Color should be preserved")
+	testing.expect(t, cell.fg == ac.Ansi.Red, "Color should be preserved")
 
 	cell = get_cell(&buffer, 9, 9)
 	testing.expect(t, cell.rune == 'Y', "Content should be preserved")
@@ -309,7 +310,7 @@ test_buffer_resize_smaller :: proc(t: ^testing.T) {
 
 	for y in 0 ..< 5 {
 		for x in 0 ..< 5 {
-			set_cell(&buffer, x, y, 'A', Ansi.Red, Ansi.Blue, {})
+			set_cell(&buffer, x, y, 'A', ac.Ansi.Red, ac.Ansi.Blue, {})
 		}
 	}
 
@@ -331,16 +332,16 @@ test_buffer_cell_index_calculation :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	set_cell(&buffer, 0, 0, 'A', Ansi.Red, Ansi.Blue, {})
+	set_cell(&buffer, 0, 0, 'A', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, buffer.cells[0].rune == 'A', "Cell at (0,0) should be at index 0")
 
-	set_cell(&buffer, 5, 0, 'B', Ansi.Red, Ansi.Blue, {})
+	set_cell(&buffer, 5, 0, 'B', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, buffer.cells[5].rune == 'B', "Cell at (5,0) should be at index 5")
 
-	set_cell(&buffer, 0, 1, 'C', Ansi.Red, Ansi.Blue, {})
+	set_cell(&buffer, 0, 1, 'C', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, buffer.cells[10].rune == 'C', "Cell at (0,1) should be at index 10")
 
-	set_cell(&buffer, 9, 9, 'D', Ansi.Red, Ansi.Blue, {})
+	set_cell(&buffer, 9, 9, 'D', ac.Ansi.Red, ac.Ansi.Blue, {})
 	testing.expect(t, buffer.cells[99].rune == 'D', "Cell at (9,9) should be at index 99")
 }
 
@@ -349,8 +350,8 @@ test_buffer_multiple_styles :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	styles: StyleFlags = {.Bold, .Underline, .Dim}
-	set_cell(&buffer, 5, 5, 'X', Ansi.Red, Ansi.Blue, styles)
+	styles: ac.StyleFlags = {.Bold, .Underline, .Dim}
+	set_cell(&buffer, 5, 5, 'X', ac.Ansi.Red, ac.Ansi.Blue, styles)
 
 	cell := get_cell(&buffer, 5, 5)
 	testing.expect(t, .Bold in cell.style, "Cell should have Bold")
@@ -370,7 +371,7 @@ test_buffer_large_dimensions :: proc(t: ^testing.T) {
 		"Large buffer should have correct cell count",
 	)
 
-	set_cell(&buffer, 199, 99, 'X', Ansi.Red, Ansi.Blue, {})
+	set_cell(&buffer, 199, 99, 'X', ac.Ansi.Red, ac.Ansi.Blue, {})
 	cell := get_cell(&buffer, 199, 99)
 	testing.expect(t, cell.rune == 'X', "Should set cell at edge of large buffer")
 }
@@ -380,9 +381,9 @@ test_buffer_write_multiple_lines :: proc(t: ^testing.T) {
 	buffer, _ := init_buffer(10, 3, context.allocator)
 	defer destroy_buffer(&buffer)
 
-	write_string(&buffer, 0, 0, "Line0", Ansi.Red, Ansi.Blue, {})
-	write_string(&buffer, 0, 1, "Line1", Ansi.Red, Ansi.Blue, {})
-	write_string(&buffer, 0, 2, "Line2", Ansi.Red, Ansi.Blue, {})
+	write_string(&buffer, 0, 0, "Line0", ac.Ansi.Red, ac.Ansi.Blue, {})
+	write_string(&buffer, 0, 1, "Line1", ac.Ansi.Red, ac.Ansi.Blue, {})
+	write_string(&buffer, 0, 2, "Line2", ac.Ansi.Red, ac.Ansi.Blue, {})
 
 	cell := get_cell(&buffer, 0, 0)
 	testing.expect(t, cell.rune == 'L', "First char of line 0 should be 'L'")
@@ -396,8 +397,6 @@ test_buffer_write_multiple_lines :: proc(t: ^testing.T) {
 
 @(test)
 test_buffer_get_cell_returns_nil_out_of_bounds :: proc(t: ^testing.T) {
-	// Test that get_cell returns nil for out-of-bounds access
-	// Users should check for nil before dereferencing
 	buffer, _ := init_buffer(10, 10, context.allocator)
 	defer destroy_buffer(&buffer)
 

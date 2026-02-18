@@ -5,7 +5,7 @@ import "core:mem"
 import "core:strings"
 import "core:unicode/utf8"
 
-import ac "../ansuz-color"
+import ac "../color"
 
 // Rect represents a rectangle with position and dimensions
 Rect :: struct {

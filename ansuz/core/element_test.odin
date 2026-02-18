@@ -2,6 +2,10 @@ package ansuz
 
 import "core:testing"
 
+import ac "../color"
+import al "../layout"
+import ab "../buffer"
+
 // ============================================================================
 // Element ID Tests
 // ============================================================================
@@ -47,7 +51,7 @@ test_element_default :: proc(t: ^testing.T) {
 test_element_using_layout :: proc(t: ^testing.T) {
 	// Test that 'using layout' allows direct field access
 	el := Element {
-		sizing = {.X = grow(), .Y = fixed(1)},
+		sizing = {.X = al.grow(), .Y = al.fixed(1)},
 		direction = .LeftToRight,
 		gap = 2,
 	}
@@ -63,7 +67,7 @@ test_element_using_layout :: proc(t: ^testing.T) {
 test_element_with_content :: proc(t: ^testing.T) {
 	el := Element {
 		content = "Hello World",
-		style   = style(.White, .Default, {}),
+		style   = ac.style(ac.Ansi.White, ac.Ansi.Default, {}),
 	}
 
 	content, ok := el.content.?
@@ -74,8 +78,8 @@ test_element_with_content :: proc(t: ^testing.T) {
 @(test)
 test_element_with_box_style :: proc(t: ^testing.T) {
 	el := Element {
-		box_style = BoxStyle.Rounded,
-		style     = style(.Cyan, .Default, {}),
+		box_style = ab.BoxStyle.Rounded,
+		style     = ac.style(.Cyan, ac.Ansi.Default, {}),
 	}
 
 	bs, ok := el.box_style.?
@@ -91,7 +95,7 @@ test_element_with_box_style :: proc(t: ^testing.T) {
 test_element_to_render_cmd_text :: proc(t: ^testing.T) {
 	el := Element {
 		content = "Test text",
-		style   = style(.Green, .Default, {}),
+		style   = ac.style(ac.Ansi.Green, ac.Ansi.Default, {}),
 	}
 
 	cmd := _element_to_render_cmd(el)
@@ -103,8 +107,8 @@ test_element_to_render_cmd_text :: proc(t: ^testing.T) {
 @(test)
 test_element_to_render_cmd_box :: proc(t: ^testing.T) {
 	el := Element {
-		box_style = BoxStyle.Sharp,
-		style     = style(.White, .Blue, {}),
+		box_style = ab.BoxStyle.Sharp,
+		style     = ac.style(ac.Ansi.White, .Blue, {}),
 	}
 
 	cmd := _element_to_render_cmd(el)
@@ -117,7 +121,7 @@ test_element_to_render_cmd_box :: proc(t: ^testing.T) {
 test_element_to_render_cmd_rect :: proc(t: ^testing.T) {
 	el := Element {
 		fill_char = '#',
-		style     = style(.Red, .Default, {}),
+		style     = ac.style(ac.Ansi.Red, ac.Ansi.Default, {}),
 	}
 
 	cmd := _element_to_render_cmd(el)
@@ -140,7 +144,7 @@ test_element_priority_content_over_box :: proc(t: ^testing.T) {
 	// Content should take priority over box_style
 	el := Element {
 		content   = "Text wins",
-		box_style = BoxStyle.Rounded,
+		box_style = ab.BoxStyle.Rounded,
 	}
 
 	cmd := _element_to_render_cmd(el)
@@ -154,18 +158,18 @@ test_element_priority_content_over_box :: proc(t: ^testing.T) {
 
 @(test)
 test_element_layout_integration :: proc(t: ^testing.T) {
-	l_ctx := init_layout_context()
-	defer destroy_layout_context(&l_ctx)
+	l_ctx := al.init_layout_context()
+	defer al.destroy_layout_context(&l_ctx)
 
-	reset_layout_context(&l_ctx, Rect{0, 0, 80, 24})
+	al.reset_layout_context(&l_ctx, al.Rect{0, 0, 80, 24})
 
 	// Add root container
-	begin_container(&l_ctx, LayoutConfig{sizing = {.X = grow(), .Y = grow()}})
+	al.begin_container(&l_ctx, al.LayoutConfig{sizing = {.X = al.grow(), .Y = al.grow()}})
 
 	// Add text node using internal element processing
 	el := Element {
 		content = "Test",
-		sizing = {.X = fit(), .Y = fixed(1)},
+		sizing = {.X = al.fit(), .Y = al.fixed(1)},
 	}
 	config := el.layout
 	if txt, ok := el.content.?; ok {
@@ -173,10 +177,10 @@ test_element_layout_integration :: proc(t: ^testing.T) {
 			config.sizing[.X].value = f32(len(txt))
 		}
 	}
-	node_idx := _add_node(&l_ctx, config, false)
+	node_idx := al._add_node(&l_ctx, config, false)
 	l_ctx.nodes[node_idx].render_cmd = _element_to_render_cmd(el)
 
-	end_container(&l_ctx)
+	al.end_container(&l_ctx)
 
 	testing.expect(t, len(l_ctx.nodes) == 2, "Should have 2 nodes (container + text)")
 }
@@ -187,8 +191,8 @@ test_widget_theme_integration :: proc(t: ^testing.T) {
 	ctx := new(Context)
 	defer free(ctx)
 	defer delete(ctx.focusable_items) // Clean up focusable items allocated by register_focusable
-	ctx.layout_ctx = init_layout_context()
-	defer destroy_layout_context(&ctx.layout_ctx)
+	ctx.layout_ctx = al.init_layout_context()
+	defer al.destroy_layout_context(&ctx.layout_ctx)
 
 
 	// Initialize theme
@@ -200,7 +204,7 @@ test_widget_theme_integration :: proc(t: ^testing.T) {
 	ctx.theme.button.prefix = "[CUSTOM] "
 
 	// Create button
-	reset_layout_context(&ctx.layout_ctx, Rect{0, 0, 80, 24})
+	al.reset_layout_context(&ctx.layout_ctx, al.Rect{0, 0, 80, 24})
 	widget_button(ctx, "Test")
 
 	// Check the last added node (widget_button adds one node for the element)
