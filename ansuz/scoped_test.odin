@@ -44,6 +44,7 @@ _free_test_context :: proc(ctx: ^Context) {
 	delete(ctx.input_keys)
 	strings.builder_destroy(&ctx.render_buffer)
 	destroy_layout_context(&ctx.layout_ctx)
+	destroy_buffer(&ctx.buffer)
 	free(ctx.theme)
 	free(ctx)
 }
