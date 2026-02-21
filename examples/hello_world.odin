@@ -10,7 +10,7 @@
 
 package hello_world
 
-import ansuz "../ansuz"
+import ansuz "../ansuz/core"
 import "core:fmt"
 
 frame_count: i32

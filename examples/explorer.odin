@@ -11,7 +11,7 @@
 
 package explorer
 
-import ansuz "../ansuz"
+import ansuz "../ansuz/core"
 import "core:fmt"
 import "core:os"
 import "core:path/filepath"

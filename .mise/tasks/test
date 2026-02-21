@@ -4,14 +4,12 @@
 
 set -euo pipefail
 
-if ! command -v odin &>/dev/null; then
-    if [[ -n "${ODIN_ROOT:-}" ]] && [[ -x "$ODIN_ROOT/odin" ]]; then
-        export PATH="$ODIN_ROOT:$PATH"
-    else
-        echo "Error: 'odin' not found. Set ODIN_ROOT or install Odin." >&2
-        exit 1
-    fi
-fi
+ROOT="$(pwd)"
 
 echo "Running tests..."
-odin test ansuz -file </dev/null
+echo "=== ansuz/color ===" && odin test "$ROOT/ansuz/color"
+echo "=== ansuz/terminal ===" && odin test "$ROOT/ansuz/terminal"
+echo "=== ansuz/buffer ===" && odin test "$ROOT/ansuz/buffer"
+echo "=== ansuz/layout ===" && odin test "$ROOT/ansuz/layout"
+echo "=== ansuz/core ===" && odin test "$ROOT/ansuz/core"
+echo "All tests complete!"

@@ -1,6 +1,6 @@
 package main
 
-import "../ansuz"
+import ansuz "../ansuz/core"
 import "core:fmt"
 import "core:os"
 

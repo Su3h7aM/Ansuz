@@ -31,7 +31,7 @@ fi
 
 mkdir -p bin
 
-FLAGS="-o:minimal -linker:mold -microarch:native"
+FLAGS="-o:minimal"
 
 echo "Building hello_world..."
 odin build examples/hello_world.odin -file -out:bin/hello_world $FLAGS

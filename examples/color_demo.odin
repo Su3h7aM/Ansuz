@@ -10,7 +10,7 @@
 
 package color_demo
 
-import ansuz "../ansuz"
+import ansuz "../ansuz/core"
 import "core:fmt"
 import "core:math"
 

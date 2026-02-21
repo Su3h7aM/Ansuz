@@ -364,3 +364,47 @@ handle_tab_navigation :: proc(ctx: ^Context, reverse: bool) -> bool {
 	set_focus(ctx, new_id)
 	return true
 }
+
+// --- Re-exports from subpackages ---
+
+// Terminal
+is_quit_key :: at.is_quit_key
+wait_for_event :: proc(ctx: ^Context, timeout_ms: i32 = -1) -> (result: at.WaitResult, new_width: int, new_height: int) {
+	return at.wait_for_event(ctx.width, ctx.height, timeout_ms)
+}
+Event :: at.Event
+KeyEvent :: at.KeyEvent
+Key :: at.Key
+KeyModifiers :: at.KeyModifiers
+ResizeEvent :: at.ResizeEvent
+MouseEvent :: at.MouseEvent
+
+// Layout
+grow :: al.grow
+fixed :: al.fixed
+fit :: al.fit
+percent :: al.percent
+padding_all :: al.padding_all
+
+// Color
+style :: ac.style
+default_style :: ac.default_style
+Ansi :: ac.Ansi
+Style :: ac.Style
+StyleFlags :: ac.StyleFlags
+TerminalColor :: ac.TerminalColor
+rgb :: ac.rgb
+hex :: ac.hex
+color256 :: ac.color256
+grayscale :: ac.grayscale
+RGB :: ac.RGB
+
+// Buffer
+BoxStyle :: ab.BoxStyle
+Rect :: al.Rect
+
+// Layout types
+LayoutConfig :: al.LayoutConfig
+DEFAULT_LAYOUT_CONFIG :: al.DEFAULT_LAYOUT_CONFIG
+Alignment :: al.Alignment
+LayoutDirection :: al.LayoutDirection

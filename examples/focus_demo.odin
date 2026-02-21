@@ -1,6 +1,6 @@
 package examples
 
-import ansuz "../ansuz"
+import ansuz "../ansuz/core"
 import "core:fmt"
 
 main :: proc() {
